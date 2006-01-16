@@ -13,12 +13,15 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include <apti18n.h>
 #include <apt-pkg/acquire-method.h>
 #include <apt-pkg/error.h>
 
 #include <sys/stat.h>
 #include <unistd.h>
+
+// CNC:2003-02-20 - Moved header to fix compilation error when
+// 		    --disable-nls is used.
+#include <apti18n.h>
 									/*}}}*/
 
 class FileMethod : public pkgAcqMethod
@@ -53,9 +56,11 @@ bool FileMethod::Fetch(FetchItem *Itm)
 	 Res.IMSHit = true;
    }
    
-   // See if we can compute a file without a .gz exentsion
-   string::size_type Pos = File.rfind(".gz");
-   if (Pos + 3 == File.length())
+   // CNC:2003-11-04
+   // See if we can compute a file without a .gz/.bz2/etc extension
+   string ComprExtension = _config->Find("Acquire::ComprExtension", ".bz2");
+   string::size_type Pos = File.rfind(ComprExtension);
+   if (Pos + ComprExtension.length() == File.length())
    {
       File = string(File,0,Pos);
       if (stat(File.c_str(),&Buf) == 0)

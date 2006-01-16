@@ -1,6 +1,6 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: acquire-method.h,v 1.15 2001/03/13 06:51:46 jgg Exp $
+// $Id: acquire-method.h,v 1.1 2002/07/23 17:54:50 niemeyer Exp $
 /* ######################################################################
 
    Acquire Method - Method helper class + functions
@@ -25,6 +25,9 @@ class pkgAcqMethod
 {
    protected:
 
+   // CNC:2002-07-11
+   unsigned long Flags;
+
    struct FetchItem
    {
       FetchItem *Next;
@@ -39,6 +42,8 @@ class pkgAcqMethod
    {
       string MD5Sum;
       string SHA1Sum;
+      // CNC:2002-07-03
+      string SignatureFP;
       time_t LastModified;
       bool IMSHit;
       string Filename;
@@ -67,13 +72,16 @@ class pkgAcqMethod
    void URIDone(FetchResult &Res,FetchResult *Alt = 0);
    bool MediaFail(string Required,string Drive);
    virtual void Exit() {};
+   // CNC:2004-04-27
+   virtual string PreferredURI() { return ""; };
 
    public:
 
    enum CnfFlags {SingleInstance = (1<<0),
                   Pipeline = (1<<1), SendConfig = (1<<2),
                   LocalOnly = (1<<3), NeedsCleanup = (1<<4), 
-                  Removable = (1<<5)};
+                  // CNC:2004-04-27
+                  Removable = (1<<5), HasPreferredURI = (1<<6)};
 
    void Log(const char *Format,...);
    void Status(const char *Format,...);
@@ -86,3 +94,5 @@ class pkgAcqMethod
 };
 
 #endif
+
+// vim:sts=3:sw=3

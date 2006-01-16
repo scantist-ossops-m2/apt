@@ -1,6 +1,6 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: clean.cc,v 1.4 2001/02/20 07:03:17 jgg Exp $
+// $Id: clean.cc,v 1.1 2002/07/23 17:54:50 niemeyer Exp $
 /* ######################################################################
 
    Clean - Clean out downloaded directories
@@ -82,8 +82,11 @@ bool pkgArchiveCleaner::Go(string Dir,pkgCache &Cache)
 	 continue;
       string Arch = DeQuoteString(string(Start,I-Start));
       
+// CNC:2004-04-19
+#if 0
       if (Arch != "all" && Arch != MyArch)
 	 continue;
+#endif
       
       // Lookup the package
       pkgCache::PkgIterator P = Cache.FindPkg(Pkg);

@@ -1,6 +1,6 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: acquire.cc,v 1.49 2001/05/27 04:28:37 jgg Exp $
+// $Id: acquire.cc,v 1.2 2002/07/25 18:07:18 niemeyer Exp $
 /* ######################################################################
 
    Acquire - File Acquiration
@@ -506,6 +506,9 @@ pkgAcquire::MethodConfig::MethodConfig()
    LocalOnly = false;
    Removable = false;
    Next = 0;
+   // CNC:2004-04-27
+   HasPreferredURI = false;
+   DonePreferredURI = false;
 }
 									/*}}}*/
 
@@ -684,16 +687,37 @@ bool pkgAcquire::Queue::Cycle()
       return _error->Error("Pipedepth failure");
 			   
    // Look for a queable item
+   // CNC:2004-04-27
+   bool Preferred = (Workers->Config->HasPreferredURI == true &&
+		     Workers->Config->DonePreferredURI == false &&
+		     Workers->Config->PreferredURI.empty() == false);
    QItem *I = Items;
    while (PipeDepth < (signed)MaxPipeDepth)
    {
-      for (; I != 0; I = I->Next)
-	 if (I->Owner->Status == pkgAcquire::Item::StatIdle)
-	    break;
+      // CNC:2004-04-27
+      if (Preferred) {
+	 for (; I != 0; I = I->Next)
+	    if (I->Owner->Status == pkgAcquire::Item::StatIdle &&
+	        strncmp(I->URI.c_str(), Workers->Config->PreferredURI.c_str(),
+		        Workers->Config->PreferredURI.length()) == 0)
+	       break;
+      } else {
+	 for (; I != 0; I = I->Next)
+	    if (I->Owner->Status == pkgAcquire::Item::StatIdle)
+	       break;
+      }
       
       // Nothing to do, queue is idle.
-      if (I == 0)
+      if (I == 0) {
+         // CNC:2004-04-27
+	 if (Preferred == true) {
+	    Preferred = false;
+	    Workers->Config->DonePreferredURI = true;
+	    I = Items;
+	    continue;
+	 }
 	 return true;
+      }
       
       I->Worker = Workers;
       I->Owner->Status = pkgAcquire::Item::StatFetching;
@@ -848,3 +872,4 @@ void pkgAcquireStatus::Fetched(unsigned long Size,unsigned long Resume)
    FetchedBytes += Size - Resume;
 }
 									/*}}}*/
+// vim:sts=3:sw=3

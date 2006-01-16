@@ -1,6 +1,6 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: srcrecords.cc,v 1.7 2002/11/09 20:38:02 doogie Exp $
+// $Id: srcrecords.cc,v 1.2 2003/01/29 18:43:48 niemeyer Exp $
 /* ######################################################################
    
    Source Package Records - Allows access to source package records
@@ -109,6 +109,18 @@ pkgSrcRecords::Parser *pkgSrcRecords::Find(const char *Package,bool SrcOnly)
       // Source name hit
       if ((*Current)->Package() == Package)
 	 return *Current;
+      
+
+      // CNC:2003-11-21
+      // Check for a files hit
+      vector<pkgSrcRecords::File> Files;
+      if ((*Current)->Files(Files) == true) {
+         vector<pkgSrcRecords::File>::const_iterator I = Files.begin();
+	 for (; I != Files.end(); I++) {
+            if (flNotDir(I->Path) == flNotDir(Package))
+	       return *Current;
+	 }
+      }
       
       if (SrcOnly == true)
 	 continue;
