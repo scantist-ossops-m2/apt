@@ -1617,6 +1617,20 @@ static bool ShowSrcPackage(CommandLine &CmdL)
 // Policy - Show the results of the preferences file			/*{{{*/
 // ---------------------------------------------------------------------
 /* */
+static const char *CurrentStateToString(pkgCache::State::PkgCurrentState state) {
+   switch (state) {
+   case pkgCache::State::NotInstalled: return "not-installed";
+   case pkgCache::State::UnPacked: return "unpacked";
+   case pkgCache::State::HalfConfigured: return "half-configured";
+   case pkgCache::State::HalfInstalled: return "half-installed";
+   case pkgCache::State::ConfigFiles: return "config-files";
+   case pkgCache::State::Installed: return "installed";
+   case pkgCache::State::TriggersAwaited: return "triggers-awaited";
+   case pkgCache::State::TriggersPending: return "triggers-pending";
+   default: return "<unknown>";
+   }
+}
+
 static bool Policy(CommandLine &CmdL)
 {
    pkgCacheFile CacheFile;
@@ -1736,14 +1750,21 @@ static bool Policy(CommandLine &CmdL)
 	    if (SrcList->FindIndex(VF.File(),Indx) == false &&
 		_system->FindIndex(VF.File(),Indx) == false)
 	       return _error->Error(_("Cache is out of sync, can't x-ref a package file"));
-	    printf("       %4i %s\n",Plcy->GetPriority(VF.File()),
-		   Indx->Describe(true).c_str());
+
+	    std::string ignoredReason = "";
+	    if (VF.File().Flagged(pkgCache::Flag::NotSource) && Pkg.CurrentVer() != V) {
+	       ignoredReason = std::string(" [") + CurrentStateToString((pkgCache::State::PkgCurrentState) Pkg->CurrentState) + "]";
+	    }
+
+	    printf("       %4i %s%s\n",Plcy->GetPriority(VF.File()),
+		   Indx->Describe(true).c_str(), ignoredReason.c_str());
 	 }
       }
    }
    
    return true;
 }
+
 									/*}}}*/
 // Madison - Look a bit like katie's madison				/*{{{*/
 // ---------------------------------------------------------------------
