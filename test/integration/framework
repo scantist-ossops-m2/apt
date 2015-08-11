@@ -99,10 +99,14 @@ msgdone() {
 }
 getaptconfig() {
 	if [ -f ./aptconfig.conf ]; then
-            echo "./aptconfig.conf"
+		echo "$(readlink -f ./aptconfig.conf)"
 	elif [ -f ../aptconfig.conf ]; then
-            echo "../aptconfig.conf"
-        fi
+		echo "$(readlink -f ../aptconfig.conf)"
+	elif [ -f ../../aptconfig.conf ]; then
+		echo "$(readlink -f ../../aptconfig.conf)"
+	elif [ -f "${TMPWORKINGDIRECTORY}/aptconfig.conf" ]; then
+		echo "$(readlink -f "${TMPWORKINGDIRECTORY}/aptconfig.conf")"
+	fi
 }
 runapt() {
 	msgdebug "Executing: ${CCMD}$*${CDEBUG} "
@@ -141,8 +145,11 @@ gdb() {
 	case "$1" in
 	aptget) CMD="apt-get";;
 	aptcache) CMD="apt-cache";;
+	aptcdrom) CMD="apt-cdrom";;
+	aptconfig) CMD="apt-config";;
 	aptmark) CMD="apt-mark";;
 	apthelper) CMD="apt-helper";;
+	aptftparchive) CMD="apt-ftparchive";;
 	*) CMD="$1";;
 	esac
 	shift
@@ -563,10 +570,12 @@ echo '$NAME says \"Hello!\"'" > ${BUILDDIR}/${NAME}
 
  -- Joe Sixpack <joe@example.org>  $(date -R)" > ${BUILDDIR}/debian/changelog
 	echo "Source: $NAME
-Section: $SECTION
 Priority: $PRIORITY
 Maintainer: Joe Sixpack <joe@example.org>
 Standards-Version: 3.9.3" > ${BUILDDIR}/debian/control
+	if [ "$SECTION" != '<none>' ]; then
+		echo "Section: $SECTION" >> ${BUILDDIR}/debian/control
+	fi
 	local BUILDDEPS="$(echo "$DEPENDENCIES" | grep '^Build-')"
 	test -z "$BUILDDEPS" || echo "$BUILDDEPS" >> ${BUILDDIR}/debian/control
 	echo "
@@ -1289,7 +1298,7 @@ testdpkgstatus() {
 	local PKGS="$(dpkg -l "$@" 2>/dev/null | grep "^${STATE}" | wc -l)"
 	if [ "$PKGS" != $NR ]; then
 		echo >&2 $PKGS
-		dpkg -l "$@" | grep '^[a-z]' >&2
+		dpkg -l "$@" | grep '^[a-z]' >&2 || true
 		msgfail
 	else
 		msgpass
@@ -1314,6 +1323,17 @@ testmarkedauto() {
 		echo -n > $COMPAREFILE
 	fi
 	aptmark showauto 2>&1 | checkdiff $COMPAREFILE - && msgpass || msgfail
+}
+testmarkedmanual() {
+	local COMPAREFILE="${TMPWORKINGDIRECTORY}/rootdir/tmp/testmarkedmanual.comparefile"
+	if [ -n "$1" ]; then
+		msgtest 'Test for correctly marked as manually installed' "$*"
+		while [ -n "$1" ]; do echo "$1"; shift; done | sort > $COMPAREFILE
+	else
+		msgtest 'Test for correctly marked as manually installed' 'no package'
+		echo -n > $COMPAREFILE
+	fi
+	aptmark showmanual 2>&1 | checkdiff $COMPAREFILE - && msgpass || msgfail
 }
 
 msgfailoutput() {
@@ -1413,12 +1433,23 @@ testfailure() {
 	else
 		local EXITCODE=$?
 		if expr match "$1" '^apt.*' >/dev/null; then
-			if grep -q -E ' runtime error: ' "$OUTPUT"; then
-				msgfailoutput 'compiler detected undefined behavior' "$OUTPUT" "$@"
-			elif ! grep -q -E '^E: ' "$OUTPUT"; then
-				msgfailoutput "run failed with exitcode ${EXITCODE}, but with no errors" "$OUTPUT" "$@"
+			if [ "$1" = 'aptkey' ]; then
+				if grep -q -E " Can't check signature: " "$OUTPUT" || \
+					grep -q -E " BAD signature from " "$OUTPUT"; then
+					msgpass
+				else
+					msgfailoutput "run failed with exitcode ${EXITCODE}, but no signature error" "$OUTPUT" "$@"
+				fi
 			else
-				msgpass
+				if grep -q -E ' runtime error: ' "$OUTPUT"; then
+					msgfailoutput 'compiler detected undefined behavior' "$OUTPUT" "$@"
+				elif grep -q -E '==ERROR' "$OUTPUT"; then
+					msgfailoutput 'compiler sanitizers reported errors' "$OUTPUT" "$@"
+				elif ! grep -q -E '^E: ' "$OUTPUT"; then
+					msgfailoutput "run failed with exitcode ${EXITCODE}, but with no errors" "$OUTPUT" "$@"
+				else
+					msgpass
+				fi
 			fi
 		else
 			msgpass

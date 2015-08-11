@@ -47,7 +47,7 @@
 class pkgAcquire::Worker : public WeakPointable
 {
    /** \brief dpointer placeholder (for later in case we need it) */
-   void *d;
+   void * const d;
   
    friend class pkgAcquire;
    
@@ -317,7 +317,7 @@ class pkgAcquire::Worker : public WeakPointable
     *  \param Config A location in which to store information about
     *  the fetch method.
     */
-   Worker(MethodConfig *Config);
+   explicit Worker(MethodConfig *Config);
 
    /** \brief Clean up this worker.
     *

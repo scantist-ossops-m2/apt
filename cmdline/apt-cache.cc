@@ -253,12 +253,12 @@ static bool DumpPackage(CommandLine &CmdL)
       {
 	 cout << Cur.VerStr() << " - ";
 	 for (pkgCache::PrvIterator Prv = Cur.ProvidesList(); Prv.end() != true; ++Prv)
-	    cout << Prv.ParentPkg().FullName(true) << " ";
+	    cout << Prv.ParentPkg().FullName(true) << " (= " << (Prv->ProvideVersion == 0 ? "" : Prv.ProvideVersion()) << ") ";
 	 cout << endl;
       }
       cout << "Reverse Provides: " << endl;
       for (pkgCache::PrvIterator Prv = Pkg.ProvidesList(); Prv.end() != true; ++Prv)
-	 cout << Prv.OwnerPkg().FullName(true) << " " << Prv.OwnerVer().VerStr() << endl;
+	 cout << Prv.OwnerPkg().FullName(true) << " " << Prv.OwnerVer().VerStr()  << " (= " << (Prv->ProvideVersion == 0 ? "" : Prv.ProvideVersion()) << ")"<< endl;
    }
 
    return true;
@@ -364,14 +364,14 @@ static bool Stats(CommandLine &)
    cout << _("  Single virtual packages: ") << DVirt << endl;
    cout << _("  Mixed virtual packages: ") << NVirt << endl;
    cout << _("  Missing: ") << Missing << endl;
-   
+
    cout << _("Total distinct versions: ") << Cache->Head().VersionCount << " (" <<
       SizeToStr(Cache->Head().VersionCount*Cache->Head().VersionSz) << ')' << endl;
    cout << _("Total distinct descriptions: ") << Cache->Head().DescriptionCount << " (" <<
       SizeToStr(Cache->Head().DescriptionCount*Cache->Head().DescriptionSz) << ')' << endl;
-   cout << _("Total dependencies: ") << Cache->Head().DependsCount << " (" << 
-      SizeToStr(Cache->Head().DependsCount*Cache->Head().DependencySz) << ')' << endl;
-   
+   cout << _("Total dependencies: ") << Cache->Head().DependsCount << "/" << Cache->Head().DependsDataCount << " (" <<
+      SizeToStr((Cache->Head().DependsCount*Cache->Head().DependencySz) +
+	    (Cache->Head().DependsDataCount*Cache->Head().DependencyDataSz)) << ')' << endl;
    cout << _("Total ver/file relations: ") << Cache->Head().VerFileCount << " (" <<
       SizeToStr(Cache->Head().VerFileCount*Cache->Head().VerFileSz) << ')' << endl;
    cout << _("Total Desc/File relations: ") << Cache->Head().DescFileCount << " (" <<
@@ -392,10 +392,8 @@ static bool Stats(CommandLine &)
 	    stritems.insert(V->VerStr);
 	 if (V->Section != 0)
 	    stritems.insert(V->Section);
-#if APT_PKG_ABI >= 413
 	 stritems.insert(V->SourcePkgName);
 	 stritems.insert(V->SourceVerStr);
-#endif
 	 for (pkgCache::DepIterator D = V.DependsList(); D.end() == false; ++D)
 	 {
 	    if (D->Version != 0)
@@ -430,10 +428,10 @@ static bool Stats(CommandLine &)
       stritems.insert(F->Component);
       stritems.insert(F->IndexType);
    }
+
    unsigned long Size = 0;
    for (std::set<map_stringitem_t>::const_iterator i = stritems.begin(); i != stritems.end(); ++i)
       Size += strlen(Cache->StrP + *i) + 1;
-
    cout << _("Total globbed strings: ") << stritems.size() << " (" << SizeToStr(Size) << ')' << endl;
    stritems.clear();
 
@@ -450,6 +448,7 @@ static bool Stats(CommandLine &)
       APT_CACHESIZE(VersionCount, VersionSz) +
       APT_CACHESIZE(DescriptionCount, DescriptionSz) +
       APT_CACHESIZE(DependsCount, DependencySz) +
+      APT_CACHESIZE(DependsDataCount, DependencyDataSz) +
       APT_CACHESIZE(ReleaseFileCount, ReleaseFileSz) +
       APT_CACHESIZE(PackageFileCount, PackageFileSz) +
       APT_CACHESIZE(VerFileCount, VerFileSz) +
@@ -690,6 +689,7 @@ static bool ShowDepends(CommandLine &CmdL, bool const RevDepends)
    bool const ShowBreaks = _config->FindB("APT::Cache::ShowBreaks", Important == false);
    bool const ShowEnhances = _config->FindB("APT::Cache::ShowEnhances", Important == false);
    bool const ShowOnlyFirstOr = _config->FindB("APT::Cache::ShowOnlyFirstOr", false);
+   bool const ShowImplicit = _config->FindB("APT::Cache::ShowImplicit", false);
 
    while (verset.empty() != true)
    {
@@ -710,12 +710,16 @@ static bool ShowDepends(CommandLine &CmdL, bool const RevDepends)
 	    case pkgCache::Dep::Depends: if (!ShowDepends) continue; break;
 	    case pkgCache::Dep::Recommends: if (!ShowRecommends) continue; break;
 	    case pkgCache::Dep::Suggests: if (!ShowSuggests) continue; break;
-	    case pkgCache::Dep::Replaces: if (!ShowReplaces) continue; break;	    case pkgCache::Dep::Conflicts: if (!ShowConflicts) continue; break;
+	    case pkgCache::Dep::Replaces: if (!ShowReplaces) continue; break;
+	    case pkgCache::Dep::Conflicts: if (!ShowConflicts) continue; break;
 	    case pkgCache::Dep::DpkgBreaks: if (!ShowBreaks) continue; break;
 	    case pkgCache::Dep::Enhances: if (!ShowEnhances) continue; break;
 	    }
+	    if (ShowImplicit == false && D.IsImplicit())
+	       continue;
 
 	    pkgCache::PkgIterator Trg = RevDepends ? D.ParentPkg() : D.TargetPkg();
+	    bool const showNoArch = RevDepends || (D->CompareOp & pkgCache::Dep::ArchSpecific) != pkgCache::Dep::ArchSpecific;
 
 	    if((Installed && Trg->CurrentVer != 0) || !Installed)
 	      {
@@ -729,9 +733,9 @@ static bool ShowDepends(CommandLine &CmdL, bool const RevDepends)
 		if (ShowDepType == true)
 		  cout << D.DepType() << ": ";
 		if (Trg->VersionList == 0)
-		  cout << "<" << Trg.FullName(true) << ">";
+		  cout << "<" << Trg.FullName(showNoArch) << ">";
 		else
-		  cout << Trg.FullName(true);
+		  cout << Trg.FullName(showNoArch);
 		if (ShowVersion == true && D->Version != 0)
 		   cout << " (" << pkgCache::CompTypeDeb(D->CompareOp) << ' ' << D.TargetVer() << ')';
 		cout << std::endl;
@@ -1484,6 +1488,7 @@ static bool Search(CommandLine &CmdL)
    delete [] PatternMatch;
    for (unsigned I = 0; I != NumPatterns; I++)
       regfree(&Patterns[I]);
+   delete [] Patterns;
    if (ferror(stdout))
        return _error->Error("Write to stdout failed");
    return true;

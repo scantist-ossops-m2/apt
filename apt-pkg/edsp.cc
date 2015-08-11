@@ -51,14 +51,7 @@ static void WriteScenarioVersion(pkgDepCache &Cache, FILE* output, pkgCache::Pkg
 				pkgCache::VerIterator const &Ver)
 {
    fprintf(output, "Package: %s\n", Pkg.Name());
-#if APT_PKG_ABI >= 413
    fprintf(output, "Source: %s\n", Ver.SourcePkgName());
-#else
-   pkgRecords Recs(Cache);
-   pkgRecords::Parser &rec = Recs.Lookup(Ver.FileList());
-   string srcpkg = rec.SourcePkg().empty() ? Pkg.Name() : rec.SourcePkg();
-   fprintf(output, "Source: %s\n", srcpkg.c_str());
-#endif
    fprintf(output, "Architecture: %s\n", Ver.Arch());
    fprintf(output, "Version: %s\n", Ver.VerStr());
    if (Pkg.CurrentVer() == Ver)
@@ -109,11 +102,11 @@ static void WriteScenarioDependency( FILE* output, pkgCache::VerIterator const &
    bool orGroup = false;
    for (pkgCache::DepIterator Dep = Ver.DependsList(); Dep.end() == false; ++Dep)
    {
-      if (Dep.IsMultiArchImplicit() == true)
+      if (Dep.IsImplicit() == true)
 	 continue;
       if (orGroup == false)
 	 dependencies[Dep->Type].append(", ");
-      dependencies[Dep->Type].append(Dep.TargetPkg().Name());
+      dependencies[Dep->Type].append(Dep.TargetPkg().FullName((Dep->CompareOp & pkgCache::Dep::ArchSpecific) != pkgCache::Dep::ArchSpecific));
       if (Dep->Version != 0)
 	 dependencies[Dep->Type].append(" (").append(pkgCache::CompTypeDeb(Dep->CompareOp)).append(" ").append(Dep.TargetVer()).append(")");
       if ((Dep->CompareOp & pkgCache::Dep::Or) == pkgCache::Dep::Or)
@@ -147,7 +140,7 @@ static void WriteScenarioLimitedDependency(FILE* output,
    bool orGroup = false;
    for (pkgCache::DepIterator Dep = Ver.DependsList(); Dep.end() == false; ++Dep)
    {
-      if (Dep.IsMultiArchImplicit() == true)
+      if (Dep.IsImplicit() == true)
 	 continue;
       if (orGroup == false)
       {
@@ -163,7 +156,7 @@ static void WriteScenarioLimitedDependency(FILE* output,
 	 orGroup = false;
 	 continue;
       }
-      dependencies[Dep->Type].append(Dep.TargetPkg().Name());
+      dependencies[Dep->Type].append(Dep.TargetPkg().FullName((Dep->CompareOp & pkgCache::Dep::ArchSpecific) != pkgCache::Dep::ArchSpecific));
       if (Dep->Version != 0)
 	 dependencies[Dep->Type].append(" (").append(pkgCache::CompTypeDeb(Dep->CompareOp)).append(" ").append(Dep.TargetVer()).append(")");
       if ((Dep->CompareOp & pkgCache::Dep::Or) == pkgCache::Dep::Or)

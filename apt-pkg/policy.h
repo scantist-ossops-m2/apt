@@ -59,7 +59,7 @@ class pkgPolicy : public pkgDepCache::Policy
    struct PkgPin : Pin
    {
       std::string Pkg;
-      PkgPin(std::string const &Pkg) : Pin(), Pkg(Pkg) {};
+      explicit PkgPin(std::string const &Pkg) : Pin(), Pkg(Pkg) {};
    };
    
    Pin *Pins;
@@ -78,18 +78,18 @@ class pkgPolicy : public pkgDepCache::Policy
    pkgCache::VerIterator GetMatch(pkgCache::PkgIterator const &Pkg);
 
    // Things for the cache interface.
-   virtual pkgCache::VerIterator GetCandidateVer(pkgCache::PkgIterator const &Pkg);
-   virtual signed short GetPriority(pkgCache::PkgIterator const &Pkg);
+   virtual pkgCache::VerIterator GetCandidateVer(pkgCache::PkgIterator const &Pkg) APT_OVERRIDE;
+   virtual signed short GetPriority(pkgCache::PkgIterator const &Pkg) APT_OVERRIDE;
    virtual signed short GetPriority(pkgCache::VerIterator const &Pkg);
-   virtual signed short GetPriority(pkgCache::PkgFileIterator const &File);
+   virtual signed short GetPriority(pkgCache::PkgFileIterator const &File) APT_OVERRIDE;
 
    bool InitDefaults();
    
-   pkgPolicy(pkgCache *Owner);
+   explicit pkgPolicy(pkgCache *Owner);
    virtual ~pkgPolicy();
    private:
-   pkgCache::VerIterator GetCandidateVerNew(pkgCache::PkgIterator const &Pkg);
-   void *d;
+   APT_HIDDEN pkgCache::VerIterator GetCandidateVerNew(pkgCache::PkgIterator const &Pkg);
+   void * const d;
 };
 
 bool ReadPinFile(pkgPolicy &Plcy, std::string File = "");

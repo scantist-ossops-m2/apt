@@ -47,7 +47,7 @@ using namespace std;
 // ---------------------------------------------------------------------
 /* */
 pkgAcquire::Worker::Worker(Queue *Q,MethodConfig *Cnf,
-			   pkgAcquireStatus *Log) : Log(Log)
+			   pkgAcquireStatus *log) : d(NULL), Log(log)
 {
    OwnerQ = Q;
    Config = Cnf;
@@ -62,15 +62,10 @@ pkgAcquire::Worker::Worker(Queue *Q,MethodConfig *Cnf,
 // Worker::Worker - Constructor for method config startup		/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-pkgAcquire::Worker::Worker(MethodConfig *Cnf)
+pkgAcquire::Worker::Worker(MethodConfig *Cnf) : d(NULL), OwnerQ(NULL), Config(Cnf),
+						Access(Cnf->Access), CurrentItem(NULL),
+						CurrentSize(0), TotalSize(0)
 {
-   OwnerQ = 0;
-   Config = Cnf;
-   Access = Cnf->Access;
-   CurrentItem = 0;
-   TotalSize = 0;
-   CurrentSize = 0;
-
    Construct();
 }
 									/*}}}*/
@@ -209,19 +204,22 @@ bool pkgAcquire::Worker::RunMessages()
 	 return _error->Error("Invalid message from method %s: %s",Access.c_str(),Message.c_str());
 
       string URI = LookupTag(Message,"URI");
-      pkgAcquire::Queue::QItem *Itm = 0;
+      pkgAcquire::Queue::QItem *Itm = NULL;
       if (URI.empty() == false)
 	 Itm = OwnerQ->FindItem(URI,this);
 
-      // update used mirror
-      string UsedMirror = LookupTag(Message,"UsedMirror", "");
-      if (!UsedMirror.empty() &&
-          Itm && 
-          Itm->Description.find(" ") != string::npos)
+      if (Itm != NULL)
       {
-         Itm->Description.replace(0, Itm->Description.find(" "), UsedMirror);
-         // FIXME: will we need this as well?
-         //Itm->ShortDesc = UsedMirror;
+	 // update used mirror
+	 string UsedMirror = LookupTag(Message,"UsedMirror", "");
+	 if (UsedMirror.empty() == false)
+	 {
+	    for (pkgAcquire::Queue::QItem::owner_iterator O = Itm->Owners.begin(); O != Itm->Owners.end(); ++O)
+	       (*O)->UsedMirror = UsedMirror;
+
+	    if (Itm->Description.find(" ") != string::npos)
+	       Itm->Description.replace(0, Itm->Description.find(" "), UsedMirror);
+	 }
       }
 
       // Determine the message number and dispatch
@@ -253,17 +251,14 @@ bool pkgAcquire::Worker::RunMessages()
                break;
             }
 
-            string NewURI = LookupTag(Message,"New-URI",URI.c_str());
+	    std::string const NewURI = LookupTag(Message,"New-URI",URI.c_str());
             Itm->URI = NewURI;
 
 	    ItemDone();
 
 	    // Change the status so that it can be dequeued
 	    for (pkgAcquire::Queue::QItem::owner_iterator O = Itm->Owners.begin(); O != Itm->Owners.end(); ++O)
-	    {
-	       pkgAcquire::Item *Owner = *O;
-	       Owner->Status = pkgAcquire::Item::StatIdle;
-	    }
+	       (*O)->Status = pkgAcquire::Item::StatIdle;
 	    // Mark the item as done (taking care of all queues)
 	    // and then put it in the main queue again
 	    std::vector<Item*> const ItmOwners = Itm->Owners;
@@ -272,12 +267,28 @@ bool pkgAcquire::Worker::RunMessages()
 	    for (pkgAcquire::Queue::QItem::owner_iterator O = ItmOwners.begin(); O != ItmOwners.end(); ++O)
 	    {
 	       pkgAcquire::Item *Owner = *O;
-	       pkgAcquire::ItemDesc desc = Owner->GetItemDesc();
+	       pkgAcquire::ItemDesc &desc = Owner->GetItemDesc();
+	       // if we change site, treat it as a mirror change
+	       if (URI::SiteOnly(NewURI) != URI::SiteOnly(desc.URI))
+	       {
+		  std::string const OldSite = desc.Description.substr(0, desc.Description.find(" "));
+		  if (likely(APT::String::Startswith(desc.URI, OldSite)))
+		  {
+		     std::string const OldExtra = desc.URI.substr(OldSite.length() + 1);
+		     if (likely(APT::String::Endswith(NewURI, OldExtra)))
+		     {
+			std::string const NewSite = NewURI.substr(0, NewURI.length() - OldExtra.length());
+			Owner->UsedMirror = URI::ArchiveOnly(NewSite);
+			if (desc.Description.find(" ") != string::npos)
+			   desc.Description.replace(0, desc.Description.find(" "), Owner->UsedMirror);
+		     }
+		  }
+	       }
 	       desc.URI = NewURI;
 	       OwnerQ->Owner->Enqueue(desc);
 
 	       if (Log != 0)
-		  Log->Done(Owner->GetItemDesc());
+		  Log->Done(desc);
 	    }
             break;
          }
@@ -401,10 +412,13 @@ bool pkgAcquire::Worker::RunMessages()
 		  consideredOkay = true;
 
 	       if (consideredOkay == true)
+		  consideredOkay = Owner->VerifyDone(Message, Config);
+	       else // hashsum mismatch
+		  Owner->Status = pkgAcquire::Item::StatAuthError;
+
+	       if (consideredOkay == true)
 	       {
 		  Owner->Done(Message, ReceivedHashes, Config);
-
-		  // Log that we are done
 		  if (Log != 0)
 		  {
 		     if (isIMSHit)
@@ -415,9 +429,7 @@ bool pkgAcquire::Worker::RunMessages()
 	       }
 	       else
 	       {
-		  Owner->Status = pkgAcquire::Item::StatAuthError;
 		  Owner->Failed(Message,Config);
-
 		  if (Log != 0)
 		     Log->Fail(Owner->GetItemDesc());
 	       }
@@ -727,7 +739,7 @@ void pkgAcquire::Worker::PrepareFiles(char const * const caller, pkgAcquire::Que
 	 unlink(Owner->DestFile.c_str());
 	 if (link(filename.c_str(), Owner->DestFile.c_str()) != 0)
 	 {
-	    // diferent mounts can't happen for us as we download to lists/ by default,
+	    // different mounts can't happen for us as we download to lists/ by default,
 	    // but if the system is reused by others the locations can potentially be on
 	    // different disks, so use symlink as poor-men replacement.
 	    // FIXME: Real copying as last fallback, but that is costly, so offload to a method preferable

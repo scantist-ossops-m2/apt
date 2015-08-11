@@ -216,10 +216,9 @@ pkgCache::VerIterator FindNowVersion(const pkgCache::PkgIterator &Pkg)
 // DPkgPM::pkgDPkgPM - Constructor					/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-pkgDPkgPM::pkgDPkgPM(pkgDepCache *Cache) 
-   : pkgPackageManager(Cache), pkgFailures(0), PackagesDone(0), PackagesTotal(0)
+pkgDPkgPM::pkgDPkgPM(pkgDepCache *Cache)
+   : pkgPackageManager(Cache),d(new pkgDPkgPMPrivate()), pkgFailures(0), PackagesDone(0), PackagesTotal(0)
 {
-   d = new pkgDPkgPMPrivate();
 }
 									/*}}}*/
 // DPkgPM::pkgDPkgPM - Destructor					/*{{{*/
@@ -1485,6 +1484,10 @@ bool pkgDPkgPM::Go(APT::Progress::PackageManager *progress)
 	      a != Args.end(); ++a)
 	    clog << *a << ' ';
 	 clog << endl;
+	 for (std::vector<char *>::const_iterator p = Packages.begin();
+	       p != Packages.end(); ++p)
+	    free(*p);
+	 Packages.clear();
 	 continue;
       }
       Args.push_back(NULL);
@@ -1843,16 +1846,7 @@ void pkgDPkgPM::WriteApportReport(const char *pkgpath, const char *errormsg)
    time_t now = time(NULL);
    fprintf(report, "Date: %s" , ctime(&now));
    fprintf(report, "Package: %s %s\n", pkgname.c_str(), pkgver.c_str());
-#if APT_PKG_ABI >= 413
    fprintf(report, "SourcePackage: %s\n", Ver.SourcePkgName());
-#else
-   pkgRecords Recs(Cache);
-   pkgRecords::Parser &Parse = Recs.Lookup(Ver.FileList());
-   std::string srcpkgname = Parse.SourcePkg();
-   if(srcpkgname.empty())
-      srcpkgname = pkgname;
-   fprintf(report, "SourcePackage: %s\n", srcpkgname.c_str());
-#endif
    fprintf(report, "ErrorMessage:\n %s\n", errormsg);
 
    // ensure that the log is flushed

@@ -36,6 +36,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <memory>
+#include <algorithm>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -54,7 +56,7 @@ using std::string;
 /* We set the dirty flag and make sure that is written to the disk */
 pkgCacheGenerator::pkgCacheGenerator(DynamicMMap *pMap,OpProgress *Prog) :
 		    Map(*pMap), Cache(pMap,false), Progress(Prog),
-		     CurrentRlsFile(NULL), CurrentFile(NULL), FoundFileDeps(0)
+		     CurrentRlsFile(NULL), CurrentFile(NULL), d(NULL)
 {
    if (_error->PendingError() == true)
       return;
@@ -227,22 +229,6 @@ bool pkgCacheGenerator::MergeList(ListParser &List,
 	 continue;
       }
 
-      if (Arch.empty() == true)
-      {
-	 // use the pseudo arch 'none' for arch-less packages
-	 Arch = "none";
-	 /* We might built a SingleArchCache here, which we don't want to blow up
-	    just for these :none packages to a proper MultiArchCache, so just ensure
-	    that we have always a native package structure first for SingleArch */
-	 pkgCache::PkgIterator NP;
-	 Dynamic<pkgCache::PkgIterator> DynPkg(NP);
-	 if (NewPackage(NP, PackageName, _config->Find("APT::Architecture")) == false)
-	 // TRANSLATOR: The first placeholder is a package name,
-	 // the other two should be copied verbatim as they include debug info
-	 return _error->Error(_("Error occurred while processing %s (%s%d)"),
-			      PackageName.c_str(), "NewPackage", 0);
-      }
-
       // Get a pointer to the package structure
       pkgCache::PkgIterator Pkg;
       Dynamic<pkgCache::PkgIterator> DynPkg(Pkg);
@@ -265,10 +251,7 @@ bool pkgCacheGenerator::MergeList(ListParser &List,
       }
 
       if (OutVer != 0)
-      {
-	 FoundFileDeps |= List.HasFileDeps();
 	 return true;
-      }
    }
 
    if (Cache.HeaderP->PackageCount >= std::numeric_limits<map_id_t>::max())
@@ -284,7 +267,6 @@ bool pkgCacheGenerator::MergeList(ListParser &List,
       return _error->Error(_("Wow, you exceeded the number of dependencies "
 			     "this APT is capable of."));
 
-   FoundFileDeps |= List.HasFileDeps();
    return true;
 }
 // CacheGenerator::MergeListGroup					/*{{{*/
@@ -442,40 +424,6 @@ bool pkgCacheGenerator::MergeListVersion(ListParser &List, pkgCache::PkgIterator
 	       return _error->Error(_("Error occurred while processing %s (%s%d)"),
 				    Pkg.Name(), "AddImplicitDepends", 1);
       }
-      /* :none packages are packages without an architecture. They are forbidden by
-	 debian-policy, so usually they will only be in (old) dpkg status files -
-	 and dpkg will complain about them - and are pretty rare. We therefore do
-	 usually not create conflicts while the parent is created, but only if a :none
-	 package (= the target) appears. This creates incorrect dependencies on :none
-	 for architecture-specific dependencies on the package we copy from, but we
-	 will ignore this bug as architecture-specific dependencies are only allowed
-	 in jessie and until then the :none packages should be extinct (hopefully).
-	 In other words: This should work long enough to allow graceful removal of
-	 these packages, it is not supposed to allow users to keep using them … */
-      if (strcmp(Pkg.Arch(), "none") == 0)
-      {
-	 pkgCache::PkgIterator M = Grp.FindPreferredPkg();
-	 if (M.end() == false && Pkg != M)
-	 {
-	    pkgCache::DepIterator D = M.RevDependsList();
-	    Dynamic<pkgCache::DepIterator> DynD(D);
-	    for (; D.end() == false; ++D)
-	    {
-	       if ((D->Type != pkgCache::Dep::Conflicts &&
-		    D->Type != pkgCache::Dep::DpkgBreaks &&
-		    D->Type != pkgCache::Dep::Replaces) ||
-		   D.ParentPkg().Group() == Grp)
-		  continue;
-
-	       map_pointer_t *OldDepLast = NULL;
-	       pkgCache::VerIterator ConVersion = D.ParentVer();
-	       Dynamic<pkgCache::VerIterator> DynV(ConVersion);
-	       // duplicate the Conflicts/Breaks/Replaces for :none arch
-	       NewDepends(Pkg, ConVersion, D->Version,
-		     D->CompareOp, D->Type, OldDepLast);
-	    }
-	 }
-      }
    }
    if (unlikely(AddImplicitDepends(Grp, Pkg, Ver) == false))
       return _error->Error(_("Error occurred while processing %s (%s%d)"),
@@ -545,57 +493,6 @@ bool pkgCacheGenerator::AddNewDescription(ListParser &List, pkgCache::VerIterato
 }
 									/*}}}*/
 									/*}}}*/
-// CacheGenerator::MergeFileProvides - Merge file provides   		/*{{{*/
-// ---------------------------------------------------------------------
-/* If we found any file depends while parsing the main list we need to 
-   resolve them. Since it is undesired to load the entire list of files
-   into the cache as virtual packages we do a two stage effort. MergeList
-   identifies the file depends and this creates Provdies for them by
-   re-parsing all the indexs. */
-bool pkgCacheGenerator::MergeFileProvides(ListParser &List)
-{
-   List.Owner = this;
-   
-   unsigned int Counter = 0;
-   while (List.Step() == true)
-   {
-      string PackageName = List.Package();
-      if (PackageName.empty() == true)
-	 return false;
-      string Version = List.Version();
-      if (Version.empty() == true)
-	 continue;
-      
-      pkgCache::PkgIterator Pkg = Cache.FindPkg(PackageName);
-      Dynamic<pkgCache::PkgIterator> DynPkg(Pkg);
-      if (Pkg.end() == true)
-	 return _error->Error(_("Error occurred while processing %s (%s%d)"),
-				PackageName.c_str(), "FindPkg", 1);
-      Counter++;
-      if (Counter % 100 == 0 && Progress != 0)
-	 Progress->Progress(List.Offset());
-
-      unsigned short Hash = List.VersionHash();
-      pkgCache::VerIterator Ver = Pkg.VersionList();
-      Dynamic<pkgCache::VerIterator> DynVer(Ver);
-      for (; Ver.end() == false; ++Ver)
-      {
-	 if (List.SameVersion(Hash, Ver) == true && Version == Ver.VerStr())
-	 {
-	    if (List.CollectFileProvides(Cache,Ver) == false)
-	       return _error->Error(_("Error occurred while processing %s (%s%d)"),
-				    PackageName.c_str(), "CollectFileProvides", 1);
-	    break;
-	 }
-      }
-      
-      if (Ver.end() == true)
-	 _error->Warning(_("Package %s %s was not found while processing file dependencies"),PackageName.c_str(),Version.c_str());
-   }
-
-   return true;
-}
-									/*}}}*/
 // CacheGenerator::NewGroup - Add a new group				/*{{{*/
 // ---------------------------------------------------------------------
 /* This creates a new group structure and adds it to the hash table */
@@ -648,6 +545,16 @@ bool pkgCacheGenerator::NewPackage(pkgCache::PkgIterator &Pkg,const string &Name
       return false;
    Pkg = pkgCache::PkgIterator(Cache,Cache.PkgP + Package);
 
+   // Set the name, arch and the ID
+   APT_IGNORE_DEPRECATED(Pkg->Name = Grp->Name;)
+   Pkg->Group = Grp.Index();
+   // all is mapped to the native architecture
+   map_stringitem_t const idxArch = (Arch == "all") ? Cache.HeaderP->Architecture : StoreString(MIXED, Arch);
+   if (unlikely(idxArch == 0))
+      return false;
+   Pkg->Arch = idxArch;
+   Pkg->ID = Cache.HeaderP->PackageCount++;
+
    // Insert the package into our package list
    if (Grp->FirstPackage == 0) // the group is new
    {
@@ -662,23 +569,53 @@ bool pkgCacheGenerator::NewPackage(pkgCache::PkgIterator &Pkg,const string &Name
    }
    else // Group the Packages together
    {
+      // but first get implicit provides done
+      if (APT::Configuration::checkArchitecture(Pkg.Arch()) == true)
+      {
+	 pkgCache::PkgIterator const M = Grp.FindPreferredPkg(false); // native or any foreign pkg will do
+	 if (M.end() == false)
+	    for (pkgCache::PrvIterator Prv = M.ProvidesList(); Prv.end() == false; ++Prv)
+	    {
+	       if ((Prv->Flags & pkgCache::Flag::ArchSpecific) != 0)
+		  continue;
+	       pkgCache::VerIterator Ver = Prv.OwnerVer();
+	       if ((Ver->MultiArch & pkgCache::Version::Allowed) == pkgCache::Version::Allowed ||
+	           ((Ver->MultiArch & pkgCache::Version::Foreign) == pkgCache::Version::Foreign &&
+			(Prv->Flags & pkgCache::Flag::MultiArchImplicit) == 0))
+		  if (NewProvides(Ver, Pkg, Prv->ProvideVersion, Prv->Flags) == false)
+		     return false;
+	    }
+
+	 for (pkgCache::PkgIterator P = Grp.PackageList(); P.end() == false;  P = Grp.NextPkg(P))
+	    for (pkgCache::VerIterator Ver = P.VersionList(); Ver.end() == false; ++Ver)
+	       if ((Ver->MultiArch & pkgCache::Version::Foreign) == pkgCache::Version::Foreign)
+		  if (NewProvides(Ver, Pkg, Ver->VerStr, pkgCache::Flag::MultiArchImplicit) == false)
+		     return false;
+      }
+      // and negative dependencies, don't forget negative dependencies
+      {
+	 pkgCache::PkgIterator const M = Grp.FindPreferredPkg(false);
+	 if (M.end() == false)
+	    for (pkgCache::DepIterator Dep = M.RevDependsList(); Dep.end() == false; ++Dep)
+	    {
+	       if ((Dep->CompareOp & (pkgCache::Dep::ArchSpecific | pkgCache::Dep::MultiArchImplicit)) != 0)
+		  continue;
+	       if (Dep->Type != pkgCache::Dep::DpkgBreaks && Dep->Type != pkgCache::Dep::Conflicts &&
+		     Dep->Type != pkgCache::Dep::Replaces)
+		  continue;
+	       pkgCache::VerIterator Ver = Dep.ParentVer();
+	       map_pointer_t * unused = NULL;
+	       if (NewDepends(Pkg, Ver, Dep->Version, Dep->CompareOp, Dep->Type, unused) == false)
+		  return false;
+	    }
+      }
+
       // this package is the new last package
       pkgCache::PkgIterator LastPkg(Cache, Cache.PkgP + Grp->LastPackage);
       Pkg->NextPackage = LastPkg->NextPackage;
       LastPkg->NextPackage = Package;
    }
    Grp->LastPackage = Package;
-
-   // Set the name, arch and the ID
-   APT_IGNORE_DEPRECATED(Pkg->Name = Grp->Name;)
-   Pkg->Group = Grp.Index();
-   // all is mapped to the native architecture
-   map_stringitem_t const idxArch = (Arch == "all") ? Cache.HeaderP->Architecture : StoreString(MIXED, Arch);
-   if (unlikely(idxArch == 0))
-      return false;
-   Pkg->Arch = idxArch;
-   Pkg->ID = Cache.HeaderP->PackageCount++;
-
    return true;
 }
 									/*}}}*/
@@ -709,16 +646,16 @@ bool pkgCacheGenerator::AddImplicitDepends(pkgCache::GrpIterator &G,
       {
 	 // Replaces: ${self}:other ( << ${binary:Version})
 	 NewDepends(D, V, VerStrIdx,
-		    pkgCache::Dep::Less, pkgCache::Dep::Replaces,
+		    pkgCache::Dep::Less | pkgCache::Dep::MultiArchImplicit, pkgCache::Dep::Replaces,
 		    OldDepLast);
 	 // Breaks: ${self}:other (!= ${binary:Version})
 	 NewDepends(D, V, VerStrIdx,
-		    pkgCache::Dep::NotEquals, pkgCache::Dep::DpkgBreaks,
+		    pkgCache::Dep::NotEquals | pkgCache::Dep::MultiArchImplicit, pkgCache::Dep::DpkgBreaks,
 		    OldDepLast);
       } else {
 	 // Conflicts: ${self}:other
 	 NewDepends(D, V, 0,
-		    pkgCache::Dep::NoOp, pkgCache::Dep::Conflicts,
+		    pkgCache::Dep::NoOp | pkgCache::Dep::MultiArchImplicit, pkgCache::Dep::Conflicts,
 		    OldDepLast);
       }
    }
@@ -737,16 +674,16 @@ bool pkgCacheGenerator::AddImplicitDepends(pkgCache::VerIterator &V,
       map_stringitem_t const VerStrIdx = V->VerStr;
       // Replaces: ${self}:other ( << ${binary:Version})
       NewDepends(D, V, VerStrIdx,
-		 pkgCache::Dep::Less, pkgCache::Dep::Replaces,
+		 pkgCache::Dep::Less | pkgCache::Dep::MultiArchImplicit, pkgCache::Dep::Replaces,
 		 OldDepLast);
       // Breaks: ${self}:other (!= ${binary:Version})
       NewDepends(D, V, VerStrIdx,
-		 pkgCache::Dep::NotEquals, pkgCache::Dep::DpkgBreaks,
+		 pkgCache::Dep::NotEquals | pkgCache::Dep::MultiArchImplicit, pkgCache::Dep::DpkgBreaks,
 		 OldDepLast);
    } else {
       // Conflicts: ${self}:other
       NewDepends(D, V, 0,
-		 pkgCache::Dep::NoOp, pkgCache::Dep::Conflicts,
+		 pkgCache::Dep::NoOp | pkgCache::Dep::MultiArchImplicit, pkgCache::Dep::Conflicts,
 		 OldDepLast);
    }
    return true;
@@ -912,36 +849,9 @@ map_pointer_t pkgCacheGenerator::NewDescription(pkgCache::DescIterator &Desc,
    version and to the package that it is pointing to. */
 bool pkgCacheGenerator::NewDepends(pkgCache::PkgIterator &Pkg,
 				   pkgCache::VerIterator &Ver,
-				   string const &Version,
-				   unsigned int const &Op,
-				   unsigned int const &Type,
-				   map_stringitem_t* &OldDepLast)
-{
-   map_stringitem_t index = 0;
-   if (Version.empty() == false)
-   {
-      int const CmpOp = Op & 0x0F;
-      // =-deps are used (79:1) for lockstep on same-source packages (e.g. data-packages)
-      if (CmpOp == pkgCache::Dep::Equals && strcmp(Version.c_str(), Ver.VerStr()) == 0)
-	 index = Ver->VerStr;
-
-      if (index == 0)
-      {
-	 void const * const oldMap = Map.Data();
-	 index = StoreString(VERSIONNUMBER, Version);
-	 if (unlikely(index == 0))
-	    return false;
-	 if (OldDepLast != 0 && oldMap != Map.Data())
-	    OldDepLast += (map_pointer_t const * const) Map.Data() - (map_pointer_t const * const) oldMap;
-      }
-   }
-   return NewDepends(Pkg, Ver, index, Op, Type, OldDepLast);
-}
-bool pkgCacheGenerator::NewDepends(pkgCache::PkgIterator &Pkg,
-				   pkgCache::VerIterator &Ver,
 				   map_pointer_t const Version,
-				   unsigned int const &Op,
-				   unsigned int const &Type,
+				   uint8_t const Op,
+				   uint8_t const Type,
 				   map_pointer_t* &OldDepLast)
 {
    void const * const oldMap = Map.Data();
@@ -950,19 +860,72 @@ bool pkgCacheGenerator::NewDepends(pkgCache::PkgIterator &Pkg,
    if (unlikely(Dependency == 0))
       return false;
 
-   // Fill it in
-   pkgCache::DepIterator Dep(Cache,Cache.DepP + Dependency);
-   Dynamic<pkgCache::DepIterator> DynDep(Dep);
-   Dep->ParentVer = Ver.Index();
-   Dep->Type = Type;
-   Dep->CompareOp = Op;
-   Dep->Version = Version;
-   Dep->ID = Cache.HeaderP->DependsCount++;
+   bool isDuplicate = false;
+   map_pointer_t DependencyData = 0;
+   map_pointer_t PreviousData = 0;
+   if (Pkg->RevDepends != 0)
+   {
+      pkgCache::Dependency const * const L = Cache.DepP + Pkg->RevDepends;
+      DependencyData = L->DependencyData;
+      do {
+	 pkgCache::DependencyData const * const D = Cache.DepDataP + DependencyData;
+	 if (Version > D->Version)
+	    break;
+	 if (D->Version == Version && D->Type == Type && D->CompareOp == Op)
+	 {
+	    isDuplicate = true;
+	    break;
+	 }
+	 PreviousData = DependencyData;
+	 DependencyData = D->NextData;
+      } while (DependencyData != 0);
+   }
 
-   // Link it to the package
-   Dep->Package = Pkg.Index();
-   Dep->NextRevDepends = Pkg->RevDepends;
-   Pkg->RevDepends = Dep.Index();
+   if (isDuplicate == false)
+   {
+      DependencyData = AllocateInMap(sizeof(pkgCache::DependencyData));
+      if (unlikely(DependencyData == 0))
+        return false;
+   }
+
+   pkgCache::Dependency * Link = Cache.DepP + Dependency;
+   Link->ParentVer = Ver.Index();
+   Link->DependencyData = DependencyData;
+   Link->ID = Cache.HeaderP->DependsCount++;
+
+   pkgCache::DepIterator Dep(Cache, Link);
+   if (isDuplicate == false)
+   {
+      Dep->Type = Type;
+      Dep->CompareOp = Op;
+      Dep->Version = Version;
+      Dep->Package = Pkg.Index();
+      ++Cache.HeaderP->DependsDataCount;
+      if (PreviousData != 0)
+      {
+	 pkgCache::DependencyData * const D = Cache.DepDataP + PreviousData;
+	 Dep->NextData = D->NextData;
+	 D->NextData = DependencyData;
+      }
+      else if (Pkg->RevDepends != 0)
+      {
+	 pkgCache::Dependency const * const D = Cache.DepP + Pkg->RevDepends;
+	 Dep->NextData = D->DependencyData;
+      }
+   }
+
+   if (isDuplicate == true || PreviousData != 0)
+   {
+      pkgCache::Dependency * const L = Cache.DepP + Pkg->RevDepends;
+      Link->NextRevDepends = L->NextRevDepends;
+      L->NextRevDepends = Dependency;
+   }
+   else
+   {
+      Link->NextRevDepends = Pkg->RevDepends;
+      Pkg->RevDepends = Dependency;
+   }
+
 
    // Do we know where to link the Dependency to?
    if (OldDepLast == NULL)
@@ -974,9 +937,8 @@ bool pkgCacheGenerator::NewDepends(pkgCache::PkgIterator &Pkg,
       OldDepLast += (map_pointer_t const * const) Map.Data() - (map_pointer_t const * const) oldMap;
 
    Dep->NextDepends = *OldDepLast;
-   *OldDepLast = Dep.Index();
+   *OldDepLast = Dependency;
    OldDepLast = &Dep->NextDepends;
-
    return true;
 }
 									/*}}}*/
@@ -984,91 +946,161 @@ bool pkgCacheGenerator::NewDepends(pkgCache::PkgIterator &Pkg,
 // ---------------------------------------------------------------------
 /* This creates a Group and the Package to link this dependency to if
    needed and handles also the caching of the old endpoint */
-bool pkgCacheGenerator::ListParser::NewDepends(pkgCache::VerIterator &Ver,
+bool pkgCacheListParser::NewDepends(pkgCache::VerIterator &Ver,
 					       const string &PackageName,
 					       const string &Arch,
 					       const string &Version,
-					       unsigned int Op,
-					       unsigned int Type)
+					       uint8_t const Op,
+					       uint8_t const Type)
 {
    pkgCache::GrpIterator Grp;
    Dynamic<pkgCache::GrpIterator> DynGrp(Grp);
    if (unlikely(Owner->NewGroup(Grp, PackageName) == false))
       return false;
 
-   // Locate the target package
-   pkgCache::PkgIterator Pkg = Grp.FindPkg(Arch);
-   // we don't create 'none' packages and their dependencies if we can avoid it …
-   if (Pkg.end() == true && Arch == "none" && strcmp(Ver.ParentPkg().Arch(), "none") != 0)
-      return true;
+   map_stringitem_t idxVersion = 0;
+   if (Version.empty() == false)
+   {
+      int const CmpOp = Op & 0x0F;
+      // =-deps are used (79:1) for lockstep on same-source packages (e.g. data-packages)
+      if (CmpOp == pkgCache::Dep::Equals && strcmp(Version.c_str(), Ver.VerStr()) == 0)
+	 idxVersion = Ver->VerStr;
+
+      if (idxVersion == 0)
+      {
+	 idxVersion = StoreString(pkgCacheGenerator::VERSIONNUMBER, Version);
+	 if (unlikely(idxVersion == 0))
+	    return false;
+      }
+   }
+
+   bool const isNegative = (Type == pkgCache::Dep::DpkgBreaks ||
+	 Type == pkgCache::Dep::Conflicts ||
+	 Type == pkgCache::Dep::Replaces);
+
+   pkgCache::PkgIterator Pkg;
    Dynamic<pkgCache::PkgIterator> DynPkg(Pkg);
-   if (Pkg.end() == true) {
-      if (unlikely(Owner->NewPackage(Pkg, PackageName, Arch) == false))
-	 return false;
+   if (isNegative == false || (Op & pkgCache::Dep::ArchSpecific) == pkgCache::Dep::ArchSpecific || Grp->FirstPackage == 0)
+   {
+      // Locate the target package
+      Pkg = Grp.FindPkg(Arch);
+      if (Pkg.end() == true) {
+	 if (unlikely(Owner->NewPackage(Pkg, PackageName, Arch) == false))
+	    return false;
+      }
+
+      /* Caching the old end point speeds up generation substantially */
+      if (OldDepVer != Ver) {
+	 OldDepLast = NULL;
+	 OldDepVer = Ver;
+      }
+
+      return Owner->NewDepends(Pkg, Ver, idxVersion, Op, Type, OldDepLast);
    }
+   else
+   {
+      /* Caching the old end point speeds up generation substantially */
+      if (OldDepVer != Ver) {
+	 OldDepLast = NULL;
+	 OldDepVer = Ver;
+      }
 
-   // Is it a file dependency?
-   if (unlikely(PackageName[0] == '/'))
-      FoundFileDeps = true;
-
-   /* Caching the old end point speeds up generation substantially */
-   if (OldDepVer != Ver) {
-      OldDepLast = NULL;
-      OldDepVer = Ver;
+      for (Pkg = Grp.PackageList(); Pkg.end() == false; Pkg = Grp.NextPkg(Pkg))
+      {
+	 if (Owner->NewDepends(Pkg, Ver, idxVersion, Op, Type, OldDepLast) == false)
+	       return false;
+      }
    }
-
-   return Owner->NewDepends(Pkg, Ver, Version, Op, Type, OldDepLast);
+   return true;
 }
 									/*}}}*/
 // ListParser::NewProvides - Create a Provides element			/*{{{*/
-// ---------------------------------------------------------------------
-/* */
-bool pkgCacheGenerator::ListParser::NewProvides(pkgCache::VerIterator &Ver,
-					        const string &PkgName,
+bool pkgCacheListParser::NewProvides(pkgCache::VerIterator &Ver,
+						const string &PkgName,
 						const string &PkgArch,
-						const string &Version)
+						const string &Version,
+						uint8_t const Flags)
 {
-   pkgCache &Cache = Owner->Cache;
+   pkgCache const &Cache = Owner->Cache;
 
    // We do not add self referencing provides
    if (Ver.ParentPkg().Name() == PkgName && (PkgArch == Ver.ParentPkg().Arch() ||
 	(PkgArch == "all" && strcmp((Cache.StrP + Cache.HeaderP->Architecture), Ver.ParentPkg().Arch()) == 0)))
       return true;
-   
-   // Get a structure
-   map_pointer_t const Provides = Owner->AllocateInMap(sizeof(pkgCache::Provides));
-   if (unlikely(Provides == 0))
-      return false;
-   Cache.HeaderP->ProvidesCount++;
-   
-   // Fill it in
-   pkgCache::PrvIterator Prv(Cache,Cache.ProvideP + Provides,Cache.PkgP);
-   Dynamic<pkgCache::PrvIterator> DynPrv(Prv);
-   Prv->Version = Ver.Index();
-   Prv->NextPkgProv = Ver->ProvidesList;
-   Ver->ProvidesList = Prv.Index();
-   if (Version.empty() == false) {
-      map_stringitem_t const idxProvideVersion = WriteString(Version);
-      Prv->ProvideVersion = idxProvideVersion;
-      if (unlikely(idxProvideVersion == 0))
-	 return false;
-   }
-   
+
    // Locate the target package
    pkgCache::PkgIterator Pkg;
    Dynamic<pkgCache::PkgIterator> DynPkg(Pkg);
    if (unlikely(Owner->NewPackage(Pkg,PkgName, PkgArch) == false))
       return false;
-   
+
+   map_stringitem_t idxProvideVersion = 0;
+   if (Version.empty() == false) {
+      idxProvideVersion = StoreString(pkgCacheGenerator::VERSIONNUMBER, Version);
+      if (unlikely(idxProvideVersion == 0))
+	 return false;
+   }
+   return Owner->NewProvides(Ver, Pkg, idxProvideVersion, Flags);
+}
+bool pkgCacheGenerator::NewProvides(pkgCache::VerIterator &Ver,
+				    pkgCache::PkgIterator &Pkg,
+				    map_pointer_t const ProvideVersion,
+				    uint8_t const Flags)
+{
+   // Get a structure
+   map_pointer_t const Provides = AllocateInMap(sizeof(pkgCache::Provides));
+   if (unlikely(Provides == 0))
+      return false;
+   ++Cache.HeaderP->ProvidesCount;
+
+   // Fill it in
+   pkgCache::PrvIterator Prv(Cache,Cache.ProvideP + Provides,Cache.PkgP);
+   Prv->Version = Ver.Index();
+   Prv->ProvideVersion = ProvideVersion;
+   Prv->Flags = Flags;
+   Prv->NextPkgProv = Ver->ProvidesList;
+   Ver->ProvidesList = Prv.Index();
+
    // Link it to the package
    Prv->ParentPkg = Pkg.Index();
    Prv->NextProvides = Pkg->ProvidesList;
    Pkg->ProvidesList = Prv.Index();
-   
    return true;
 }
 									/*}}}*/
-bool pkgCacheGenerator::ListParser::SameVersion(unsigned short const Hash,/*{{{*/
+// ListParser::NewProvidesAllArch - add provides for all architectures	/*{{{*/
+bool pkgCacheListParser::NewProvidesAllArch(pkgCache::VerIterator &Ver, string const &Package,
+				string const &Version, uint8_t const Flags) {
+   pkgCache &Cache = Owner->Cache;
+   pkgCache::GrpIterator const Grp = Cache.FindGrp(Package);
+   if (Grp.end() == true)
+      return NewProvides(Ver, Package, Cache.NativeArch(), Version, Flags);
+   else
+   {
+      map_stringitem_t idxProvideVersion = 0;
+      if (Version.empty() == false) {
+	 idxProvideVersion = StoreString(pkgCacheGenerator::VERSIONNUMBER, Version);
+	 if (unlikely(idxProvideVersion == 0))
+	    return false;
+      }
+
+      bool const isImplicit = (Flags & pkgCache::Flag::MultiArchImplicit) == pkgCache::Flag::MultiArchImplicit;
+      bool const isArchSpecific = (Flags & pkgCache::Flag::ArchSpecific) == pkgCache::Flag::ArchSpecific;
+      pkgCache::PkgIterator const OwnerPkg = Ver.ParentPkg();
+      for (pkgCache::PkgIterator Pkg = Grp.PackageList(); Pkg.end() == false; Pkg = Grp.NextPkg(Pkg))
+      {
+	 if (isImplicit && OwnerPkg == Pkg)
+	    continue;
+	 if (isArchSpecific == false && APT::Configuration::checkArchitecture(OwnerPkg.Arch()) == false)
+	    continue;
+	 if (Owner->NewProvides(Ver, Pkg, idxProvideVersion, Flags) == false)
+	    return false;
+      }
+   }
+   return true;
+}
+									/*}}}*/
+bool pkgCacheListParser::SameVersion(unsigned short const Hash,		/*{{{*/
       pkgCache::VerIterator const &Ver)
 {
    return Hash == Ver->Hash;
@@ -1193,10 +1225,10 @@ map_stringitem_t pkgCacheGenerator::StoreString(enum StringType const type, cons
 /* This just verifies that each file in the list of index files exists,
    has matching attributes with the cache and the cache does not have
    any extra files. */
-static bool CheckValidity(const string &CacheFile, 
+static bool CheckValidity(const string &CacheFile,
                           pkgSourceList &List,
-                          FileIterator Start, 
-                          FileIterator End,
+                          FileIterator const Start,
+                          FileIterator const End,
                           MMap **OutMap = 0)
 {
    bool const Debug = _config->FindB("Debug::pkgCacheGen", false);
@@ -1204,7 +1236,7 @@ static bool CheckValidity(const string &CacheFile,
    if (CacheFile.empty() == true || FileExists(CacheFile) == false)
    {
       if (Debug == true)
-	 std::clog << "CacheFile doesn't exist" << std::endl;
+	 std::clog << "CacheFile " << CacheFile << " doesn't exist" << std::endl;
       return false;
    }
 
@@ -1222,7 +1254,7 @@ static bool CheckValidity(const string &CacheFile,
    if (_error->PendingError() == true || Map->Size() == 0)
    {
       if (Debug == true)
-	 std::clog << "Errors are pending or Map is empty()" << std::endl;
+	 std::clog << "Errors are pending or Map is empty() for " << CacheFile << std::endl;
       _error->Discard();
       return false;
    }
@@ -1246,10 +1278,9 @@ static bool CheckValidity(const string &CacheFile,
       if (Debug == true)
 	 std::clog << "with ID " << RlsFile->ID << " is valid" << std::endl;
 
-      std::vector <pkgIndexFile *> *Indexes = (*i)->GetIndexFiles();
-      for (std::vector<pkgIndexFile *>::const_iterator j = Indexes->begin(); j != Indexes->end(); ++j)
-	 if ((*j)->HasPackages())
-	    Files.push_back (*j);
+      std::vector <pkgIndexFile *> const * const Indexes = (*i)->GetIndexFiles();
+      std::copy_if(Indexes->begin(), Indexes->end(), std::back_inserter(Files),
+	    [](pkgIndexFile const * const I) { return I->HasPackages(); });
    }
    for (unsigned I = 0; I != Cache.HeaderP->ReleaseFileCount; ++I)
       if (RlsVisited[I] == false)
@@ -1259,8 +1290,7 @@ static bool CheckValidity(const string &CacheFile,
 	 return false;
       }
 
-   for (; Start != End; ++Start)
-      Files.push_back(*Start);
+   std::copy(Start, End, std::back_inserter(Files));
 
    /* Now we check every index file, see if it is in the cache,
       verify the IMS data and check that it is on the disk too.. */
@@ -1343,16 +1373,37 @@ static map_filesize_t ComputeSize(pkgSourceList const * const List, FileIterator
 }
 									/*}}}*/
 // BuildCache - Merge the list of index files into the cache		/*{{{*/
-// ---------------------------------------------------------------------
-/* */
 static bool BuildCache(pkgCacheGenerator &Gen,
-		       OpProgress *Progress,
+		       OpProgress * const Progress,
 		       map_filesize_t &CurrentSize,map_filesize_t TotalSize,
 		       pkgSourceList const * const List,
-		       FileIterator Start, FileIterator End)
+		       FileIterator const Start, FileIterator const End)
 {
    std::vector<pkgIndexFile *> Files;
-   bool const HasFileDeps = Gen.HasFileDeps();
+   bool mergeFailure = false;
+
+   auto const indexFileMerge = [&](pkgIndexFile * const I) {
+      if (I->HasPackages() == false || mergeFailure)
+	 return;
+
+      if (I->Exists() == false)
+	 return;
+
+      if (I->FindInCache(Gen.GetCache()).end() == false)
+      {
+	 _error->Warning("Duplicate sources.list entry %s",
+	       I->Describe().c_str());
+	 return;
+      }
+
+      map_filesize_t const Size = I->Size();
+      if (Progress != NULL)
+	 Progress->OverallProgress(CurrentSize, TotalSize, Size, _("Reading package lists"));
+      CurrentSize += Size;
+
+      if (I->Merge(Gen,Progress) == false)
+	 mergeFailure = true;
+   };
 
    if (List !=  NULL)
    {
@@ -1369,86 +1420,33 @@ static bool BuildCache(pkgCacheGenerator &Gen,
 	    return false;
 
 	 std::vector <pkgIndexFile *> *Indexes = (*i)->GetIndexFiles();
-	 for (std::vector<pkgIndexFile *>::const_iterator I = Indexes->begin(); I != Indexes->end(); ++I)
-	 {
-	    if (HasFileDeps)
-	       Files.push_back(*I);
-
-	    if ((*I)->HasPackages() == false)
-	       continue;
-
-	    if ((*I)->Exists() == false)
-	       continue;
-
-	    if ((*I)->FindInCache(Gen.GetCache()).end() == false)
-	    {
-	       _error->Warning("Duplicate sources.list entry %s",
-		     (*I)->Describe().c_str());
-	       continue;
-	    }
-
-	    map_filesize_t Size = (*I)->Size();
-	    if (Progress != NULL)
-	       Progress->OverallProgress(CurrentSize,TotalSize,Size,_("Reading package lists"));
-	    CurrentSize += Size;
-
-	    if ((*I)->Merge(Gen,Progress) == false)
-	       return false;
-	 }
-      }
-   }
-
-   Gen.SelectReleaseFile("", "");
-   FileIterator I;
-   for (I = Start; I != End; ++I)
-   {
-      if (HasFileDeps)
-	 Files.push_back(*I);
-
-      if ((*I)->HasPackages() == false)
-	 continue;
-      
-      if ((*I)->Exists() == false)
-	 continue;
-
-      if ((*I)->FindInCache(Gen.GetCache()).end() == false)
-      {
-	 _error->Warning("Duplicate sources.list entry %s",
-			 (*I)->Describe().c_str());
-	 continue;
-      }
-      
-      map_filesize_t Size = (*I)->Size();
-      if (Progress != NULL)
-	 Progress->OverallProgress(CurrentSize,TotalSize,Size,_("Reading package lists"));
-      CurrentSize += Size;
-      
-      if ((*I)->Merge(Gen,Progress) == false)
-	 return false;
-   }   
-
-   if (HasFileDeps == true)
-   {
-      if (Progress != NULL)
-	 Progress->Done();
-      TotalSize = ComputeSize(List, Start, End);
-      CurrentSize = 0;
-      for (std::vector<pkgIndexFile *>::const_iterator I = Files.begin(); I != Files.end(); ++I)
-      {
-	 map_filesize_t Size = (*I)->Size();
-	 if (Progress != NULL)
-	    Progress->OverallProgress(CurrentSize,TotalSize,Size,_("Collecting File Provides"));
-	 CurrentSize += Size;
-	 if ((*I)->MergeFileProvides(Gen,Progress) == false)
+	 if (Indexes != NULL)
+	    std::for_each(Indexes->begin(), Indexes->end(), indexFileMerge);
+	 if (mergeFailure)
 	    return false;
       }
    }
-   
+
+   if (Start != End)
+   {
+      Gen.SelectReleaseFile("", "");
+      std::for_each(Start, End, indexFileMerge);
+      if (mergeFailure)
+	 return false;
+   }
    return true;
 }
 									/*}}}*/
-// CacheGenerator::CreateDynamicMMap - load an mmap with configuration options	/*{{{*/
-DynamicMMap* pkgCacheGenerator::CreateDynamicMMap(FileFd *CacheF, unsigned long Flags) {
+// CacheGenerator::MakeStatusCache - Construct the status cache		/*{{{*/
+// ---------------------------------------------------------------------
+/* This makes sure that the status cache (the cache that has all 
+   index files from the sources list and all local ones) is ready
+   to be mmaped. If OutMap is not zero then a MMap object representing
+   the cache will be stored there. This is pretty much mandetory if you
+   are using AllowMem. AllowMem lets the function be run as non-root
+   where it builds the cache 'fast' into a memory buffer. */
+static DynamicMMap* CreateDynamicMMap(FileFd * const CacheF, unsigned long Flags)
+{
    map_filesize_t const MapStart = _config->FindI("APT::Cache-Start", 24*1024*1024);
    map_filesize_t const MapGrow = _config->FindI("APT::Cache-Grow", 1*1024*1024);
    map_filesize_t const MapLimit = _config->FindI("APT::Cache-Limit", 0);
@@ -1460,15 +1458,42 @@ DynamicMMap* pkgCacheGenerator::CreateDynamicMMap(FileFd *CacheF, unsigned long 
    else
       return new DynamicMMap(Flags, MapStart, MapGrow, MapLimit);
 }
-									/*}}}*/
-// CacheGenerator::MakeStatusCache - Construct the status cache		/*{{{*/
-// ---------------------------------------------------------------------
-/* This makes sure that the status cache (the cache that has all 
-   index files from the sources list and all local ones) is ready
-   to be mmaped. If OutMap is not zero then a MMap object representing
-   the cache will be stored there. This is pretty much mandetory if you
-   are using AllowMem. AllowMem lets the function be run as non-root
-   where it builds the cache 'fast' into a memory buffer. */
+static bool writeBackMMapToFile(pkgCacheGenerator * const Gen, DynamicMMap * const Map,
+      std::string const &FileName)
+{
+   FileFd SCacheF(FileName, FileFd::WriteAtomic);
+   if (_error->PendingError() == true)
+      return false;
+
+   fchmod(SCacheF.Fd(),0644);
+
+   // Write out the main data
+   if (SCacheF.Write(Map->Data(),Map->Size()) == false)
+      return _error->Error(_("IO Error saving source cache"));
+   SCacheF.Sync();
+
+   // Write out the proper header
+   Gen->GetCache().HeaderP->Dirty = false;
+   if (SCacheF.Seek(0) == false ||
+	 SCacheF.Write(Map->Data(),sizeof(*Gen->GetCache().HeaderP)) == false)
+      return _error->Error(_("IO Error saving source cache"));
+   Gen->GetCache().HeaderP->Dirty = true;
+   SCacheF.Sync();
+   return true;
+}
+static bool loadBackMMapFromFile(std::unique_ptr<pkgCacheGenerator> &Gen,
+      SPtr<DynamicMMap> &Map, OpProgress * const Progress, std::string const &FileName)
+{
+   Map = CreateDynamicMMap(NULL, 0);
+   FileFd CacheF(FileName, FileFd::ReadOnly);
+   map_pointer_t const alloc = Map->RawAllocate(CacheF.Size());
+   if ((alloc == 0 && _error->PendingError())
+	 || CacheF.Read((unsigned char *)Map->Data() + alloc,
+	    CacheF.Size()) == false)
+      return false;
+   Gen.reset(new pkgCacheGenerator(Map.Get(),Progress));
+   return true;
+}
 APT_DEPRECATED bool pkgMakeStatusCache(pkgSourceList &List,OpProgress &Progress,
 			MMap **OutMap, bool AllowMem)
    { return pkgCacheGenerator::MakeStatusCache(List, &Progress, OutMap, AllowMem); }
@@ -1478,18 +1503,6 @@ bool pkgCacheGenerator::MakeStatusCache(pkgSourceList &List,OpProgress *Progress
    bool const Debug = _config->FindB("Debug::pkgCacheGen", false);
 
    std::vector<pkgIndexFile *> Files;
-   /*
-   for (std::vector<metaIndex *>::const_iterator i = List.begin();
-        i != List.end();
-        ++i)
-   {
-      std::vector <pkgIndexFile *> *Indexes = (*i)->GetIndexFiles();
-      for (std::vector<pkgIndexFile *>::const_iterator j = Indexes->begin();
-	   j != Indexes->end();
-	   ++j)
-         Files.push_back (*j);
-   }
-*/
    if (_system->AddStatusFiles(Files) == false)
       return false;
 
@@ -1510,160 +1523,130 @@ bool pkgCacheGenerator::MakeStatusCache(pkgSourceList &List,OpProgress *Progress
 	 CreateDirectory(dir, flNotFile(SrcCacheFile));
    }
 
-   // Decide if we can write to the cache
-   bool Writeable = false;
-   if (CacheFile.empty() == false)
-      Writeable = access(flNotFile(CacheFile).c_str(),W_OK) == 0;
-   else
-      if (SrcCacheFile.empty() == false)
-	 Writeable = access(flNotFile(SrcCacheFile).c_str(),W_OK) == 0;
-   if (Debug == true)
-      std::clog << "Do we have write-access to the cache files? " << (Writeable ? "YES" : "NO") << std::endl;
-
-   if (Writeable == false && AllowMem == false && CacheFile.empty() == false)
-      return _error->Error(_("Unable to write to %s"),flNotFile(CacheFile).c_str());
-
    if (Progress != NULL)
       Progress->OverallProgress(0,1,1,_("Reading package lists"));
 
-   // Cache is OK, Fin.
-   if (CheckValidity(CacheFile, List, Files.begin(),Files.end(),OutMap) == true)
+   bool pkgcache_fine = false;
+   bool srcpkgcache_fine = false;
+   bool volatile_fine = List.GetVolatileFiles().empty();
+
+   if (CheckValidity(CacheFile, List, Files.begin(), Files.end(), volatile_fine ? OutMap : NULL) == true)
+   {
+      if (Debug == true)
+	 std::clog << "pkgcache.bin is valid - no need to build any cache" << std::endl;
+      pkgcache_fine = true;
+      srcpkgcache_fine = true;
+   }
+   if (pkgcache_fine == false)
+   {
+      if (CheckValidity(SrcCacheFile, List, Files.end(), Files.end()) == true)
+      {
+	 if (Debug == true)
+	    std::clog << "srcpkgcache.bin is valid - it can be reused" << std::endl;
+	 srcpkgcache_fine = true;
+      }
+   }
+
+   if (volatile_fine == true && srcpkgcache_fine == true && pkgcache_fine == true)
    {
       if (Progress != NULL)
 	 Progress->OverallProgress(1,1,1,_("Reading package lists"));
-      if (Debug == true)
-	 std::clog << "pkgcache.bin is valid - no need to build anything" << std::endl;
       return true;
    }
-   else if (Debug == true)
-	 std::clog << "pkgcache.bin is NOT valid" << std::endl;
-   
-   /* At this point we know we need to reconstruct the package cache,
-      begin. */
-   SPtr<FileFd> CacheF;
-   SPtr<DynamicMMap> Map;
-   if (Writeable == true && CacheFile.empty() == false)
+
+   bool Writeable = false;
+   if (srcpkgcache_fine == false || pkgcache_fine == false)
    {
-      _error->PushToStack();
-      unlink(CacheFile.c_str());
-      CacheF = new FileFd(CacheFile,FileFd::WriteAtomic);
-      fchmod(CacheF->Fd(),0644);
-      Map = CreateDynamicMMap(CacheF, MMap::Public);
-      if (_error->PendingError() == true)
-      {
-	 delete CacheF.UnGuard();
-	 delete Map.UnGuard();
-	 if (Debug == true)
-	    std::clog << "Open filebased MMap FAILED" << std::endl;
-	 Writeable = false;
-	 if (AllowMem == false)
-	 {
-	    _error->MergeWithStack();
-	    return false;
-	 }
-	 _error->RevertToStack();
-      }
-      else
-      {
-	 _error->MergeWithStack();
-	 if (Debug == true)
-	    std::clog << "Open filebased MMap" << std::endl;
-      }
-   }
-   if (Writeable == false || CacheFile.empty() == true)
-   {
-      // Just build it in memory..
-      Map = CreateDynamicMMap(NULL);
+      if (CacheFile.empty() == false)
+	 Writeable = access(flNotFile(CacheFile).c_str(),W_OK) == 0;
+      else if (SrcCacheFile.empty() == false)
+	 Writeable = access(flNotFile(SrcCacheFile).c_str(),W_OK) == 0;
+
       if (Debug == true)
-	 std::clog << "Open memory Map (not filebased)" << std::endl;
+	 std::clog << "Do we have write-access to the cache files? " << (Writeable ? "YES" : "NO") << std::endl;
+
+      if (Writeable == false && AllowMem == false)
+      {
+	 if (CacheFile.empty() == false)
+	    return _error->Error(_("Unable to write to %s"),flNotFile(CacheFile).c_str());
+	 else if (SrcCacheFile.empty() == false)
+	    return _error->Error(_("Unable to write to %s"),flNotFile(SrcCacheFile).c_str());
+	 else
+	    return _error->Error("Unable to create caches as file usage is disabled, but memory not allowed either!");
+      }
    }
-   
-   // Lets try the source cache.
+
+   // At this point we know we need to construct something, so get storage ready
+   SPtr<DynamicMMap> Map = CreateDynamicMMap(NULL, 0);
+   if (Debug == true)
+      std::clog << "Open memory Map (not filebased)" << std::endl;
+
+   std::unique_ptr<pkgCacheGenerator> Gen{nullptr};
    map_filesize_t CurrentSize = 0;
-   map_filesize_t TotalSize = 0;
-   if (CheckValidity(SrcCacheFile, List, Files.end(),
-		     Files.end()) == true)
+   std::vector<pkgIndexFile*> VolatileFiles = List.GetVolatileFiles();
+   map_filesize_t TotalSize = ComputeSize(NULL, VolatileFiles.begin(), VolatileFiles.end());
+   if (srcpkgcache_fine == true && pkgcache_fine == false)
    {
       if (Debug == true)
-	 std::clog << "srcpkgcache.bin is valid - populate MMap with it." << std::endl;
-      // Preload the map with the source cache
-      FileFd SCacheF(SrcCacheFile,FileFd::ReadOnly);
-      map_pointer_t const alloc = Map->RawAllocate(SCacheF.Size());
-      if ((alloc == 0 && _error->PendingError())
-		|| SCacheF.Read((unsigned char *)Map->Data() + alloc,
-				SCacheF.Size()) == false)
+	 std::clog << "srcpkgcache.bin was valid - populate MMap with it" << std::endl;
+      if (loadBackMMapFromFile(Gen, Map, Progress, SrcCacheFile) == false)
 	 return false;
-
-      TotalSize = ComputeSize(NULL, Files.begin(), Files.end());
-
-      // Build the status cache
-      pkgCacheGenerator Gen(Map.Get(),Progress);
-      if (_error->PendingError() == true)
-	 return false;
-      if (BuildCache(Gen, Progress, CurrentSize, TotalSize, NULL,
-		     Files.begin(),Files.end()) == false)
-	 return false;
+      srcpkgcache_fine = true;
+      TotalSize += ComputeSize(NULL, Files.begin(), Files.end());
    }
-   else
+   else if (srcpkgcache_fine == false)
    {
       if (Debug == true)
 	 std::clog << "srcpkgcache.bin is NOT valid - rebuild" << std::endl;
-      TotalSize = ComputeSize(&List, Files.begin(),Files.end());
-      
-      // Build the source cache
-      pkgCacheGenerator Gen(Map.Get(),Progress);
-      if (_error->PendingError() == true)
-	 return false;
-      if (BuildCache(Gen, Progress, CurrentSize, TotalSize, &List,
-		     Files.end(),Files.end()) == false)
-	 return false;
-      
-      // Write it back
-      if (Writeable == true && SrcCacheFile.empty() == false)
-      {
-	 FileFd SCacheF(SrcCacheFile,FileFd::WriteAtomic);
-	 if (_error->PendingError() == true)
-	    return false;
-	 
-	 fchmod(SCacheF.Fd(),0644);
-	 
-	 // Write out the main data
-	 if (SCacheF.Write(Map->Data(),Map->Size()) == false)
-	    return _error->Error(_("IO Error saving source cache"));
-	 SCacheF.Sync();
-	 
-	 // Write out the proper header
-	 Gen.GetCache().HeaderP->Dirty = false;
-	 if (SCacheF.Seek(0) == false ||
-	     SCacheF.Write(Map->Data(),sizeof(*Gen.GetCache().HeaderP)) == false)
-	    return _error->Error(_("IO Error saving source cache"));
-	 Gen.GetCache().HeaderP->Dirty = true;
-	 SCacheF.Sync();
-      }
-      
-      // Build the status cache
-      if (BuildCache(Gen, Progress, CurrentSize, TotalSize, NULL,
-		     Files.begin(), Files.end()) == false)
-	 return false;
-   }
-   if (Debug == true)
-      std::clog << "Caches are ready for shipping" << std::endl;
+      Gen.reset(new pkgCacheGenerator(Map.Get(),Progress));
 
-   if (_error->PendingError() == true)
-      return false;
-   if (OutMap != 0)
-   {
-      if (CacheF != 0)
-      {
-	 delete Map.UnGuard();
-	 *OutMap = new MMap(*CacheF,0);
-      }
-      else
-      {
-	 *OutMap = Map.UnGuard();
-      }      
+      TotalSize += ComputeSize(&List, Files.begin(),Files.end());
+      if (BuildCache(*Gen, Progress, CurrentSize, TotalSize, &List,
+	       Files.end(),Files.end()) == false)
+	 return false;
+
+      if (Writeable == true && SrcCacheFile.empty() == false)
+	 if (writeBackMMapToFile(Gen.get(), Map.Get(), SrcCacheFile) == false)
+	    return false;
    }
-   
+
+   if (pkgcache_fine == false)
+   {
+      if (Debug == true)
+	 std::clog << "Building status cache in pkgcache.bin now" << std::endl;
+      if (BuildCache(*Gen, Progress, CurrentSize, TotalSize, NULL,
+	       Files.begin(), Files.end()) == false)
+	 return false;
+
+      if (Writeable == true && CacheFile.empty() == false)
+	 if (writeBackMMapToFile(Gen.get(), Map.Get(), CacheFile) == false)
+	    return false;
+   }
+
+   if (Debug == true)
+      std::clog << "Caches done. Now bring in the volatile files (if any)" << std::endl;
+
+   if (volatile_fine == false)
+   {
+      if (Gen == nullptr)
+      {
+	 if (Debug == true)
+	    std::clog << "Populate new MMap with cachefile contents" << std::endl;
+	 if (loadBackMMapFromFile(Gen, Map, Progress, CacheFile) == false)
+	    return false;
+      }
+
+      Files = List.GetVolatileFiles();
+      if (BuildCache(*Gen, Progress, CurrentSize, TotalSize, NULL,
+	       Files.begin(), Files.end()) == false)
+	 return false;
+   }
+
+   if (OutMap != nullptr)
+      *OutMap = Map.UnGuard();
+
+   if (Debug == true)
+      std::clog << "Everything is ready for shipping" << std::endl;
    return true;
 }
 									/*}}}*/
@@ -1678,7 +1661,7 @@ bool pkgCacheGenerator::MakeOnlyStatusCache(OpProgress *Progress,DynamicMMap **O
    if (_system->AddStatusFiles(Files) == false)
       return false;
 
-   SPtr<DynamicMMap> Map = CreateDynamicMMap(NULL);
+   SPtr<DynamicMMap> Map = CreateDynamicMMap(NULL, 0);
    map_filesize_t CurrentSize = 0;
    map_filesize_t TotalSize = 0;
    
@@ -1714,12 +1697,6 @@ static bool IsDuplicateDescription(pkgCache::DescIterator Desc,
    return false;
 }
 									/*}}}*/
-// CacheGenerator::FinishCache						/*{{{*/
-bool pkgCacheGenerator::FinishCache(OpProgress * /*Progress*/)
-{
-   return true;
-}
-									/*}}}*/
 
-pkgCacheGenerator::ListParser::ListParser() : Owner(NULL), OldDepLast(NULL), FoundFileDeps(false) {}
-pkgCacheGenerator::ListParser::~ListParser() {}
+pkgCacheListParser::pkgCacheListParser() : Owner(NULL), OldDepLast(NULL), d(NULL) {}
+pkgCacheListParser::~pkgCacheListParser() {}

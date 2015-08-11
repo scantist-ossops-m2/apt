@@ -45,7 +45,8 @@ using namespace std;
 // ---------------------------------------------------------------------
 /* Set the defaults for operation. The default mode with no loaded policy
    file matches the V0 policy engine. */
-pkgPolicy::pkgPolicy(pkgCache *Owner) : Pins(0), PFPriority(0), Cache(Owner)
+pkgPolicy::pkgPolicy(pkgCache *Owner) : Pins(nullptr), VerPins(nullptr),
+   PFPriority(nullptr), Cache(Owner), d(NULL)
 {
    if (Owner == 0)
       return;
@@ -395,21 +396,6 @@ APT_PURE signed short pkgPolicy::GetPriority(pkgCache::PkgFileIterator const &Fi
    return PFPriority[File->ID];
 }
 									/*}}}*/
-// PreferenceSection class - Overriding the default TrimRecord method	/*{{{*/
-// ---------------------------------------------------------------------
-/* The preference file is a user generated file so the parser should
-   therefore be a bit more friendly by allowing comments and new lines
-   all over the place rather than forcing a special format */
-class PreferenceSection : public pkgTagSection
-{
-   void TrimRecord(bool /*BeforeRecord*/, const char* &End)
-   {
-      for (; Stop < End && (Stop[0] == '\n' || Stop[0] == '\r' || Stop[0] == '#'); Stop++)
-	 if (Stop[0] == '#')
-	    Stop = (const char*) memchr(Stop,'\n',End-Stop);
-   }
-};
-									/*}}}*/
 // ReadPinDir - Load the pin files from this dir into a Policy		/*{{{*/
 // ---------------------------------------------------------------------
 /* This will load each pin file in the given dir into a Policy. If the
@@ -454,8 +440,8 @@ bool ReadPinFile(pkgPolicy &Plcy,string File)
    pkgTagFile TF(&Fd);
    if (_error->PendingError() == true)
       return false;
-   
-   PreferenceSection Tags;
+
+   pkgUserTagSection Tags;
    while (TF.Step(Tags) == true)
    {
       // can happen when there are only comments in a record

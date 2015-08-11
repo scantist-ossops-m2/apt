@@ -1,4 +1,3 @@
-// ijones, walters
 #ifndef PKGLIB_DEBMETAINDEX_H
 #define PKGLIB_DEBMETAINDEX_H
 
@@ -18,85 +17,52 @@
 
 class pkgAcquire;
 class pkgIndexFile;
-class debDebPkgFileIndex;
 class IndexTarget;
 class pkgCacheGenerator;
 class OpProgress;
+class debReleaseIndexPrivate;
 
-class APT_HIDDEN debReleaseIndex : public metaIndex {
+class APT_HIDDEN debReleaseIndex : public metaIndex
+{
+   debReleaseIndexPrivate * const d;
+
+   APT_HIDDEN bool parseSumData(const char *&Start, const char *End, std::string &Name,
+		     std::string &Hash, unsigned long long &Size);
    public:
 
-   class debSectionEntry
-   {
-      public:
-      debSectionEntry (std::string const &Section, bool const &IsSrc);
-      std::string const Section;
-      bool const IsSrc;
-   };
-
-   private:
-   /** \brief dpointer placeholder (for later in case we need it) */
-   void *d;
-   std::map<std::string, std::vector<debSectionEntry const*> > ArchEntries;
-   enum APT_HIDDEN { ALWAYS_TRUSTED, NEVER_TRUSTED, CHECK_TRUST } Trusted;
-
-   public:
+   APT_HIDDEN std::string MetaIndexInfo(const char *Type) const;
+   APT_HIDDEN std::string MetaIndexFile(const char *Types) const;
+   APT_HIDDEN std::string MetaIndexURI(const char *Type) const;
 
    debReleaseIndex(std::string const &URI, std::string const &Dist);
    debReleaseIndex(std::string const &URI, std::string const &Dist, bool const Trusted);
    virtual ~debReleaseIndex();
 
-   virtual std::string ArchiveURI(std::string const &File) const {return URI + File;};
-   virtual bool GetIndexes(pkgAcquire *Owner, bool const &GetAll=false) const;
-   virtual std::vector<IndexTarget> GetIndexTargets() const;
+   virtual std::string ArchiveURI(std::string const &File) const APT_OVERRIDE {return URI + File;};
+   virtual bool GetIndexes(pkgAcquire *Owner, bool const &GetAll=false) APT_OVERRIDE;
+   virtual std::vector<IndexTarget> GetIndexTargets() const APT_OVERRIDE;
 
-   virtual std::string Describe() const;
-   virtual pkgCache::RlsFileIterator FindInCache(pkgCache &Cache, bool const ModifyCheck) const;
-   virtual bool Merge(pkgCacheGenerator &Gen,OpProgress *Prog) const;
+   virtual std::string Describe() const APT_OVERRIDE;
+   virtual pkgCache::RlsFileIterator FindInCache(pkgCache &Cache, bool const ModifyCheck) const APT_OVERRIDE;
+   virtual bool Merge(pkgCacheGenerator &Gen,OpProgress *Prog) const APT_OVERRIDE;
 
-   std::string MetaIndexInfo(const char *Type) const;
-   std::string MetaIndexFile(const char *Types) const;
-   std::string MetaIndexURI(const char *Type) const;
+   virtual bool Load(std::string const &Filename, std::string * const ErrorText) APT_OVERRIDE;
+   virtual metaIndex * UnloadedClone() const APT_OVERRIDE;
 
-#if APT_PKG_ABI >= 413
-   virtual
-#endif
-   std::string LocalFileName() const;
+   virtual std::vector <pkgIndexFile *> *GetIndexFiles() APT_OVERRIDE;
 
-   virtual std::vector <pkgIndexFile *> *GetIndexFiles();
+   bool SetTrusted(TriState const Trusted);
+   bool SetCheckValidUntil(TriState const Trusted);
+   bool SetValidUntilMin(time_t const Valid);
+   bool SetValidUntilMax(time_t const Valid);
+   bool SetSignedBy(std::string const &SignedBy);
 
-   void SetTrusted(bool const Trusted);
-   virtual bool IsTrusted() const;
+   virtual bool IsTrusted() const APT_OVERRIDE;
 
-   void PushSectionEntry(std::vector<std::string> const &Archs, const debSectionEntry *Entry);
-   void PushSectionEntry(std::string const &Arch, const debSectionEntry *Entry);
-};
-
-class APT_HIDDEN debDebFileMetaIndex : public metaIndex
-{
- private:
-    void *d;
-   std::string DebFile;
-   debDebPkgFileIndex *DebIndex;
- public:
-   virtual std::string ArchiveURI(std::string const& /*File*/) const {
-      return DebFile;
-   }
-   virtual bool GetIndexes(pkgAcquire* /*Owner*/, const bool& /*GetAll=false*/) const {
-      return true;
-   }
-   virtual std::vector<IndexTarget> GetIndexTargets() const {
-      return std::vector<IndexTarget>();
-   }
-   virtual std::vector<pkgIndexFile *> *GetIndexFiles() {
-      return Indexes;
-   }
-   virtual bool IsTrusted() const {
-      return true;
-   }
-   debDebFileMetaIndex(std::string const &DebFile);
-   virtual ~debDebFileMetaIndex();
-
+   void AddComponent(bool const isSrc, std::string const &Name,
+	 std::vector<std::string> const &Targets,
+	 std::vector<std::string> const &Architectures,
+	 std::vector<std::string> Languages);
 };
 
 #endif

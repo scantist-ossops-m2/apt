@@ -51,6 +51,7 @@ static bool addArgumentsAPTCache(std::vector<CommandLine::Args> &Args, char cons
       addArg(0, "conflicts", "APT::Cache::ShowConflicts", 0);
       addArg(0, "enhances", "APT::Cache::ShowEnhances", 0);
       addArg(0, "recurse", "APT::Cache::RecurseDepends", 0);
+      addArg(0, "implicit", "APT::Cache::ShowImplicit", 0);
    }
    else if (CmdMatches("search"))
    {
@@ -163,10 +164,10 @@ static bool addArgumentsAPTGet(std::vector<CommandLine::Args> &Args, char const 
       // once sbuild is fixed, this option can be removed
       addArg('f', "fix-broken", "APT::Get::Fix-Broken", 0);
    }
-   else if (CmdMatches("files"))
+   else if (CmdMatches("indextargets"))
    {
-      addArg(0,"format","APT::Get::Files::Format", CommandLine::HasArg);
-      addArg(0,"release-info","APT::Get::Files::ReleaseInfo", 0);
+      addArg(0,"format","APT::Get::IndexTargets::Format", CommandLine::HasArg);
+      addArg(0,"release-info","APT::Get::IndexTargets::ReleaseInfo", 0);
    }
    else if (CmdMatches("clean", "autoclean", "check", "download", "changelog") ||
 	    CmdMatches("markauto", "unmarkauto")) // deprecated commands

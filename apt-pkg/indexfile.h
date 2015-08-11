@@ -38,6 +38,7 @@ class pkgAcquire;
 #endif
 
 class pkgCacheGenerator;
+class pkgCacheListParser;
 class OpProgress;
 
 class IndexTarget							/*{{{*/
@@ -60,6 +61,9 @@ class IndexTarget							/*{{{*/
    /** \brief Is it okay if the file isn't found in the meta index */
    bool IsOptional;
 
+   /** \brief If the file is downloaded compressed, do not unpack it */
+   bool KeepCompressed;
+
    /** \brief options with which this target was created
        Prefer the usage of #Option if at all possible.
        Beware: Not all of these options are intended for public use */
@@ -67,7 +71,7 @@ class IndexTarget							/*{{{*/
 
    IndexTarget(std::string const &MetaKey, std::string const &ShortDesc,
 	 std::string const &LongDesc, std::string const &URI, bool const IsOptional,
-	 std::map<std::string, std::string> const &Options);
+	 bool const KeepCompressed, std::map<std::string, std::string> const &Options);
 
    enum OptionKeys {
       SITE,
@@ -89,7 +93,7 @@ class IndexTarget							/*{{{*/
 
 class pkgIndexFile
 {
-   void *d;
+   void * const d;
    protected:
    bool Trusted;
 
@@ -102,12 +106,12 @@ class pkgIndexFile
       // Global list of Items supported
       static Type **GlobalList;
       static unsigned long GlobalListLen;
-      static Type *GetType(const char *Type) APT_PURE;
+      static Type *GetType(const char * const Type) APT_PURE;
 
       const char *Label;
 
-      virtual pkgRecords::Parser *CreatePkgParser(pkgCache::PkgFileIterator /*File*/) const {return 0;};
-      virtual pkgSrcRecords::Parser *CreateSrcPkgParser(std::string /*File*/) const {return 0;};
+      virtual pkgRecords::Parser *CreatePkgParser(pkgCache::PkgFileIterator const &/*File*/) const {return 0;};
+      virtual pkgSrcRecords::Parser *CreateSrcPkgParser(std::string const &/*File*/) const {return 0;};
       Type();
       virtual ~Type() {};
    };
@@ -115,13 +119,13 @@ class pkgIndexFile
    virtual const Type *GetType() const = 0;
    
    // Return descriptive strings of various sorts
-   virtual std::string ArchiveInfo(pkgCache::VerIterator Ver) const;
+   virtual std::string ArchiveInfo(pkgCache::VerIterator const &Ver) const;
    virtual std::string SourceInfo(pkgSrcRecords::Parser const &Record,
 			     pkgSrcRecords::File const &File) const;
-   virtual std::string Describe(bool Short = false) const = 0;
+   virtual std::string Describe(bool const Short = false) const = 0;
 
    // Interface for acquire
-   virtual std::string ArchiveURI(std::string /*File*/) const {return std::string();};
+   virtual std::string ArchiveURI(std::string const &/*File*/) const {return std::string();};
 
    // Interface for the record parsers
    virtual pkgSrcRecords::Parser *CreateSrcParser() const {return 0;};
@@ -130,40 +134,77 @@ class pkgIndexFile
    virtual bool Exists() const = 0;
    virtual bool HasPackages() const = 0;
    virtual unsigned long Size() const = 0;
-   virtual bool Merge(pkgCacheGenerator &/*Gen*/, OpProgress* /*Prog*/) const { return false; };
-   APT_DEPRECATED virtual bool Merge(pkgCacheGenerator &Gen, OpProgress &Prog) const
-      { return Merge(Gen, &Prog); };
-   virtual bool MergeFileProvides(pkgCacheGenerator &/*Gen*/,OpProgress* /*Prog*/) const {return true;};
-   APT_DEPRECATED virtual bool MergeFileProvides(pkgCacheGenerator &Gen, OpProgress &Prog) const
-      {return MergeFileProvides(Gen, &Prog);};
+   virtual bool Merge(pkgCacheGenerator &/*Gen*/, OpProgress* const /*Prog*/) { return true; };
    virtual pkgCache::PkgFileIterator FindInCache(pkgCache &Cache) const;
 
    static bool TranslationsAvailable();
-   static bool CheckLanguageCode(const char *Lang);
+   static bool CheckLanguageCode(const char * const Lang);
    static std::string LanguageCode();
 
    bool IsTrusted() const { return Trusted; };
 
-   pkgIndexFile(bool Trusted);
+   explicit pkgIndexFile(bool const Trusted);
    virtual ~pkgIndexFile();
 };
 
-class pkgIndexTargetFile : public pkgIndexFile
+class pkgDebianIndexFile : public pkgIndexFile
 {
-   void *d;
+protected:
+   virtual std::string IndexFileName() const = 0;
+   virtual std::string GetComponent() const = 0;
+   virtual std::string GetArchitecture() const = 0;
+   virtual std::string GetProgressDescription() const = 0;
+   virtual uint8_t GetIndexFlags() const = 0;
+   virtual bool OpenListFile(FileFd &Pkg, std::string const &FileName) = 0;
+   APT_HIDDEN virtual pkgCacheListParser * CreateListParser(FileFd &Pkg);
+
+public:
+   virtual bool Merge(pkgCacheGenerator &Gen, OpProgress* const Prog) APT_OVERRIDE;
+   virtual pkgCache::PkgFileIterator FindInCache(pkgCache &Cache) const APT_OVERRIDE;
+
+   pkgDebianIndexFile(bool const Trusted);
+   virtual ~pkgDebianIndexFile();
+};
+
+class pkgDebianIndexTargetFile : public pkgDebianIndexFile
+{
+   void * const d;
 protected:
    IndexTarget const Target;
 
-   std::string IndexFileName() const;
+   virtual std::string IndexFileName() const APT_OVERRIDE;
+   virtual std::string GetComponent() const APT_OVERRIDE;
+   virtual std::string GetArchitecture() const APT_OVERRIDE;
+   virtual std::string GetProgressDescription() const APT_OVERRIDE;
+   virtual bool OpenListFile(FileFd &Pkg, std::string const &FileName) APT_OVERRIDE;
 
 public:
-   virtual std::string ArchiveURI(std::string File) const;
-   virtual std::string Describe(bool Short = false) const;
-   virtual bool Exists() const;
-   virtual unsigned long Size() const;
+   virtual std::string ArchiveURI(std::string const &File) const APT_OVERRIDE;
+   virtual std::string Describe(bool const Short = false) const APT_OVERRIDE;
+   virtual bool Exists() const APT_OVERRIDE;
+   virtual unsigned long Size() const APT_OVERRIDE;
 
-   pkgIndexTargetFile(IndexTarget const &Target, bool const Trusted);
-   virtual ~pkgIndexTargetFile();
+   pkgDebianIndexTargetFile(IndexTarget const &Target, bool const Trusted);
+   virtual ~pkgDebianIndexTargetFile();
+};
+
+class pkgDebianIndexRealFile : public pkgDebianIndexFile
+{
+   void * const d;
+protected:
+   std::string File;
+
+   virtual std::string IndexFileName() const APT_OVERRIDE;
+   virtual std::string GetProgressDescription() const APT_OVERRIDE;
+   virtual bool OpenListFile(FileFd &Pkg, std::string const &FileName) APT_OVERRIDE;
+public:
+   virtual std::string Describe(bool const /*Short*/ = false) const APT_OVERRIDE;
+   virtual bool Exists() const APT_OVERRIDE;
+   virtual unsigned long Size() const APT_OVERRIDE;
+   virtual std::string ArchiveURI(std::string const &/*File*/) const APT_OVERRIDE;
+
+   pkgDebianIndexRealFile(std::string const &File, bool const Trusted);
+   virtual ~pkgDebianIndexRealFile();
 };
 
 #endif

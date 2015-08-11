@@ -56,6 +56,7 @@
 #include <apt-pkg/pkgcache.h>
 #include <apt-pkg/cacheiterators.h>
 #include <apt-pkg/upgrade.h>
+#include <apt-pkg/sptr.h>
 
 #include <apt-private/acqprogress.h>
 #include <apt-private/private-cacheset.h>
@@ -137,11 +138,9 @@ static bool TryToInstallBuildDep(pkgCache::PkgIterator Pkg,pkgCacheFile &Cache,
    return true;
 }
 									/*}}}*/
-// GetReleaseForSourceRecord - Return Suite for the given srcrecord	/*{{{*/
-// ---------------------------------------------------------------------
-/* */
-static std::string GetReleaseForSourceRecord(pkgSourceList *SrcList,
-                                      pkgSrcRecords::Parser *Parse)
+// GetReleaseFileForSourceRecord - Return Suite for the given srcrecord	/*{{{*/
+static pkgCache::RlsFileIterator GetReleaseFileForSourceRecord(CacheFile &CacheFile,
+      pkgSourceList *SrcList, pkgSrcRecords::Parser *Parse)
 {
    // try to find release
    const pkgIndexFile& CurrentIndexFile = Parse->Index();
@@ -154,28 +153,16 @@ static std::string GetReleaseForSourceRecord(pkgSourceList *SrcList,
            IF != Indexes->end(); ++IF)
       {
          if (&CurrentIndexFile == (*IF))
-         {
-            std::string const path = (*S)->LocalFileName();
-            if (path != "")
-            {
-               indexRecords records;
-               records.Load(path);
-               return records.GetSuite();
-            }
-         }
+	    return (*S)->FindInCache(CacheFile, false);
       }
    }
-   return "";
+   return pkgCache::RlsFileIterator(CacheFile);
 }
 									/*}}}*/
 // FindSrc - Find a source record					/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-#if APT_PKG_ABI >= 413
 static pkgSrcRecords::Parser *FindSrc(const char *Name,
-#else
-static pkgSrcRecords::Parser *FindSrc(const char *Name,pkgRecords &Recs,
-#endif
 			       pkgSrcRecords &SrcRecs,string &Src,
 			       CacheFile &CacheFile)
 {
@@ -285,19 +272,8 @@ static pkgSrcRecords::Parser *FindSrc(const char *Name,pkgRecords &Recs,
 	       {
 		  // the Version we have is possibly fuzzy or includes binUploads,
 		  // so we use the Version of the SourcePkg (empty if same as package)
-#if APT_PKG_ABI >= 413
 		  Src = Ver.SourcePkgName();
 		  VerTag = Ver.SourceVerStr();
-#else
-		  pkgRecords::Parser &Parse = Recs.Lookup(VF);
-		  Src = Parse.SourcePkg();
-		  // no SourcePkg name, so it is the "binary" name
-		  if (Src.empty() == true)
-		     Src = TmpSrc;
-		  VerTag = Parse.SourceVer();
-		  if (VerTag.empty() == true)
-		     VerTag = Ver.VerStr();
-#endif
 		  break;
 	       }
 	    }
@@ -328,17 +304,10 @@ static pkgSrcRecords::Parser *FindSrc(const char *Name,pkgRecords &Recs,
 	 pkgCache::VerIterator Ver = Cache->GetCandidateVer(Pkg);
 	 if (Ver.end() == false) 
 	 {
-#if APT_PKG_ABI >= 413
 	    if (strcmp(Ver.SourcePkgName(),Ver.ParentPkg().Name()) != 0)
 	       Src = Ver.SourcePkgName();
 	    if (VerTag.empty() == true && strcmp(Ver.SourceVerStr(),Ver.VerStr()) != 0)
 	       VerTag = Ver.SourceVerStr();
-#else
-	    pkgRecords::Parser &Parse = Recs.Lookup(Ver.FileList());
-	    Src = Parse.SourcePkg();
-	    if (VerTag.empty() == true)
-	       VerTag = Parse.SourceVer();
-#endif
 	 }
       }
    }
@@ -379,13 +348,16 @@ static pkgSrcRecords::Parser *FindSrc(const char *Name,pkgRecords &Recs,
          // See if we need to look for a specific release tag
          if (RelTag != "" && UserRequestedVerTag == "")
          {
-            const string Rel = GetReleaseForSourceRecord(SrcList, Parse);
-
-            if (Rel == RelTag)
+	    pkgCache::RlsFileIterator const Rls = GetReleaseFileForSourceRecord(CacheFile, SrcList, Parse);
+            if (Rls.end() == false)
             {
-               Last = Parse;
-               Offset = Parse->Offset();
-               Version = Ver;
+	       if ((Rls->Archive != 0 && RelTag == Rls.Archive()) ||
+		     (Rls->Codename != 0 && RelTag == Rls.Codename()))
+	       {
+		  Last = Parse;
+		  Offset = Parse->Offset();
+		  Version = Ver;
+	       }
             }
          }
 
@@ -579,7 +551,7 @@ static bool DoClean(CommandLine &)
 class LogCleaner : public pkgArchiveCleaner
 {
    protected:
-   virtual void Erase(const char *File,string Pkg,string Ver,struct stat &St) 
+   virtual void Erase(const char *File,string Pkg,string Ver,struct stat &St) APT_OVERRIDE 
    {
       c1out << "Del " << Pkg << " " << Ver << " [" << SizeToStr(St.st_size) << "B]" << endl;
       
@@ -722,9 +694,6 @@ static bool DoSource(CommandLine &CmdL)
    pkgSourceList *List = Cache.GetSourceList();
    
    // Create the text record parsers
-#if APT_PKG_ABI < 413
-   pkgRecords Recs(Cache);
-#endif
    pkgSrcRecords SrcRecs(*List);
    if (_error->PendingError() == true)
       return false;
@@ -748,22 +717,18 @@ static bool DoSource(CommandLine &CmdL)
 
    // Load the requestd sources into the fetcher
    unsigned J = 0;
-   std::string UntrustedList;
+   std::vector<std::string> UntrustedList;
    for (const char **I = CmdL.FileList + 1; *I != 0; I++, J++)
    {
       string Src;
-#if APT_PKG_ABI >= 413
       pkgSrcRecords::Parser *Last = FindSrc(*I,SrcRecs,Src,Cache);
-#else
-      pkgSrcRecords::Parser *Last = FindSrc(*I,Recs,SrcRecs,Src,Cache);
-#endif
       if (Last == 0) {
 	 return _error->Error(_("Unable to find a source package for %s"),Src.c_str());
       }
 
       if (Last->Index().IsTrusted() == false)
-         UntrustedList += Src + " ";
-      
+         UntrustedList.push_back(Src);
+
       string srec = Last->AsStr();
       string::size_type pos = srec.find("\nVcs-");
       while (pos != string::npos)
@@ -890,7 +855,7 @@ static bool DoSource(CommandLine &CmdL)
    CheckDropPrivsMustBeDisabled(Fetcher);
 
    // check authentication status of the source as well
-   if (UntrustedList != "" && !AuthPrompt(UntrustedList, false))
+   if (UntrustedList.empty() == false && AuthPrompt(UntrustedList, false) == false)
       return false;
 
    // Run it
@@ -1015,9 +980,6 @@ static bool DoBuildDep(CommandLine &CmdL)
    pkgSourceList *List = Cache.GetSourceList();
    
    // Create the text record parsers
-#if APT_PKG_ABI < 413
-   pkgRecords Recs(Cache);
-#endif
    pkgSrcRecords SrcRecs(*List);
    if (_error->PendingError() == true)
       return false;
@@ -1039,6 +1001,7 @@ static bool DoBuildDep(CommandLine &CmdL)
    {
       string Src;
       pkgSrcRecords::Parser *Last = 0;
+      SPtr<pkgSrcRecords::Parser> LastOwner;
 
       // an unpacked debian source tree
       using APT::String::Startswith;
@@ -1047,10 +1010,10 @@ static bool DoBuildDep(CommandLine &CmdL)
       {
          ioprintf(c1out, _("Note, using directory '%s' to get the build dependencies\n"), *I);
          // FIXME: how can we make this more elegant?
-         std::string TypeName = "debian/control File Source Index";
+         std::string TypeName = "Debian control file";
          pkgIndexFile::Type *Type = pkgIndexFile::Type::GetType(TypeName.c_str());
          if(Type != NULL)
-            Last = Type->CreateSrcPkgParser(*I);
+            LastOwner = Last = Type->CreateSrcPkgParser(*I);
       }
       // if its a local file (e.g. .dsc) use this
       else if (FileExists(*I))
@@ -1058,17 +1021,13 @@ static bool DoBuildDep(CommandLine &CmdL)
          ioprintf(c1out, _("Note, using file '%s' to get the build dependencies\n"), *I);
 
          // see if we can get a parser for this pkgIndexFile type
-         string TypeName = flExtension(*I) + " File Source Index";
+         string TypeName = "Debian " + flExtension(*I) + " file";
          pkgIndexFile::Type *Type = pkgIndexFile::Type::GetType(TypeName.c_str());
          if(Type != NULL)
-            Last = Type->CreateSrcPkgParser(*I);
+            LastOwner = Last = Type->CreateSrcPkgParser(*I);
       } else {
          // normal case, search the cache for the source file
-#if APT_PKG_ABI >= 413
 	 Last = FindSrc(*I,SrcRecs,Src,Cache);
-#else
-	 Last = FindSrc(*I,Recs,SrcRecs,Src,Cache);
-#endif
       }
 
       if (Last == 0)
@@ -1213,12 +1172,12 @@ static bool DoBuildDep(CommandLine &CmdL)
 	       for (; Ver != verlist.end(); ++Ver)
 	       {
 		  forbidden.clear();
-		  if (Ver->MultiArch == pkgCache::Version::None || Ver->MultiArch == pkgCache::Version::All)
+		  if (Ver->MultiArch == pkgCache::Version::No || Ver->MultiArch == pkgCache::Version::All)
 		  {
 		     if (colon == string::npos)
 			Pkg = Ver.ParentPkg().Group().FindPkg(hostArch);
 		     else if (strcmp(D->Package.c_str() + colon, ":any") == 0)
-			forbidden = "Multi-Arch: none";
+			forbidden = "Multi-Arch: no";
 		     else if (strcmp(D->Package.c_str() + colon, ":native") == 0)
 			Pkg = Ver.ParentPkg().Group().FindPkg("native");
 		  }
@@ -1477,7 +1436,7 @@ static bool DoChangelog(CommandLine &CmdL)
    return true;
 }
 									/*}}}*/
-// DoFiles - Lists all IndexTargets					/*{{{*/
+// DoIndexTargets - Lists all IndexTargets				/*{{{*/
 static std::string format_key(std::string key)
 {
    // deb822 is case-insensitive, but the human eye prefers candy
@@ -1493,7 +1452,7 @@ static std::string format_key(std::string key)
    }
    return key;
 }
-static bool DoFiles(CommandLine &CmdL)
+static bool DoIndexTargets(CommandLine &CmdL)
 {
    pkgCacheFile CacheFile;
    pkgSourceList *SrcList = CacheFile.GetSourceList();
@@ -1501,8 +1460,8 @@ static bool DoFiles(CommandLine &CmdL)
    if (SrcList == NULL)
       return false;
 
-   std::string const Format = _config->Find("APT::Get::Files::Format");
-   bool const ReleaseInfo = _config->FindB("APT::Get::Files::ReleaseInfo", true);
+   std::string const Format = _config->Find("APT::Get::IndexTargets::Format");
+   bool const ReleaseInfo = _config->FindB("APT::Get::IndexTargets::ReleaseInfo", true);
    bool Filtered = CmdL.FileSize() > 1;
    for (pkgSourceList::const_iterator S = SrcList->begin(); S != SrcList->end(); ++S)
    {
@@ -1696,7 +1655,7 @@ int main(int argc,const char *argv[])					/*{{{*/
 				   {"source",&DoSource},
                                    {"download",&DoDownload},
                                    {"changelog",&DoChangelog},
-				   {"files",&DoFiles},
+				   {"indextargets",&DoIndexTargets},
 				   {"moo",&DoMoo},
 				   {"help",&ShowHelp},
                                    {0,0}};

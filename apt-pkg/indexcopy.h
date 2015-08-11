@@ -25,14 +25,14 @@ using std::vector;
 #endif
 
 class pkgTagSection;
-class indexRecords;
 class pkgCdromStatus;
 class FileFd;
+class metaIndex;
 
 class IndexCopy								/*{{{*/
 {
    /** \brief dpointer placeholder (for later in case we need it) */
-   void *d;
+   void * const d;
 
    protected:
    
@@ -59,13 +59,13 @@ class IndexCopy								/*{{{*/
 									/*}}}*/
 class PackageCopy : public IndexCopy					/*{{{*/
 {
-   void *d;
+   void * const d;
    protected:
 
-   virtual bool GetFile(std::string &Filename,unsigned long long &Size);
-   virtual bool RewriteEntry(FileFd &Target, std::string const &File);
-   virtual const char *GetFileName() {return "Packages";};
-   virtual const char *Type() {return "Package";};
+   virtual bool GetFile(std::string &Filename,unsigned long long &Size) APT_OVERRIDE;
+   virtual bool RewriteEntry(FileFd &Target, std::string const &File) APT_OVERRIDE;
+   virtual const char *GetFileName() APT_OVERRIDE {return "Packages";};
+   virtual const char *Type() APT_OVERRIDE {return "Package";};
 
    public:
    PackageCopy();
@@ -74,13 +74,13 @@ class PackageCopy : public IndexCopy					/*{{{*/
 									/*}}}*/
 class SourceCopy : public IndexCopy					/*{{{*/
 {
-   void *d;
+   void * const d;
    protected:
    
-   virtual bool GetFile(std::string &Filename,unsigned long long &Size);
-   virtual bool RewriteEntry(FileFd &Target, std::string const &File);
-   virtual const char *GetFileName() {return "Sources";};
-   virtual const char *Type() {return "Source";};
+   virtual bool GetFile(std::string &Filename,unsigned long long &Size) APT_OVERRIDE;
+   virtual bool RewriteEntry(FileFd &Target, std::string const &File) APT_OVERRIDE;
+   virtual const char *GetFileName() APT_OVERRIDE {return "Sources";};
+   virtual const char *Type() APT_OVERRIDE {return "Source";};
 
    public:
    SourceCopy();
@@ -89,7 +89,7 @@ class SourceCopy : public IndexCopy					/*{{{*/
 									/*}}}*/
 class TranslationsCopy							/*{{{*/
 {
-   void *d;
+   void * const d;
    protected:
    pkgTagSection *Section;
 
@@ -104,9 +104,9 @@ class TranslationsCopy							/*{{{*/
 class SigVerify								/*{{{*/
 {
    /** \brief dpointer placeholder (for later in case we need it) */
-   void *d;
+   void * const d;
 
-   APT_HIDDEN bool Verify(std::string prefix,std::string file, indexRecords *records);
+   APT_HIDDEN bool Verify(std::string prefix,std::string file, metaIndex *records);
    APT_HIDDEN bool CopyMetaIndex(std::string CDROM, std::string CDName,
 		      std::string prefix, std::string file);
 

@@ -1011,6 +1011,25 @@ class FileFdPrivate {							/*{{{*/
 	~FileFdPrivate() { CloseDown(""); }
 };
 									/*}}}*/
+// FileFd Constructors							/*{{{*/
+FileFd::FileFd(std::string FileName,unsigned int const Mode,unsigned long AccessMode) : iFd(-1), Flags(0), d(NULL)
+{
+   Open(FileName,Mode, None, AccessMode);
+}
+FileFd::FileFd(std::string FileName,unsigned int const Mode, CompressMode Compress, unsigned long AccessMode) : iFd(-1), Flags(0), d(NULL)
+{
+   Open(FileName,Mode, Compress, AccessMode);
+}
+FileFd::FileFd() : iFd(-1), Flags(AutoClose), d(NULL) {}
+FileFd::FileFd(int const Fd, unsigned int const Mode, CompressMode Compress) : iFd(-1), Flags(0), d(NULL)
+{
+   OpenDescriptor(Fd, Mode, Compress);
+}
+FileFd::FileFd(int const Fd, bool const AutoClose) : iFd(-1), Flags(0), d(NULL)
+{
+   OpenDescriptor(Fd, ReadWrite, None, AutoClose);
+}
+									/*}}}*/
 // FileFd::Open - Open a file						/*{{{*/
 // ---------------------------------------------------------------------
 /* The most commonly used open mode combinations are given with Mode */
@@ -2096,28 +2115,27 @@ std::string GetTempDir()						/*{{{*/
    return string(tmpdir);
 }
 									/*}}}*/
-FileFd* GetTempFile(std::string const &Prefix, bool ImmediateUnlink)	/*{{{*/
+FileFd* GetTempFile(std::string const &Prefix, bool ImmediateUnlink, FileFd * const TmpFd)	/*{{{*/
 {
    char fn[512];
-   FileFd *Fd = new FileFd();
+   FileFd * const Fd = TmpFd == NULL ? new FileFd() : TmpFd;
 
-   std::string tempdir = GetTempDir();
-   snprintf(fn, sizeof(fn), "%s/%s.XXXXXX", 
+   std::string const tempdir = GetTempDir();
+   snprintf(fn, sizeof(fn), "%s/%s.XXXXXX",
             tempdir.c_str(), Prefix.c_str());
-   int fd = mkstemp(fn);
+   int const fd = mkstemp(fn);
    if(ImmediateUnlink)
       unlink(fn);
-   if (fd < 0) 
+   if (fd < 0)
    {
       _error->Errno("GetTempFile",_("Unable to mkstemp %s"), fn);
       return NULL;
    }
-   if (!Fd->OpenDescriptor(fd, FileFd::WriteOnly, FileFd::None, true))
+   if (!Fd->OpenDescriptor(fd, FileFd::ReadWrite, FileFd::None, true))
    {
       _error->Errno("GetTempFile",_("Unable to write to %s"),fn);
       return NULL;
    }
-
    return Fd;
 }
 									/*}}}*/
