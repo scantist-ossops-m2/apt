@@ -44,7 +44,7 @@ Configuration *_config = new Configuration;
 // Configuration::Configuration - Constructor				/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-Configuration::Configuration() : ToFree(true)
+Configuration::Configuration() : ToFree(true), Freezable(false)
 {
    Root = new Item;
 }
@@ -150,6 +150,7 @@ Configuration::Item *Configuration::Lookup(const char *Name,bool const &Create)
    }
    
    Itm = Lookup(Itm,Start,End - Start,Create);
+
    return Itm;
 }
 									/*}}}*/
@@ -348,50 +349,78 @@ string Configuration::FindAny(const char *Name,const char *Default) const
 // Configuration::CndSet - Conditinal Set a value			/*{{{*/
 // ---------------------------------------------------------------------
 /* This will not overwrite */
-void Configuration::CndSet(const char *Name,const string &Value)
+bool Configuration::CndSet(const char *Name,const string &Value)
 {
    Item *Itm = Lookup(Name,true);
-   if (Itm == 0)
-      return;
+   if (Itm->IsFrozen())
+      return _error->Error("Cannot modify %s, it's frozen", Itm->FullTag().c_str());
    if (Itm->Value.empty() == true)
       Itm->Value = Value;
+
+   return true;
 }
 									/*}}}*/
 // Configuration::Set - Set an integer value				/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-void Configuration::CndSet(const char *Name,int const Value)
+bool Configuration::CndSet(const char *Name,int const Value)
 {
    Item *Itm = Lookup(Name,true);
    if (Itm == 0 || Itm->Value.empty() == false)
-      return;
+      return true;
+   if (Itm->IsFrozen())
+      return _error->Error("Cannot modify %s, it's frozen", Itm->FullTag().c_str());
+
    char S[300];
    snprintf(S,sizeof(S),"%i",Value);
    Itm->Value = S;
+   return true;
 }
 									/*}}}*/
 // Configuration::Set - Set a value					/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-void Configuration::Set(const char *Name,const string &Value)
+bool Configuration::Set(const char *Name,const string &Value)
 {
    Item *Itm = Lookup(Name,true);
-   if (Itm == 0)
-      return;
+
+   if (Itm->IsFrozen())
+      return _error->Error("Cannot modify %s, it's frozen", Itm->FullTag().c_str());
+
    Itm->Value = Value;
+   return true;
 }
 									/*}}}*/
 // Configuration::Set - Set an integer value				/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-void Configuration::Set(const char *Name,int const &Value)
+bool Configuration::Set(const char *Name,int const &Value)
 {
    Item *Itm = Lookup(Name,true);
-   if (Itm == 0)
-      return;
+
+   if (Itm->IsFrozen())
+      return _error->Error("Cannot modify %s, it's frozen", Itm->FullTag().c_str());
+
    char S[300];
    snprintf(S,sizeof(S),"%i",Value);
    Itm->Value = S;
+   return true;
+}
+									/*}}}*/
+// Configuration::Freeze - Freeze an option				/*{{{*/
+// ---------------------------------------------------------------------
+/* */
+void Configuration::Freeze(const char *Name)
+{
+   if (Freezable == false)
+      return;
+
+   Item *Itm = Lookup(Name,true);
+   if (Itm == 0) {
+      return;
+   }
+
+   Itm->Frozen = true;
 }
 									/*}}}*/
 // Configuration::Clear - Clear an single value from a list	        /*{{{*/
@@ -610,6 +639,19 @@ string Configuration::Item::FullTag(const Item *Stop) const
    if (Parent == 0 || Parent->Parent == 0 || Parent == Stop)
       return Tag;
    return Parent->FullTag(Stop) + "::" + Tag;
+}
+
+									/*}}}*/
+
+// Configuration::Item::FullTag - Return the fully scoped tag		/*{{{*/
+// ---------------------------------------------------------------------
+/* Stop sets an optional max recursion depth if this item is being viewed as
+   part of a sub tree. */
+bool Configuration::Item::IsFrozen(const Item *Stop) const
+{
+   if (Parent == 0 || Parent->Parent == 0 || Parent == Stop)
+      return Frozen;
+   return Frozen || Parent->IsFrozen(Stop);
 }
 									/*}}}*/
 
@@ -898,8 +940,10 @@ bool ReadConfigFile(Configuration &Conf,const string &FName,bool const &AsSectio
 	    else
 	    {
 	       // Set the item in the configuration class
-	       if (NoWord == false)
-		  Conf.Set(Item,Word);
+	       if (NoWord == false) {
+		  if (Conf.Set(Item,Word) == false)
+		     return false;
+	       }
 	    }
 	    
 	    // Empty the buffer

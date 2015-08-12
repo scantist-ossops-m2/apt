@@ -51,16 +51,19 @@ class Configuration
       Item *Parent;
       Item *Child;
       Item *Next;
+      bool Frozen;
       
       std::string FullTag(const Item *Stop = 0) const;
-      
-      Item() : Parent(0), Child(0), Next(0) {};
+      bool IsFrozen(const Item *Stop = 0) const;
+
+      Item() : Parent(0), Child(0), Next(0), Frozen(false) {};
    };
    
    private:
    
    Item *Root;
    bool ToFree;
+   bool Freezable;
 
    Item *Lookup(Item *Head,const char *S,unsigned long const &Len,bool const &Create);
    Item *Lookup(const char *Name,const bool &Create);
@@ -93,11 +96,14 @@ class Configuration
    bool FindB(std::string const &Name,bool const &Default = false) const {return FindB(Name.c_str(),Default);};
    std::string FindAny(const char *Name,const char *Default = 0) const;
 	      
-   inline void Set(const std::string &Name,const std::string &Value) {Set(Name.c_str(),Value);};
-   void CndSet(const char *Name,const std::string &Value);
-   void CndSet(const char *Name,const int Value);
-   void Set(const char *Name,const std::string &Value);
-   void Set(const char *Name,const int &Value);
+   inline bool Set(const std::string &Name,const std::string &Value) { return Set(Name.c_str(),Value);};
+   bool CndSet(const char *Name,const std::string &Value);
+   bool CndSet(const char *Name,const int Value);
+   bool Set(const char *Name,const std::string &Value);
+   bool Set(const char *Name,const int &Value);
+   void Freeze(const char *Name);
+
+   inline void SetFreezable() { Freezable = true; }
    
    inline bool Exists(const std::string &Name) const {return Exists(Name.c_str());};
    bool Exists(const char *Name) const;
