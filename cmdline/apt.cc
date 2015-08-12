@@ -108,6 +108,7 @@ int main(int argc, const char *argv[])					/*{{{*/
    setlocale(LC_ALL,"");
    textdomain(PACKAGE);
 
+    _config->SetFreezable();
     if(pkgInitConfig(*_config) == false) 
     {
         _error->DumpErrors();

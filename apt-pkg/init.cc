@@ -135,6 +135,7 @@ bool pkgInitConfig(Configuration &Cnf)
 
    // Read the configuration parts dir
    std::string Parts = Cnf.FindDir("Dir::Etc::parts");
+   _config->Freeze("Dir::Etc::Parts");
    if (DirectoryExists(Parts) == true)
       Res &= ReadConfigDir(Cnf,Parts);
    else
@@ -142,16 +143,19 @@ bool pkgInitConfig(Configuration &Cnf)
 
    // Read the main config file
    std::string FName = Cnf.FindFile("Dir::Etc::main");
+   _config->Freeze("Dir::Etc::main");
    if (RealFileExists(FName) == true)
       Res &= ReadConfigFile(Cnf,FName);
 
    if (Res == false)
       return false;
 
+   _config->Freeze("Debug::pkgInitConfig");
    if (Cnf.FindB("Debug::pkgInitConfig",false) == true)
       Cnf.Dump();
    
 #ifdef APT_DOMAIN
+   _config->Freeze("Dir::Locale");
    if (Cnf.Exists("Dir::Locale"))
    {  
       bindtextdomain(APT_DOMAIN,Cnf.FindDir("Dir::Locale").c_str());
@@ -168,6 +172,7 @@ bool pkgInitConfig(Configuration &Cnf)
 bool pkgInitSystem(Configuration &Cnf,pkgSystem *&Sys)
 {
    Sys = 0;
+   Cnf.Freeze("APT::System");
    std::string Label = Cnf.Find("Apt::System","");
    if (Label.empty() == false)
    {

@@ -309,6 +309,8 @@ std::vector<CommandLine::Args> getCommandArgs(char const * const Program, char c
 void ParseCommandLine(CommandLine &CmdL, CommandLine::Dispatch * const Cmds, CommandLine::Args * const Args,/*{{{*/
       Configuration * const * const Cnf, pkgSystem ** const Sys, int const argc, const char *argv[], bool(*ShowHelp)(CommandLine &CmdL))
 {
+   if (Cnf != nullptr)
+      (*Cnf)->SetFreezable();
    CmdL = CommandLine(Args,_config);
    if ((Cnf != NULL && pkgInitConfig(**Cnf) == false) ||
        CmdL.Parse(argc,argv) == false ||
