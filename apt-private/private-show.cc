@@ -40,9 +40,6 @@ static bool DisplayRecord(pkgCacheFile &CacheFile, pkgCache::VerIterator V,
    pkgCache *Cache = CacheFile.GetPkgCache();
    if (unlikely(Cache == NULL))
       return false;
-   pkgDepCache *depCache = CacheFile.GetDepCache();
-   if (unlikely(depCache == NULL))
-      return false;
 
    // Find an appropriate file
    pkgCache::VerFileIterator Vf = V.FileList();
@@ -88,11 +85,10 @@ static bool DisplayRecord(pkgCacheFile &CacheFile, pkgCache::VerIterator V,
    else
       package_size = _("unknown");
 
-   pkgDepCache::StateCache &state = (*depCache)[V.ParentPkg()];
    bool is_installed = V.ParentPkg().CurrentVer() == V;
    const char *manual_installed;
    if (is_installed)
-      manual_installed = !(state.Flags & pkgCache::Flag::Auto) ? "yes" : "no";
+      manual_installed = !(V.ParentPkg()->Flags & pkgCache::Flag::Auto) ? "yes" : "no";
    else
       manual_installed = "";
 
