@@ -305,6 +305,8 @@ bool debListParser::UsePackage(pkgCache::PkgIterator &Pkg,
 	 return false;
    if (Section.FindFlag("Important",Pkg->Flags,pkgCache::Flag::Important) == false)
       return false;
+   if (Section.FindFlag("Auto-Installed",Pkg->Flags,pkgCache::Flag::Auto) == false)
+	 return false;
 
    if (strcmp(Pkg.Name(),"apt") == 0)
    {
