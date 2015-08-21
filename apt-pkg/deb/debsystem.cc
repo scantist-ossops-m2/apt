@@ -40,7 +40,7 @@ debSystem debSys;
 
 class APT_HIDDEN debSystemPrivate {
 public:
-   debSystemPrivate() : LockFD(-1), LockCount(0), StatusFile(0)
+   debSystemPrivate() : LockFD(-1), LockCount(0), StatusFile(0), ExtendedState(nullptr)
    {
    }
    // For locking support
@@ -48,6 +48,7 @@ public:
    unsigned LockCount;
    
    debStatusIndex *StatusFile;
+   debExtendedStateIndex *ExtendedState;
 };
 
 // System::debSystem - Constructor					/*{{{*/
@@ -63,6 +64,7 @@ debSystem::debSystem() : pkgSystem("Debian dpkg interface", &debVS), d(new debSy
 debSystem::~debSystem()
 {
    delete d->StatusFile;
+   delete d->ExtendedState;
    delete d;
 }
 									/*}}}*/
@@ -192,6 +194,11 @@ bool debSystem::Initialize(Configuration &Cnf)
      d->StatusFile = 0;
    }
 
+   if (d->ExtendedState) {
+     delete d->ExtendedState;
+     d->ExtendedState = 0;
+   }
+
    return true;
 }
 									/*}}}*/
@@ -230,6 +237,10 @@ bool debSystem::AddStatusFiles(std::vector<pkgIndexFile *> &List)
    if (d->StatusFile == 0)
       d->StatusFile = new debStatusIndex(_config->FindFile("Dir::State::status"));
    List.push_back(d->StatusFile);
+   if (d->ExtendedState == 0)
+      d->ExtendedState = new debExtendedStateIndex(_config->FindFile("Dir::State::extended_states"));
+   List.push_back(d->ExtendedState);
+
    return true;
 }
 									/*}}}*/
@@ -239,11 +250,14 @@ bool debSystem::AddStatusFiles(std::vector<pkgIndexFile *> &List)
 bool debSystem::FindIndex(pkgCache::PkgFileIterator File,
 			  pkgIndexFile *&Found) const
 {
-   if (d->StatusFile == 0)
-      return false;
-   if (d->StatusFile->FindInCache(*File.Cache()) == File)
+   if (d->StatusFile != nullptr && d->StatusFile->FindInCache(*File.Cache()) == File)
    {
       Found = d->StatusFile;
+      return true;
+   }
+   if (d->ExtendedState != nullptr && d->ExtendedState->FindInCache(*File.Cache()) == File)
+   {
+      Found = d->ExtendedState;
       return true;
    }
    

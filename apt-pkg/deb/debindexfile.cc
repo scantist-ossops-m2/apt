@@ -157,6 +157,17 @@ pkgCacheListParser * debStatusIndex::CreateListParser(FileFd &Pkg)
    return newError ? NULL : Parser;
 }
 									/*}}}*/
+
+debExtendedStateIndex::debExtendedStateIndex(std::string const &File) : debStatusIndex(File)
+{
+}
+
+uint8_t debExtendedStateIndex::GetIndexFlags() const
+{
+   return pkgCache::Flag::NotSource | pkgCache::Flag::NoPackages;
+}
+
+									/*}}}*/
 // DebPkgFile Index - a single .deb file as an index			/*{{{*/
 debDebPkgFileIndex::debDebPkgFileIndex(std::string const &DebFile)
    : pkgDebianIndexRealFile(DebFile, true), d(NULL), DebFile(DebFile)
@@ -293,6 +304,11 @@ class APT_HIDDEN debIFTypeStatus : public pkgIndexFile::Type
    };
    debIFTypeStatus() {Label = "Debian dpkg status file";};
 };
+class APT_HIDDEN debIFTypeExtendedState : public debIFTypePkg
+{
+   public:
+   debIFTypeExtendedState() {Label = "Debian APT extended state file";};
+};
 class APT_HIDDEN debIFTypeDebPkgFile : public pkgIndexFile::Type
 {
    public:
@@ -325,6 +341,7 @@ APT_HIDDEN debIFTypeSrc _apt_Src;
 APT_HIDDEN debIFTypePkg _apt_Pkg;
 APT_HIDDEN debIFTypeTrans _apt_Trans;
 APT_HIDDEN debIFTypeStatus _apt_Status;
+APT_HIDDEN debIFTypeExtendedState _apt_ExtendedState;
 APT_HIDDEN debIFTypeDebPkgFile _apt_DebPkgFile;
 // file based pseudo indexes
 APT_HIDDEN debIFTypeDscFile _apt_DscFile;
@@ -346,6 +363,10 @@ const pkgIndexFile::Type *debStatusIndex::GetType() const
 {
    return &_apt_Status;
 }
+const pkgIndexFile::Type *debExtendedStateIndex::GetType() const
+{
+   return &_apt_ExtendedState;
+}
 const pkgIndexFile::Type *debDebPkgFileIndex::GetType() const
 {
    return &_apt_DebPkgFile;
@@ -364,6 +385,7 @@ debStatusIndex::~debStatusIndex() {}
 debPackagesIndex::~debPackagesIndex() {}
 debTranslationsIndex::~debTranslationsIndex() {}
 debSourcesIndex::~debSourcesIndex() {}
+debExtendedStateIndex::~debExtendedStateIndex() {}
 
 debDebPkgFileIndex::~debDebPkgFileIndex() {}
 debDscFileIndex::~debDscFileIndex() {}

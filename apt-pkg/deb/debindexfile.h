@@ -49,6 +49,20 @@ public:
    virtual ~debStatusIndex();
 };
 
+class debExtendedStateIndex : public debStatusIndex
+{
+protected:
+   virtual uint8_t GetIndexFlags() const APT_OVERRIDE;
+public:
+   virtual const Type *GetType() const APT_OVERRIDE APT_CONST;
+
+   // Interface for the Cache Generator
+   virtual bool HasPackages() const APT_OVERRIDE {return Exists();};
+
+   debExtendedStateIndex(std::string const &File);
+   virtual ~debExtendedStateIndex();
+};
+
 class debPackagesIndex : public pkgDebianIndexTargetFile
 {
    void * const d;
