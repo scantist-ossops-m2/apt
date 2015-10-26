@@ -23,7 +23,7 @@ msgstr ""
 #: cmdline/apt-cache.cc:149
 #, c-format
 msgid "Package %s version %s has an unmet dep:\n"
-msgstr "版本为 %2$s 的软件包 %1$s 有未满足的依赖关系：\n"
+msgstr "软件包 %s 的 %s 版本有未满足的依赖：\n"
 
 #: cmdline/apt-cache.cc:277
 msgid "Total package names: "
@@ -39,7 +39,7 @@ msgstr "  普通软件包："
 
 #: cmdline/apt-cache.cc:320
 msgid "  Pure virtual packages: "
-msgstr "  完全虚拟软件包："
+msgstr "  纯虚拟软件包："
 
 #: cmdline/apt-cache.cc:321
 msgid "  Single virtual packages: "
@@ -97,22 +97,22 @@ msgstr "总占用空间："
 #: apt-private/private-show.cc:58
 #, c-format
 msgid "Package file %s is out of sync."
-msgstr "软件包文件 %s 尚未同步。"
+msgstr "软件包文件 %s 未同步。"
 
 #: cmdline/apt-cache.cc:584 cmdline/apt-cache.cc:1442 cmdline/apt-cache.cc:1444
 #: cmdline/apt-cache.cc:1521 cmdline/apt-mark.cc:59 cmdline/apt-mark.cc:106
 #: cmdline/apt-mark.cc:232 apt-private/private-show.cc:171
 #: apt-private/private-show.cc:173
 msgid "No packages found"
-msgstr "没有发现匹配的软件包"
+msgstr "没有发现软件包"
 
 #: cmdline/apt-cache.cc:1254 apt-private/private-search.cc:41
 msgid "You must give at least one search pattern"
-msgstr "您必须明确地给出至少一个表达式"
+msgstr "您必须给出至少一个表达式"
 
 #: cmdline/apt-cache.cc:1421
 msgid "This command is deprecated. Please use 'apt-mark showauto' instead."
-msgstr "该命令已废弃。请使用‘apt-mark showauto’。"
+msgstr "该命令已废弃，请使用‘apt-mark showauto’。"
 
 #: cmdline/apt-cache.cc:1516 apt-pkg/cacheset.cc:596
 #, c-format
@@ -125,7 +125,7 @@ msgstr "软件包文件："
 
 #: cmdline/apt-cache.cc:1553 cmdline/apt-cache.cc:1644
 msgid "Cache is out of sync, can't x-ref a package file"
-msgstr "缓存尚未同步，无法交差引证(x-ref)一个软件包文件"
+msgstr "缓存未同步，无法交差引证(x-ref)一个软件包文件"
 
 #. Show any packages have explicit pins
 #: cmdline/apt-cache.cc:1567
@@ -134,7 +134,7 @@ msgstr "被锁定的软件包："
 
 #: cmdline/apt-cache.cc:1579 cmdline/apt-cache.cc:1624
 msgid "(not found)"
-msgstr "(没有找到)"
+msgstr "(未找到)"
 
 #: cmdline/apt-cache.cc:1587
 msgid "  Installed: "
@@ -247,7 +247,7 @@ msgstr "请把盘片插入驱动器再按回车键"
 #: cmdline/apt-cdrom.cc:139
 #, c-format
 msgid "Failed to mount '%s' to '%s'"
-msgstr "无法将 %s 挂载到 %s"
+msgstr "无法将 ‘%s’ 挂载到 ‘%s’"
 
 #: cmdline/apt-cdrom.cc:178
 msgid ""
@@ -309,7 +309,7 @@ msgstr "找不到软件包‘%s’的‘%s’版本"
 #: cmdline/apt-get.cc:330
 #, c-format
 msgid "Can not find a package '%s' with release '%s'"
-msgstr "找不到软件包‘%s’的‘%s’发行"
+msgstr "找不到随‘%2$s’发行的软件包‘%1$s’"
 
 #: cmdline/apt-get.cc:367
 #, c-format
@@ -330,18 +330,18 @@ msgstr "找不到软件包 %s"
 #: apt-private/private-install.cc:866
 #, c-format
 msgid "%s set to manually installed.\n"
-msgstr "%s 已设置为手动安装。\n"
+msgstr "%s 设置为手动安装。\n"
 
 #: cmdline/apt-get.cc:461 cmdline/apt-mark.cc:83
 #, c-format
 msgid "%s set to automatically installed.\n"
-msgstr "%s 已设置为自动安装。\n"
+msgstr "%s 设置为自动安装。\n"
 
 #: cmdline/apt-get.cc:469 cmdline/apt-mark.cc:127
 msgid ""
 "This command is deprecated. Please use 'apt-mark auto' and 'apt-mark manual' "
 "instead."
-msgstr "该命令已废弃。请用‘apt-mark auto’或‘apt-mark manual’。"
+msgstr "该命令已废弃，请用‘apt-mark auto’或‘apt-mark manual’。"
 
 #: cmdline/apt-get.cc:538 cmdline/apt-get.cc:546
 msgid "Internal error, problem resolver broke stuff"
@@ -378,18 +378,18 @@ msgid ""
 msgstr ""
 "请使用：\n"
 "bzr branch %s\n"
-"获得该软件包的最近更新(可能尚未正式发布)。\n"
+"来获得该软件包的最新版(可能尚未正式发布)。\n"
 
 #: cmdline/apt-get.cc:839
 #, c-format
 msgid "Skipping already downloaded file '%s'\n"
-msgstr "忽略已下载的文件“%s”\n"
+msgstr "跳过已下载的文件“%s”\n"
 
 #: cmdline/apt-get.cc:873 cmdline/apt-get.cc:876
 #: apt-private/private-install.cc:188 apt-private/private-install.cc:191
 #, c-format
 msgid "Couldn't determine free space in %s"
-msgstr "无法获知您在 %s 上的可用空间"
+msgstr "无法获知 %s 的可用空间"
 
 #: cmdline/apt-get.cc:886
 #, c-format
@@ -417,21 +417,21 @@ msgstr "下载源代码 %s\n"
 
 #: cmdline/apt-get.cc:924
 msgid "Failed to fetch some archives."
-msgstr "有一些包文件无法下载。"
+msgstr "有一些归档无法下载。"
 
 #: cmdline/apt-get.cc:929 apt-private/private-install.cc:315
 msgid "Download complete and in download only mode"
-msgstr "下载完毕，目前是“仅下载”模式"
+msgstr "于“仅下载”模式中下载完毕"
 
 #: cmdline/apt-get.cc:954
 #, c-format
 msgid "Skipping unpack of already unpacked source in %s\n"
-msgstr "忽略已经被解包到 %s 目录的源代码包\n"
+msgstr "跳过已经被解压到 %s 目录的源代码包\n"
 
 #: cmdline/apt-get.cc:967
 #, c-format
 msgid "Unpack command '%s' failed.\n"
-msgstr "运行解包的命令“%s”出错。\n"
+msgstr "解压命令“%s”失败。\n"
 
 #: cmdline/apt-get.cc:968
 #, c-format
@@ -1788,7 +1788,7 @@ msgstr "您想要删除之前下载的所有 .deb 文件吗？"
 
 #: dselect/install:102
 msgid "Some errors occurred while unpacking. Packages that were installed"
-msgstr "在解包时发生了一些错误。已经安装的软件包"
+msgstr "在解压时发生了一些错误。已经安装的软件包"
 
 #: dselect/install:103
 msgid "will be configured. This may result in duplicate errors"
@@ -3455,7 +3455,7 @@ msgstr "路径名 %s 太长"
 #: apt-inst/extract.cc:132
 #, c-format
 msgid "Unpacking %s more than once"
-msgstr "%s 被解包了不只一次"
+msgstr "%s 被解压了不只一次"
 
 #: apt-inst/extract.cc:142
 #, c-format
@@ -3753,7 +3753,7 @@ msgstr "未知的 TAR 数据头类型 %u，成员 %s"
 #~ "Could not perform immediate configuration on already unpacked '%s'. "
 #~ "Please see man 5 apt.conf under APT::Immediate-Configure for details."
 #~ msgstr ""
-#~ "无法立即对已经解包的 %s 进行配置。请查看 man 5 apt.conf 中的 APT::"
+#~ "无法立即对已经解压的 %s 进行配置。请查看 man 5 apt.conf 中的 APT::"
 #~ "Immediate-Configure。"
 
 #~ msgid "Error occurred while processing %s (NewPackage)"
