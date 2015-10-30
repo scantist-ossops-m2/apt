@@ -27,7 +27,7 @@ msgstr "软件包 %s 的 %s 版本有未满足的依赖：\n"
 
 #: cmdline/apt-cache.cc:277
 msgid "Total package names: "
-msgstr "软件包名称总数："
+msgstr "软件包总数："
 
 #: cmdline/apt-cache.cc:279
 msgid "Total package structures: "
@@ -104,7 +104,7 @@ msgstr "软件包文件 %s 未同步。"
 #: cmdline/apt-mark.cc:232 apt-private/private-show.cc:171
 #: apt-private/private-show.cc:173
 msgid "No packages found"
-msgstr "没有发现软件包"
+msgstr "未发现软件包"
 
 #: cmdline/apt-cache.cc:1254 apt-private/private-search.cc:41
 msgid "You must give at least one search pattern"
@@ -206,28 +206,28 @@ msgstr ""
 "　　　 apt-cache [选项] showpkg 软件包1 [软件包2 ...]\n"
 "　　　 apt-cache [选项] showsrc 软件包1 [软件包2 ...]\n"
 "\n"
-"apt-cache 是一个底层的工具，它可以在 APT 的\n"
+"apt-cache 是一个低级工具，用于在 APT 的\n"
 "二进制缓存文件中查询信息\n"
 "\n"
 "命令：\n"
-"   gencaches - 同时生成软件包和源代码包的缓存\n"
-"   showpkg - 显示某个软件包的全面信息\n"
-"   showsrc - 显示源文件的各项记录\n"
+"   gencaches - 同时生成软件包和源码包的缓存\n"
+"   showpkg - 显示某个软件包的信息\n"
+"   showsrc - 显示源码记录\n"
 "   stats - 显示基本的统计信息\n"
 "   dump - 简要显示整个缓存文件的内容\n"
-"   dumpavail - 把所有有效的包文件列表打印到标准输出\n"
+"   dumpavail - 把所有有效的列表打印到标准输出\n"
 "   unmet - 显示所有未满足的依赖关系\n"
 "   search - 根据正则表达式搜索软件包列表\n"
 "   show - 以便于阅读的格式介绍该软件包\n"
-"   depends - 显示该软件包的依赖关系信息\n"
+"   depends - 显示该软件包的依赖关系\n"
 "   rdepends - 显示所有依赖于该软件包的软件包名字\n"
 "   pkgnames - 列出所有软件包的名字\n"
 "   dotty - 生成可用 GraphViz 处理的软件包关系图\n"
 "   xvcg - 生成可用 xvcg 处理的软件包的关系图\n"
-"   policy - 显示软件包的安装设置状态\n"
+"   policy - 显示软件包的安装设置\n"
 "\n"
 "选项：\n"
-"  -h   本帮助文档。\n"
+"  -h   本帮助信息。\n"
 "  -p=? 软件包的缓存。\n"
 "  -s=? 源代码包的缓存。\n"
 "  -q   关闭进度显示。\n"
@@ -285,7 +285,7 @@ msgid ""
 msgstr ""
 "用法：apt-config [选项] 命令\n"
 "\n"
-"apt-config 是一个用于读取APT 配置文件的简单工具\n"
+"apt-config 是一个用于读取 APT 配置文件的简单工具\n"
 "\n"
 "命令：\n"
 "   shell - Shell 模式\n"
@@ -353,12 +353,12 @@ msgstr "无法锁定下载目录"
 
 #: cmdline/apt-get.cc:726
 msgid "Must specify at least one package to fetch source for"
-msgstr "要下载源代码，必须指定至少一个对应的软件包"
+msgstr "欲下载源代码，必须指定至少一个软件包名称"
 
 #: cmdline/apt-get.cc:766 cmdline/apt-get.cc:1071
 #, c-format
 msgid "Unable to find a source package for %s"
-msgstr "无法找到与 %s 对应的源代码包"
+msgstr "无法找到与 %s 对应的源代码"
 
 #: cmdline/apt-get.cc:786
 #, c-format
@@ -366,7 +366,7 @@ msgid ""
 "NOTICE: '%s' packaging is maintained in the '%s' version control system at:\n"
 "%s\n"
 msgstr ""
-"提示：%s 的打包工作被维护于以下位置的 %s 版本控制系统中：\n"
+"提示：'%s' 的打包工作在以下位置的 '%s' 版本控制系统中维护：\n"
 "%s\n"
 
 #: cmdline/apt-get.cc:791
@@ -401,23 +401,23 @@ msgstr "您在 %s 上没有足够的可用空间"
 #: cmdline/apt-get.cc:895
 #, c-format
 msgid "Need to get %sB/%sB of source archives.\n"
-msgstr "需要下载 %sB/%sB 的源代码包。\n"
+msgstr "需要下载 %sB/%sB 的源代码归档。\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
 #: cmdline/apt-get.cc:900
 #, c-format
 msgid "Need to get %sB of source archives.\n"
-msgstr "需要下载 %sB 的源代码包。\n"
+msgstr "需要下载 %sB 的源代码归档。\n"
 
 #: cmdline/apt-get.cc:906
 #, c-format
 msgid "Fetch source %s\n"
-msgstr "下载源代码 %s\n"
+msgstr "获取源代码 %s\n"
 
 #: cmdline/apt-get.cc:924
 msgid "Failed to fetch some archives."
-msgstr "有一些归档无法下载。"
+msgstr "有一部分归档下载失败。"
 
 #: cmdline/apt-get.cc:929 apt-private/private-install.cc:315
 msgid "Download complete and in download only mode"
@@ -426,7 +426,7 @@ msgstr "于“仅下载”模式中下载完毕"
 #: cmdline/apt-get.cc:954
 #, c-format
 msgid "Skipping unpack of already unpacked source in %s\n"
-msgstr "跳过已经被解压到 %s 目录的源代码包\n"
+msgstr "跳过已被解压到 %s 目录的源代码\n"
 
 #: cmdline/apt-get.cc:967
 #, c-format
@@ -441,15 +441,15 @@ msgstr "请检查是否安装了“dpkg-dev”软件包。\n"
 #: cmdline/apt-get.cc:996
 #, c-format
 msgid "Build command '%s' failed.\n"
-msgstr "执行构造软件包命令“%s”失败。\n"
+msgstr "执行编译软件包命令“%s”失败。\n"
 
 #: cmdline/apt-get.cc:1015
 msgid "Child process failed"
-msgstr "子进程出错"
+msgstr "子进程失败"
 
 #: cmdline/apt-get.cc:1034
 msgid "Must specify at least one package to check builddeps for"
-msgstr "要检查生成软件包的构建依赖关系，必须指定至少一个软件包"
+msgstr "欲检查编译依赖，必须指定至少一个软件包"
 
 #: cmdline/apt-get.cc:1059
 #, c-format
@@ -457,7 +457,7 @@ msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
 "Architectures for setup"
 msgstr ""
-"找不到关于 %s 的有效体系结构信息。请参见 apt.conf(5) APT::Architectures for "
+"找不到关于 %s 的体系结构信息。详情请参见 apt.conf(5) APT::Architectures for "
 "setup"
 
 #: cmdline/apt-get.cc:1083 cmdline/apt-get.cc:1086
@@ -468,7 +468,7 @@ msgstr "无法获得 %s 的构建依赖关系信息"
 #: cmdline/apt-get.cc:1106
 #, c-format
 msgid "%s has no build depends.\n"
-msgstr " %s 没有构建依赖关系信息。\n"
+msgstr " %s 没有编译依赖信息。\n"
 
 #: cmdline/apt-get.cc:1276
 #, c-format
@@ -496,28 +496,28 @@ msgid ""
 "%s dependency for %s cannot be satisfied because candidate version of "
 "package %s can't satisfy version requirements"
 msgstr ""
-"软件包 %3$s 的候选版本不能满足版本要求，因此 %2$s 软件包的 %1$s 依赖无法满足"
+"软件包 %3$s 的候选不能满足版本要求，因此 %2$s 软件包的 %1$s 依赖无法满足"
 
 #: cmdline/apt-get.cc:1362
 #, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because package %s has no candidate "
 "version"
-msgstr "软件包 %3$s 没有可用的候选版本，因此 %2$s 的 %1$s 依赖无法满足"
+msgstr "软件包 %3$s 没有可用的候选，因此 %2$s 的 %1$s 依赖无法满足"
 
 #: cmdline/apt-get.cc:1385
 #, c-format
 msgid "Failed to satisfy %s dependency for %s: %s"
-msgstr "无法满足 %2$s 所要求 %1$s 依赖关系：%3$s"
+msgstr "无法满足 %2$s 所要求的 %1$s 依赖：%3$s"
 
 #: cmdline/apt-get.cc:1400
 #, c-format
 msgid "Build-dependencies for %s could not be satisfied."
-msgstr "不能满足软件包 %s 所要求的构建依赖关系。"
+msgstr "不能满足软件包 %s 所要求的编译依赖。"
 
 #: cmdline/apt-get.cc:1405
 msgid "Failed to process build dependencies"
-msgstr "无法处理构建依赖关系"
+msgstr "处理编译依赖失败"
 
 #: cmdline/apt-get.cc:1498 cmdline/apt-get.cc:1510
 #, c-format
@@ -578,36 +578,36 @@ msgstr ""
 "　　　 apt-get [选项] source 软件包1 [软件包2 ...]\n"
 "\n"
 "apt-get 是一个用于下载和安装软件包的简易命令行界面。\n"
-"最常用命令是 update 和 install。\n"
+"最常用的命令是 update 和 install。\n"
 "\n"
 "命令：\n"
-"   update - 取回更新的软件包列表信息\n"
-"   upgrade - 进行一次升级\n"
-"   install - 安装新的软件包(注：软件包名称是 libc6 而非 libc6.deb)\n"
+"   update - 更新软件包列表\n"
+"   upgrade - 软件包升级\n"
+"   install - 安装软件包 (注：软件包名称是 libc6 而非 libc6.deb)\n"
 "   remove - 卸载软件包\n"
-"   autoremove - 卸载所有自动安装且不再使用的软件包\n"
-"   purge - 卸载并清除软件包的配置\n"
-"   source - 下载源码包文件\n"
-"   build-dep - 为源码包配置所需的编译依赖关系\n"
+"   autoremove - 卸载所有自动安装且不再被使用的软件包\n"
+"   purge - 卸载并清除软件包的配置文件\n"
+"   source - 下载源码\n"
+"   build-dep - 为源码配置所需的编译依赖关系\n"
 "   dist-upgrade - 发布版升级，见 apt-get(8)\n"
 "   dselect-upgrade - 根据 dselect 的选择来进行升级\n"
-"   clean - 删除所有已下载的包文件\n"
-"   autoclean - 删除已下载的旧包文件\n"
-"   check - 核对以确认系统的依赖关系的完整性\n"
+"   clean - 删除所有已下载的软件包\n"
+"   autoclean - 删除已下载的旧软件包\n"
+"   check - 检查系统依赖关系完整性\n"
 "   changelog - 下载指定软件包，并显示其changelog\n"
-"   download - 下载指定的二进制包到当前目录\n"
+"   download - 下载指定软件包到当前目录\n"
 "\n"
 "选项：\n"
-"  -h  本帮助文档。\n"
-"  -q  让输出可作为日志 - 不显示进度\n"
+"  -h  本帮助信息。\n"
+"  -q  输出可作为日志 - 不显示进度\n"
 "  -qq 除了错误外，什么都不输出\n"
-"  -d  仅仅下载 - 【不】安装或解开包文件\n"
-"  -s  不作实际操作。只是依次模拟执行命令\n"
+"  -d  仅仅下载 - 【不要】安装或解压软件包\n"
+"  -s  无实际操作。只是依次模拟执行命令\n"
 "  -y  对所有询问都回答是(Yes)，同时不作任何提示\n"
-"  -f  当出现破损的依赖关系时，程序将尝试修正系统\n"
-"  -m  当有包文件无法找到时，程序仍尝试继续执行\n"
+"  -f  当出现破损的依赖关系时，尝试修正\n"
+"  -m  当有软件包无法找到时，仍尝试继续执行\n"
 "  -u  显示已升级的软件包列表\n"
-"  -b  在下载完源码包后，编译生成相应的软件包\n"
+"  -b  在下载完源码后，编译生成相应的软件包\n"
 "  -V  显示详尽的版本号\n"
 "  -c=? 读取指定配置文件\n"
 "  -o=? 设置任意指定的配置选项，例如 -o dir::cache=/tmp\n"
@@ -621,7 +621,7 @@ msgstr "需要一个 URL 作为参数"
 
 #: cmdline/apt-helper.cc:49
 msgid "Must specify at least one pair url/filename"
-msgstr "必须指定至少一对URL或者文件名"
+msgstr "必须指定至少一对URL或文件名"
 
 #: cmdline/apt-helper.cc:73 cmdline/apt-helper.cc:77
 msgid "Download Failed"
@@ -643,7 +643,7 @@ msgstr ""
 "用法： apt-helper [选项] 命令\n"
 "       apt-helper [选项] download-file URI 目标路径\n"
 "\n"
-"apt-helper 是一个 apt 的内部助手\n"
+"apt-helper 是 apt 的内部助手程序\n"
 "\n"
 "命令：\n"
 "   download-file - 将 URI 指定的文件下载到目标路径\n"
@@ -659,28 +659,28 @@ msgstr "%s 还没有安装，因此无法标记。\n"
 #: cmdline/apt-mark.cc:74
 #, c-format
 msgid "%s was already set to manually installed.\n"
-msgstr "%s 已经被设置为手动安装。\n"
+msgstr "%s 设置为手动安装。\n"
 
 #: cmdline/apt-mark.cc:76
 #, c-format
 msgid "%s was already set to automatically installed.\n"
-msgstr "%s 已经被设置为自动安装。\n"
+msgstr "%s 设置为自动安装。\n"
 
 #: cmdline/apt-mark.cc:241
 #, c-format
 msgid "%s was already set on hold.\n"
-msgstr "%s 已经设置为保留。\n"
+msgstr "%s 设置为保留。\n"
 
 #: cmdline/apt-mark.cc:243
 #, c-format
 msgid "%s was already not hold.\n"
-msgstr "%s 已经设置为不保留。\n"
+msgstr "%s 设置为不保留。\n"
 
 #: cmdline/apt-mark.cc:258 cmdline/apt-mark.cc:339 apt-pkg/deb/dpkgpm.cc:1328
 #: apt-pkg/contrib/fileutl.cc:827 apt-pkg/contrib/gpgv.cc:219
 #, c-format
 msgid "Waited for %s but it wasn't there"
-msgstr "等待子进程 %s 的退出，但是它并不存在"
+msgstr "等待子进程 %s 退出，但它消失了"
 
 #: cmdline/apt-mark.cc:273 cmdline/apt-mark.cc:322
 #, c-format
@@ -724,14 +724,14 @@ msgid ""
 msgstr ""
 "用法：apt-mark [选项] {auto|manual} 软件包1 [软件包2 ...]\n"
 "\n"
-"apt-mark 是一个可以对软件包进行 手动/自动 安装标记的简单命令行界面。\n"
+"apt-mark 可以对软件包进行 手动/自动 安装标记的简单命令行界面。\n"
 "它也能列出标记。\n"
 "\n"
 "命令：\n"
-"   auto - 标记指定软件包为自动安装\n"
-"   manual - 标记指定软件包为手动安装\n"
-"   hold - 标记指定软件包为保留(held back)\n"
-"   unhold - 取消指定软件包的保留(held back)标记\n"
+"   auto - 标记软件包为自动安装\n"
+"   manual - 标记软件包为手动安装\n"
+"   hold - 标记软件包为保留(held back)\n"
+"   unhold - 取消软件包的保留(held back)标记\n"
 "   showauto - 列出所有自动安装的软件包\n"
 "   showmanual - 列出所有手动安装的软件包\n"
 "   showhold - 列出设为保留的软件包\n"
@@ -772,18 +772,18 @@ msgstr ""
 "apt 的命令行界面。\n"
 "基本命令：\n"
 " list - 根据名称列出软件包\n"
-" search - 搜索软件包描述\n"
+" search - 在软件包描述中搜索\n"
 " show - 显示软件包细节\n"
 "\n"
-" update - 更新可用软件包列表\n"
+" update - 更新软件列表\n"
 "\n"
 " install - 安装软件包\n"
 " remove  - 移除软件包\n"
 "\n"
 " upgrade - 通过 安装/升级 软件来更新系统\n"
-" full-upgrade - 通过 卸载/安装/升级 来更新系统\n"
+" full-upgrade - 通过 移除/安装/升级 来更新系统\n"
 "\n"
-" edit-sources - 编辑软件源信息文件\n"
+" edit-sources - 编辑软件源设置\n"
 
 #: methods/cdrom.cc:203
 #, c-format
@@ -795,7 +795,7 @@ msgid ""
 "Please use apt-cdrom to make this CD-ROM recognized by APT. apt-get update "
 "cannot be used to add new CD-ROMs"
 msgstr ""
-"请使用 apt-cdrom，通过它就可以让 APT 能识别该盘片。apt-get upgdate 不能被用来"
+"请使用 apt-cdrom，通过它让 APT 识别该盘片。apt-get upgdate 不能被用来"
 "加入新的盘片。"
 
 #: methods/cdrom.cc:222
@@ -805,7 +805,7 @@ msgstr "错误的 CD-ROM"
 #: methods/cdrom.cc:249
 #, c-format
 msgid "Unable to unmount the CD-ROM in %s, it may still be in use."
-msgstr "无法卸载现在挂载于 %s 的 CD-ROM，它可能正在使用中。"
+msgstr "无法卸载挂载于 %s 的 CD-ROM，它可能正被使用。"
 
 #: methods/cdrom.cc:254
 msgid "Disk not found."
@@ -813,7 +813,7 @@ msgstr "找不到盘片。"
 
 #: methods/cdrom.cc:262 methods/file.cc:83 methods/rsh.cc:281
 msgid "File not found"
-msgstr "无法找到该文件"
+msgstr "无法找到文件"
 
 #: methods/copy.cc:61 methods/gzip.cc:117 methods/rred.cc:598
 #: methods/rred.cc:608
@@ -826,7 +826,7 @@ msgstr "无法设置文件的修改日期"
 
 #: methods/file.cc:48
 msgid "Invalid URI, local URIS must not start with //"
-msgstr "无效的 URI，本地的 URI 不能以 // 开头"
+msgstr "无效的 URI，本地 URI 不能以 // 开头"
 
 #. Login must be before getpeername otherwise dante won't work.
 #: methods/ftp.cc:177
@@ -844,17 +844,17 @@ msgstr "无法获知本地主机名"
 #: methods/ftp.cc:219 methods/ftp.cc:247
 #, c-format
 msgid "The server refused the connection and said: %s"
-msgstr "服务器拒绝了我们的连接，响应信息为：%s"
+msgstr "服务器拒绝连接，服务器响应为：%s"
 
 #: methods/ftp.cc:225
 #, c-format
 msgid "USER failed, server said: %s"
-msgstr "USER 指令出错，服务器响应信息为：%s"
+msgstr "USER 指令出错，服务器响应为：%s"
 
 #: methods/ftp.cc:232
 #, c-format
 msgid "PASS failed, server said: %s"
-msgstr "PASS 指令出错，服务器响应信息为：%s"
+msgstr "PASS 指令出错，服务器响应为：%s"
 
 #: methods/ftp.cc:252
 msgid ""
@@ -866,12 +866,12 @@ msgstr ""
 #: methods/ftp.cc:280
 #, c-format
 msgid "Login script command '%s' failed, server said: %s"
-msgstr "登录脚本命令“%s”出错，服务器响应信息为：%s"
+msgstr "登录脚本命令“%s”出错，服务器响应为：%s"
 
 #: methods/ftp.cc:306
 #, c-format
 msgid "TYPE failed, server said: %s"
-msgstr "TYPE 指令出错，服务器响应信息为：%s"
+msgstr "TYPE 指令出错，服务器响应为：%s"
 
 #: methods/ftp.cc:344 methods/ftp.cc:456 methods/rsh.cc:195 methods/rsh.cc:243
 msgid "Connection timeout"
@@ -879,28 +879,28 @@ msgstr "连接超时"
 
 #: methods/ftp.cc:350
 msgid "Server closed the connection"
-msgstr "服务器关闭了连接"
+msgstr "连接被服务器关闭"
 
 #: methods/ftp.cc:353 methods/rsh.cc:202 apt-pkg/contrib/fileutl.cc:1491
 #: apt-pkg/contrib/fileutl.cc:1500 apt-pkg/contrib/fileutl.cc:1505
 #: apt-pkg/contrib/fileutl.cc:1507
 msgid "Read error"
-msgstr "读错误"
+msgstr "读取错误"
 
 #: methods/ftp.cc:360 methods/rsh.cc:209
 msgid "A response overflowed the buffer."
-msgstr "回应超出了缓存区大小。"
+msgstr "回应超出缓冲区大小。"
 
 #: methods/ftp.cc:377 methods/ftp.cc:389
 msgid "Protocol corruption"
-msgstr "协议有误"
+msgstr "协议损坏"
 
 #: methods/ftp.cc:462 methods/rsh.cc:249 apt-pkg/contrib/fileutl.cc:887
 #: apt-pkg/contrib/fileutl.cc:1613 apt-pkg/contrib/fileutl.cc:1622
 #: apt-pkg/contrib/fileutl.cc:1627 apt-pkg/contrib/fileutl.cc:1629
 #: apt-pkg/contrib/fileutl.cc:1654
 msgid "Write error"
-msgstr "写出错"
+msgstr "写入错误"
 
 #: methods/ftp.cc:701 methods/ftp.cc:707 methods/ftp.cc:742
 msgid "Could not create a socket"
@@ -908,7 +908,7 @@ msgstr "无法创建套接字"
 
 #: methods/ftp.cc:712
 msgid "Could not connect data socket, connection timed out"
-msgstr "无法连接上数据套接字，连接超时"
+msgstr "无法连接数据套接字，连接超时"
 
 #: methods/ftp.cc:716 methods/connect.cc:116
 msgid "Failed"
@@ -932,11 +932,11 @@ msgstr "无法在套接字上监听"
 
 #: methods/ftp.cc:760
 msgid "Could not determine the socket's name"
-msgstr "无法确定套接字的名字"
+msgstr "无法确定套接字名称"
 
 #: methods/ftp.cc:792
 msgid "Unable to send PORT command"
-msgstr "无法发出 PORT 指令"
+msgstr "无法发送 PORT 指令"
 
 #: methods/ftp.cc:802
 #, c-format
@@ -946,7 +946,7 @@ msgstr "无法识别的地址族 %u (AF_*)"
 #: methods/ftp.cc:811
 #, c-format
 msgid "EPRT failed, server said: %s"
-msgstr "EPRT 指令出错，服务器响应信息为：%s"
+msgstr "EPRT 指令失败，服务器响应为：%s"
 
 #: methods/ftp.cc:831
 msgid "Data socket connect timed out"
@@ -963,7 +963,7 @@ msgstr "把文件加入哈希表时出错"
 #: methods/ftp.cc:890
 #, c-format
 msgid "Unable to fetch file, server said '%s'"
-msgstr "无法获取文件，服务器响应信息为“%s”"
+msgstr "无法获取文件，服务器响应为“%s”"
 
 #: methods/ftp.cc:905 methods/rsh.cc:338
 msgid "Data socket timed out"
@@ -972,7 +972,7 @@ msgstr "数据套接字超时"
 #: methods/ftp.cc:935
 #, c-format
 msgid "Data transfer failed, server said '%s'"
-msgstr "数据传送出错，服务器响应信息为“%s”"
+msgstr "数据传送出错，服务器响应为“%s”"
 
 #. Get the files information
 #: methods/ftp.cc:1014
@@ -1006,12 +1006,12 @@ msgstr "无法发起与 %s:%s (%s) 的连接"
 #: methods/connect.cc:108
 #, c-format
 msgid "Could not connect to %s:%s (%s), connection timed out"
-msgstr "无法连接上 %s:%s (%s)，连接超时"
+msgstr "无法连接 %s:%s (%s)，连接超时"
 
 #: methods/connect.cc:126
 #, c-format
 msgid "Could not connect to %s:%s (%s)."
-msgstr "无法连接上 %s:%s (%s)。"
+msgstr "无法连接 %s:%s (%s)。"
 
 #. We say this mainly because the pause here is for the
 #. ssh connection that is still going
@@ -1028,22 +1028,22 @@ msgstr "无法解析域名“%s”"
 #: methods/connect.cc:205
 #, c-format
 msgid "Temporary failure resolving '%s'"
-msgstr "暂时不能解析域名“%s”"
+msgstr "暂时无法解析域名“%s”"
 
 #: methods/connect.cc:209
 #, c-format
 msgid "System error resolving '%s:%s'"
-msgstr "解析“%s:%s”时出现系统故障"
+msgstr "解析“%s:%s”时遭遇系统故障"
 
 #: methods/connect.cc:211
 #, c-format
 msgid "Something wicked happened resolving '%s:%s' (%i - %s)"
-msgstr "解析“%s:%s”时，出现了某些故障(%i - %s)"
+msgstr "解析“%s:%s”时，出现了某种故障(%i - %s)"
 
 #: methods/connect.cc:258
 #, c-format
 msgid "Unable to connect to %s:%s:"
-msgstr "不能连接到 %s：%s："
+msgstr "无法连接到 %s：%s："
 
 #: methods/gpgv.cc:168
 msgid ""
@@ -1052,11 +1052,11 @@ msgstr "内部错误：签名正确无误，但是无法确认密钥指纹？！
 
 #: methods/gpgv.cc:172
 msgid "At least one invalid signature was encountered."
-msgstr "至少发现一个无效的签名。"
+msgstr "发现至少一个无效签名。"
 
 #: methods/gpgv.cc:174
 msgid "Could not execute 'gpgv' to verify signature (is gpgv installed?)"
-msgstr "无法运行 gpgv 以验证签名(您安装了 gpgv 吗？)"
+msgstr "无法执行 gpgv 以验证签名(您安装了 gpgv 吗？)"
 
 #. TRANSLATORS: %s is a single techy word like 'NODATA'
 #: methods/gpgv.cc:180
@@ -1068,7 +1068,7 @@ msgstr "明文签署文件不可用，结果为‘%s’（您的网络需要认�
 
 #: methods/gpgv.cc:184
 msgid "Unknown error executing gpgv"
-msgstr "运行 gpgv 时发生未知错误"
+msgstr "执行 gpgv 时发生未知错误"
 
 #: methods/gpgv.cc:217 methods/gpgv.cc:224
 msgid "The following signatures were invalid:\n"
@@ -1082,7 +1082,7 @@ msgstr "由于没有公钥，无法验证下列签名：\n"
 
 #: methods/gzip.cc:69
 msgid "Empty files can't be valid archives"
-msgstr "空文件不能当作有效归档"
+msgstr "空文件不是有效归档"
 
 #: methods/http.cc:513
 msgid "Error writing to the file"
@@ -1090,7 +1090,7 @@ msgstr "写入文件出错"
 
 #: methods/http.cc:527
 msgid "Error reading from server. Remote end closed connection"
-msgstr "从服务器读取数据时出错，对方关闭了连接"
+msgstr "从服务器读取数据出错，连接被对方关闭"
 
 #: methods/http.cc:529
 msgid "Error reading from server"
@@ -1154,7 +1154,7 @@ msgstr "内部错误"
 
 #: apt-private/private-upgrade.cc:25
 msgid "Calculating upgrade... "
-msgstr "正在对升级进行计算... "
+msgstr "正在计算升级... "
 
 #: apt-private/private-upgrade.cc:28
 msgid "Done"
@@ -1162,7 +1162,7 @@ msgstr "完成"
 
 #: apt-private/private-list.cc:129
 msgid "Listing"
-msgstr "正在制表"
+msgstr "正在酝酿"
 
 #: apt-private/private-list.cc:159
 #, c-format
