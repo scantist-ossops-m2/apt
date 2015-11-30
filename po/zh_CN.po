@@ -1162,7 +1162,7 @@ msgstr "完成"
 
 #: apt-private/private-list.cc:129
 msgid "Listing"
-msgstr "正在酝酿"
+msgstr "正在制表"
 
 #: apt-private/private-list.cc:159
 #, c-format
@@ -1228,7 +1228,7 @@ msgstr "[已安装]"
 #: apt-private/private-output.cc:277
 #, c-format
 msgid "[upgradable from: %s]"
-msgstr "[可从该版本升级：%s]"
+msgstr "[当前版本：%s]"
 
 #: apt-private/private-output.cc:281
 msgid "[residual-config]"
