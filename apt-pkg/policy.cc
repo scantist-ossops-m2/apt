@@ -386,6 +386,12 @@ APT_PURE signed short pkgPolicy::GetPriority(pkgCache::VerIterator const &Ver, b
 	 // Ignore
       } else if (GetPriority(file.File()) > priority) {
 	 priority = GetPriority(file.File());
+
+	 /* Dynamically downpin NEW packages from not-automatic repos */
+	 if (file.File().Flagged(pkgCache::Flag::NotAutomatic) && Ver.ParentPkg().CurrentVer().end()
+	    && !_config->FindB("APT::Install-NotAutomatic", true)) {
+	    priority = -1;
+	 }
       }
    }
 
