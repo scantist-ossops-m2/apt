@@ -1303,45 +1303,13 @@ public:
 									/*}}}*/
 class APT_HIDDEN LzmaFileFdPrivate: public FileFdPrivate {				/*{{{*/
 #ifdef HAVE_LZMA
-   struct LZMAFILE {
-      FILE* file;
-      uint8_t buffer[4096];
-      lzma_stream stream;
-      lzma_ret err;
-      bool eof;
-      bool compressing;
+   FILE* file;
+   uint8_t buffer[4096];
+   lzma_stream stream;
+   lzma_ret err;
+   bool eof;
+   bool compressing;
 
-      LZMAFILE() : file(nullptr), eof(false), compressing(false) { buffer[0] = '\0'; }
-      ~LZMAFILE()
-      {
-	 if (compressing == true)
-	 {
-	    size_t constexpr buffersize = sizeof(buffer)/sizeof(buffer[0]);
-	    while(true)
-	    {
-	       stream.avail_out = buffersize;
-	       stream.next_out = buffer;
-	       err = lzma_code(&stream, LZMA_FINISH);
-	       if (err != LZMA_OK && err != LZMA_STREAM_END)
-	       {
-		  _error->Error("~LZMAFILE: Compress finalisation failed");
-		  break;
-	       }
-	       size_t const n =  buffersize - stream.avail_out;
-	       if (n && fwrite(buffer, 1, n, file) != n)
-	       {
-		  _error->Errno("~LZMAFILE",_("Write error"));
-		  break;
-	       }
-	       if (err == LZMA_STREAM_END)
-		  break;
-	    }
-	 }
-	 lzma_end(&stream);
-	 fclose(file);
-      }
-   };
-   LZMAFILE* lzma;
    static uint32_t findXZlevel(std::vector<std::string> const &Args)
    {
       for (auto a = Args.rbegin(); a != Args.rend(); ++a)
@@ -1371,83 +1339,86 @@ class APT_HIDDEN LzmaFileFdPrivate: public FileFdPrivate {				/*{{{*/
 public:
    virtual bool InternalOpen(int const iFd, unsigned int const Mode) override
    {
+      // Reset the flag
+      err = LZMA_OK;
+      eof = false;
+      compressing = false;
+
       if ((Mode & FileFd::ReadWrite) == FileFd::ReadWrite)
 	 return filefd->FileFdError("ReadWrite mode is not supported for lzma/xz files %s", filefd->FileName.c_str());
 
-      if (lzma == nullptr)
-	 lzma = new LzmaFileFdPrivate::LZMAFILE;
       if ((Mode & FileFd::WriteOnly) == FileFd::WriteOnly)
-	 lzma->file = fdopen(iFd, "w");
+	 file = fdopen(iFd, "w");
       else
-	 lzma->file = fdopen(iFd, "r");
+	 file = fdopen(iFd, "r");
       filefd->Flags |= FileFd::Compressed;
-      if (lzma->file == nullptr)
+      if (file == nullptr)
 	 return false;
 
       lzma_stream tmp_stream = LZMA_STREAM_INIT;
-      lzma->stream = tmp_stream;
+      stream = tmp_stream;
 
       if ((Mode & FileFd::WriteOnly) == FileFd::WriteOnly)
       {
 	 uint32_t const xzlevel = findXZlevel(compressor.CompressArgs);
 	 if (compressor.Name == "xz")
 	 {
-	    if (lzma_easy_encoder(&lzma->stream, xzlevel, LZMA_CHECK_CRC64) != LZMA_OK)
+	    if (lzma_easy_encoder(&stream, xzlevel, LZMA_CHECK_CRC64) != LZMA_OK)
 	       return false;
 	 }
 	 else
 	 {
 	    lzma_options_lzma options;
 	    lzma_lzma_preset(&options, xzlevel);
-	    if (lzma_alone_encoder(&lzma->stream, &options) != LZMA_OK)
+	    if (lzma_alone_encoder(&stream, &options) != LZMA_OK)
 	       return false;
 	 }
-	 lzma->compressing = true;
+	 compressing = true;
       }
       else
       {
 	 uint64_t const memlimit = UINT64_MAX;
 	 if (compressor.Name == "xz")
 	 {
-	    if (lzma_auto_decoder(&lzma->stream, memlimit, 0) != LZMA_OK)
+	    if (lzma_auto_decoder(&stream, memlimit, 0) != LZMA_OK)
 	       return false;
 	 }
 	 else
 	 {
-	    if (lzma_alone_decoder(&lzma->stream, memlimit) != LZMA_OK)
+	    if (lzma_alone_decoder(&stream, memlimit) != LZMA_OK)
 	       return false;
 	 }
-	 lzma->compressing = false;
+	 compressing = false;
       }
       return true;
    }
    virtual ssize_t InternalUnbufferedRead(void * const To, unsigned long long const Size) override
    {
       ssize_t Res;
-      if (lzma->eof == true)
+      if (eof == true)
 	 return 0;
 
-      lzma->stream.next_out = (uint8_t *) To;
-      lzma->stream.avail_out = Size;
-      if (lzma->stream.avail_in == 0)
+      stream.next_out = (uint8_t *) To;
+      stream.avail_out = Size;
+      if (stream.avail_in == 0)
       {
-	 lzma->stream.next_in = lzma->buffer;
-	 lzma->stream.avail_in = fread(lzma->buffer, 1, sizeof(lzma->buffer)/sizeof(lzma->buffer[0]), lzma->file);
+	 stream.next_in = buffer;
+	 stream.avail_in = fread(buffer, 1, sizeof(buffer)/sizeof(buffer[0]), file);
       }
-      lzma->err = lzma_code(&lzma->stream, LZMA_RUN);
-      if (lzma->err == LZMA_STREAM_END)
+      err = lzma_code(&stream, LZMA_RUN);
+      if (err == LZMA_STREAM_END)
       {
-	 lzma->eof = true;
-	 Res = Size - lzma->stream.avail_out;
+	 eof = true;
+	 Res = Size - stream.avail_out;
       }
-      else if (lzma->err != LZMA_OK)
+      else if (err != LZMA_OK)
       {
 	 Res = -1;
 	 errno = 0;
       }
       else
       {
-	 Res = Size - lzma->stream.avail_out;
+	 Res = Size - stream.avail_out;
 	 if (Res == 0)
 	 {
 	    // lzma run was okay, but produced no output…
@@ -1459,37 +1430,63 @@ public:
    }
    virtual bool InternalReadError() override
    {
-      return filefd->FileFdError("lzma_read: %s (%d)", _("Read error"), lzma->err);
+      return filefd->FileFdError("lzma_read: %s (%d)", _("Read error"), err);
    }
    virtual ssize_t InternalWrite(void const * const From, unsigned long long const Size) override
    {
-      lzma->stream.next_in = (uint8_t *)From;
-      lzma->stream.avail_in = Size;
-      lzma->stream.next_out = lzma->buffer;
-      lzma->stream.avail_out = sizeof(lzma->buffer)/sizeof(lzma->buffer[0]);
-      lzma->err = lzma_code(&lzma->stream, LZMA_RUN);
-      if (lzma->err != LZMA_OK)
+      stream.next_in = (uint8_t *)From;
+      stream.avail_in = Size;
+      stream.next_out = buffer;
+      stream.avail_out = sizeof(buffer)/sizeof(buffer[0]);
+      err = lzma_code(&stream, LZMA_RUN);
+      if (err != LZMA_OK)
 	 return -1;
-      size_t const n = sizeof(lzma->buffer)/sizeof(lzma->buffer[0]) - lzma->stream.avail_out;
-      size_t const m = (n == 0) ? 0 : fwrite(lzma->buffer, 1, n, lzma->file);
+      size_t const n = sizeof(buffer)/sizeof(buffer[0]) - stream.avail_out;
+      size_t const m = (n == 0) ? 0 : fwrite(buffer, 1, n, file);
       if (m != n)
 	 return -1;
       else
-	 return Size - lzma->stream.avail_in;
+	 return Size - stream.avail_in;
    }
    virtual bool InternalWriteError() override
    {
-      return filefd->FileFdError("lzma_write: %s (%d)", _("Write error"), lzma->err);
+      return filefd->FileFdError("lzma_write: %s (%d)", _("Write error"), err);
    }
    virtual bool InternalStream() const override { return true; }
    virtual bool InternalClose(std::string const &) override
    {
-      delete lzma;
-      lzma = nullptr;
+      if (file == nullptr)
+	 return true;
+      if (compressing == true)
+      {
+	 size_t constexpr buffersize = sizeof(buffer)/sizeof(buffer[0]);
+	 while(true)
+	 {
+	    stream.avail_out = buffersize;
+	    stream.next_out = buffer;
+	    err = lzma_code(&stream, LZMA_FINISH);
+	    if (err != LZMA_OK && err != LZMA_STREAM_END)
+	    {
+	       _error->Error("~LZMAFILE: Compress finalisation failed");
+	       break;
+	    }
+	    size_t const n =  buffersize - stream.avail_out;
+	    if (n && fwrite(buffer, 1, n, file) != n)
+	    {
+	       _error->Errno("~LZMAFILE",_("Write error"));
+	       break;
+	    }
+	    if (err == LZMA_STREAM_END)
+	       break;
+	 }
+      }
+      lzma_end(&stream);
+      fclose(file);
+      file = nullptr;
       return true;
    }
 
-   explicit LzmaFileFdPrivate(FileFd * const filefd) : FileFdPrivate(filefd), lzma(nullptr) {}
+   explicit LzmaFileFdPrivate(FileFd * const filefd) : FileFdPrivate(filefd), file(nullptr), eof(false), compressing(false) { buffer[0] = '\0'; }
    virtual ~LzmaFileFdPrivate() { InternalClose(""); }
 #endif
 };
