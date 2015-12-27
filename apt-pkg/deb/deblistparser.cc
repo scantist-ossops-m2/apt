@@ -571,7 +571,7 @@ const char *debListParser::ParseDepends(const char *Start,const char *Stop,
 	  (strcmp(Package.c_str() + found, ":any") == 0 ||
 	   strcmp(Package.c_str() + found, ":native") == 0 ||
 	   strcmp(Package.c_str() + found + 1, arch.c_str()) == 0))
-	 Package = Package.substr(0,found);
+	 Package.erase(found);
    }
 
    // Skip white space to the '('
