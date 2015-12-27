@@ -153,6 +153,7 @@ static void GetIndexTargetsFor(char const * const Type, std::string const &URI, 
 	 bool const DefaultEnabled = APT_T_CONFIG_BOOL("DefaultEnabled", true);
 	 bool const UsePDiffs = APT_T_CONFIG_BOOL("PDiffs", E->UsePDiffs);
 	 std::string const UseByHash = APT_T_CONFIG_STR("By-Hash", E->UseByHash);
+	 std::string const ForceCompressionType = APT_T_CONFIG_STR("ForceCompressionType", "");
 	 std::string const CompressionTypes = APT_T_CONFIG_STR("CompressionTypes", DefCompressionTypes);
 #undef APT_T_CONFIG_BOOL
 #undef APT_T_CONFIG_STR
@@ -252,6 +253,7 @@ static void GetIndexTargetsFor(char const * const Type, std::string const &URI, 
 	       Options.insert(std::make_pair("BY_HASH", UseByHash));
 	       Options.insert(std::make_pair("DEFAULTENABLED", DefaultEnabled ? "yes" : "no"));
 	       Options.insert(std::make_pair("COMPRESSIONTYPES", CompressionTypes));
+	       Options.insert(std::make_pair("FORCECOMPRESSIONTYPE", ForceCompressionType));
 	       Options.insert(std::make_pair("SOURCESENTRY", E->sourcesEntry));
 
 	       bool IsOpt = IsOptional;

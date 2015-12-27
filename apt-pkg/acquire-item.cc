@@ -85,6 +85,9 @@ static std::string GetKeepCompressedFileName(std::string file, IndexTarget const
    if (Target.KeepCompressed == false)
       return file;
 
+   if (Target.Option(IndexTarget::FORCECOMPRESSIONTYPE).empty() == false)
+      return file.append(".").append(Target.Option(IndexTarget::FORCECOMPRESSIONTYPE));
+
    std::string const CompressionTypes = Target.Option(IndexTarget::COMPRESSIONTYPES);
    if (CompressionTypes.empty() == false)
    {
@@ -106,8 +109,11 @@ static std::string GetCompressedFileName(IndexTarget const &Target, std::string 
       return Name;
 
    // adjust DestFile if its compressed on disk
-   if (Target.KeepCompressed == true)
+   if (Target.KeepCompressed == true) {
+      if (Target.Option(IndexTarget::FORCECOMPRESSIONTYPE).empty() == false)
+	 return Name + '.' + Target.Option(IndexTarget::FORCECOMPRESSIONTYPE);
       return Name + '.' + Ext;
+   }
    return Name;
 }
 									/*}}}*/
