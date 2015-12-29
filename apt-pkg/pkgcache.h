@@ -392,7 +392,8 @@ struct pkgCache::Group
    map_pointer_t Next;		// Group
    /** \brief unique sequel ID */
    map_id_t ID;
-
+   /** \brief unique sequel ID */
+   map_id_t Hash;
 };
 									/*}}}*/
 // Package structure							/*{{{*/

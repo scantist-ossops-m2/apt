@@ -56,7 +56,7 @@ pkgCache::Header::Header()
 
    /* Whenever the structures change the major version should be bumped,
       whenever the generator changes the minor version should be bumped. */
-   APT_HEADER_SET(MajorVersion, 10);
+   APT_HEADER_SET(MajorVersion, 11);
    APT_HEADER_SET(MinorVersion, 2);
    APT_HEADER_SET(Dirty, false);
 
@@ -206,7 +206,7 @@ map_id_t pkgCache::sHash(const string &Str) const
    uint32_t Hash = 0;
    for (string::const_iterator I = Str.begin(); I != Str.end(); ++I)
       Hash = 41 * Hash + tolower_ascii(*I);
-   return Hash % HeaderP->GetHashTableSize();
+   return Hash;
 }
 
 map_id_t pkgCache::sHash(const char *Str) const
@@ -214,7 +214,7 @@ map_id_t pkgCache::sHash(const char *Str) const
    uint32_t Hash = tolower_ascii(*Str);
    for (const char *I = Str + 1; *I != 0; ++I)
       Hash = 41 * Hash + tolower_ascii(*I);
-   return Hash % HeaderP->GetHashTableSize();
+   return Hash;
 }
 									/*}}}*/
 // Cache::FindPkg - Locate a package by name				/*{{{*/
@@ -255,13 +255,14 @@ pkgCache::GrpIterator pkgCache::FindGrp(const string &Name) {
 		return GrpIterator(*this,0);
 
 	// Look at the hash bucket for the group
-	Group *Grp = GrpP + HeaderP->GrpHashTableP()[sHash(Name)];
+	auto Hash = sHash(Name);
+	Group *Grp = GrpP + HeaderP->GrpHashTableP()[Hash % HeaderP->GetHashTableSize()];
 	for (; Grp != GrpP; Grp = GrpP + Grp->Next) {
+	       if (Hash != Grp->Hash)
+		  continue;
 		int const cmp = strcmp(Name.c_str(), StrP + Grp->Name);
 		if (cmp == 0)
 			return GrpIterator(*this, Grp);
-		else if (cmp < 0)
-			break;
 	}
 
 	return GrpIterator(*this,0);

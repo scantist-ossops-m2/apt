@@ -515,10 +515,9 @@ bool pkgCacheGenerator::NewGroup(pkgCache::GrpIterator &Grp, const string &Name)
 
    // Insert it into the hash table
    unsigned long const Hash = Cache.Hash(Name);
-   map_pointer_t *insertAt = &Cache.HeaderP->GrpHashTableP()[Hash];
-   while (*insertAt != 0 && strcasecmp(Name.c_str(), Cache.StrP + (Cache.GrpP + *insertAt)->Name) > 0)
-      insertAt = &(Cache.GrpP + *insertAt)->Next;
+   map_pointer_t *insertAt = &Cache.HeaderP->GrpHashTableP()[Hash % Cache.HeaderP->GetHashTableSize()];
    Grp->Next = *insertAt;
+   Grp->Hash = Hash;
    *insertAt = Group;
 
    Grp->ID = Cache.HeaderP->GroupCount++;
@@ -561,9 +560,7 @@ bool pkgCacheGenerator::NewPackage(pkgCache::PkgIterator &Pkg,const string &Name
       Grp->FirstPackage = Package;
       // Insert it into the hash table
       map_id_t const Hash = Cache.Hash(Name);
-      map_pointer_t *insertAt = &Cache.HeaderP->PkgHashTableP()[Hash];
-      while (*insertAt != 0 && strcasecmp(Name.c_str(), Cache.StrP + (Cache.GrpP + (Cache.PkgP + *insertAt)->Group)->Name) > 0)
-	 insertAt = &(Cache.PkgP + *insertAt)->NextPackage;
+      map_pointer_t *insertAt = &Cache.HeaderP->PkgHashTableP()[Hash % Cache.HeaderP->GetHashTableSize()];
       Pkg->NextPackage = *insertAt;
       *insertAt = Package;
    }
