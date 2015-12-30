@@ -930,6 +930,7 @@ struct APT_HIDDEN simple_buffer {							/*{{{*/
    bool empty() const { return bufferend <= bufferstart; }
    bool full() const { return bufferend == buffersize_max; }
    unsigned long long size() const { return bufferend-bufferstart; }
+   unsigned long long free() const { return buffersize_max - bufferend; }
    void reset() { bufferend = bufferstart = 0; }
    ssize_t read(void *to, unsigned long long requested_size) APT_MUSTCHECK
    {
@@ -1235,19 +1236,23 @@ public:
    }
    virtual ssize_t InternalWrite(void const * const From, unsigned long long const Size) override
    {
-      size_t written = 0;
-
-      while (written < Size) {
-	 auto buffered = writebuffer.write(static_cast<char const*>(From) + written, Size - written);
-
-	 written += buffered;
+      if (writebuffer.empty() == true && Size >= writebuffer.free()) {
+	 // The buffer is empty and we have more data available than the buffer
+	 // is large, so we can just write it directly.
+	 return wrapped->InternalWrite(From, Size);
+      } else {
+	 // There's data in the buffer and/or we have less data to write than
+	 // the buffer size, so write as much data to the buffer as possible
+	 // and then flush the buffer.
+	 unsigned long buffered = writebuffer.write(From, Size);
 
 	 if (writebuffer.full() && InternalFlush() == false)
-	       return -1;
-      }
+	    return -1;
 
-      return written;
+	 return buffered;
+      }
    }
+
    virtual bool InternalWriteError()
    {
       return wrapped->InternalWriteError();
