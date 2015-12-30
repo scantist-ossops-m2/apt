@@ -1244,7 +1244,7 @@ public:
 	 // There's data in the buffer and/or we have less data to write than
 	 // the buffer size, so write as much data to the buffer as possible
 	 // and then flush the buffer.
-	 unsigned long buffered = writebuffer.write(From, Size);
+	 auto buffered = writebuffer.write(From, Size);
 
 	 if (writebuffer.full() && InternalFlush() == false)
 	    return -1;
