@@ -442,20 +442,15 @@ void pkgTagSection::Trim()
 }
 									/*}}}*/
 // TagSection::Exists - return True if a tag exists			/*{{{*/
-bool pkgTagSection::Exists(const char* const Tag) const
+bool pkgTagSection::Exists(string_view Tag) const
 {
    unsigned int tmp;
-   return Find(string_view(Tag), tmp);
+   return Find(Tag, tmp);
 }
 									/*}}}*/
 // TagSection::Find - Locate a tag					/*{{{*/
 // ---------------------------------------------------------------------
 /* This searches the section for a tag that matches the given string. */
-bool pkgTagSection::Find(const char *Tag,unsigned int &Pos) const
-{
-   return Find(string_view(Tag), Pos);
-}
-
 bool pkgTagSection::Find(string_view TagView,unsigned int &Pos) const
 {
    const char * const Tag = TagView.data();
@@ -480,11 +475,6 @@ bool pkgTagSection::Find(string_view TagView,unsigned int &Pos) const
    Pos = 0;
    return false;
 }
-bool pkgTagSection::Find(const char *Tag,const char *&Start,
-		         const char *&End) const
-{
-   return Find(string_view(Tag), Start, End);
-}
 
 bool pkgTagSection::Find(string_view Tag,const char *&Start,
 		         const char *&End) const
@@ -505,10 +495,6 @@ bool pkgTagSection::Find(string_view Tag,const char *&Start,
 }
 									/*}}}*/
 // TagSection::FindS - Find a string					/*{{{*/
-string pkgTagSection::FindS(const char *Tag) const
-{
-   return Find(string_view(Tag)).to_string();
-}
 string_view pkgTagSection::Find(string_view Tag) const
 {
    const char *Start;
@@ -519,11 +505,6 @@ string_view pkgTagSection::Find(string_view Tag) const
 }
 									/*}}}*/
 // TagSection::FindRawS - Find a string					/*{{{*/
-string pkgTagSection::FindRawS(const char *Tag) const
-{
-   return FindRaw(string_view(Tag)).to_string();
-}
-
 string_view pkgTagSection::FindRaw(string_view Tag) const
 {
    unsigned int Pos;
@@ -544,11 +525,11 @@ string_view pkgTagSection::FindRaw(string_view Tag) const
 // TagSection::FindI - Find an integer					/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-signed int pkgTagSection::FindI(const char *Tag,signed long Default) const
+signed int pkgTagSection::FindI(string_view Tag,signed long Default) const
 {
    const char *Start;
    const char *Stop;
-   if (Find(string_view(Tag),Start,Stop) == false)
+   if (Find(Tag,Start,Stop) == false)
       return Default;
 
    // Copy it into a temp buffer so we can use strtol
@@ -574,11 +555,11 @@ signed int pkgTagSection::FindI(const char *Tag,signed long Default) const
 // TagSection::FindULL - Find an unsigned long long integer		/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-unsigned long long pkgTagSection::FindULL(const char *Tag, unsigned long long const &Default) const
+unsigned long long pkgTagSection::FindULL(string_view Tag, unsigned long long const &Default) const
 {
    const char *Start;
    const char *Stop;
-   if (Find(string_view(Tag),Start,Stop) == false)
+   if (Find(Tag,Start,Stop) == false)
       return Default;
 
    // Copy it into a temp buffer so we can use strtoull
@@ -598,10 +579,10 @@ unsigned long long pkgTagSection::FindULL(const char *Tag, unsigned long long co
 // TagSection::FindB - Find boolean value                		/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-bool pkgTagSection::FindB(const char *Tag, bool const &Default) const
+bool pkgTagSection::FindB(string_view Tag, bool Default) const
 {
    const char *Start, *Stop;
-   if (Find(string_view(Tag), Start, Stop) == false)
+   if (Find(Tag, Start, Stop) == false)
       return Default;
    return StringToBool(string(Start, Stop));
 }
@@ -609,12 +590,12 @@ bool pkgTagSection::FindB(const char *Tag, bool const &Default) const
 // TagSection::FindFlag - Locate a yes/no type flag			/*{{{*/
 // ---------------------------------------------------------------------
 /* The bits marked in Flag are masked on/off in Flags */
-bool pkgTagSection::FindFlag(const char * const Tag, uint8_t &Flags,
+bool pkgTagSection::FindFlag(string_view Tag, uint8_t &Flags,
 			     uint8_t const Flag) const
 {
    const char *Start;
    const char *Stop;
-   if (Find(string_view(Tag),Start,Stop) == false)
+   if (Find(Tag,Start,Stop) == false)
       return true;
    return FindFlag(Flags, Flag, Start, Stop);
 }
@@ -637,12 +618,12 @@ bool pkgTagSection::FindFlag(uint8_t &Flags, uint8_t const Flag,
    }
    return true;
 }
-bool pkgTagSection::FindFlag(const char *Tag,unsigned long &Flags,
+bool pkgTagSection::FindFlag(string_view Tag,unsigned long &Flags,
 			     unsigned long Flag) const
 {
    const char *Start;
    const char *Stop;
-   if (Find(string_view(Tag),Start,Stop) == false)
+   if (Find(Tag,Start,Stop) == false)
       return true;
    return FindFlag(Flags, Flag, Start, Stop);
 }
@@ -694,13 +675,13 @@ pkgTagSection::Tag pkgTagSection::Tag::Rewrite(std::string const &Name, std::str
    else
       return Tag(REWRITE, Name, Data);
 }
-static bool WriteTag(FileFd &File, std::string Tag, std::string const &Value)
+static bool WriteTag(FileFd &File, std::string Tag, string_view Value)
 {
    if (Value.empty() || isspace_ascii(Value[0]) != 0)
       Tag.append(":");
    else
       Tag.append(": ");
-   Tag.append(Value);
+   Tag.append(Value.data(), Value.length());
    Tag.append("\n");
    return File.Write(Tag.c_str(), Tag.length());
 }
@@ -744,7 +725,7 @@ bool pkgTagSection::Write(FileFd &File, char const * const * const Order, std::v
 	 if (Exists(Order[I]) == false)
 	    continue;
 
-	 if (WriteTag(File, Order[I], FindRawS(Order[I])) == false)
+	 if (WriteTag(File, Order[I], FindRaw(Order[I])) == false)
 	    return false;
       }
    }
@@ -774,7 +755,7 @@ bool pkgTagSection::Write(FileFd &File, char const * const * const Order, std::v
 	 if (R != Rewrite.end())
 	    continue;
 
-	 if (WriteTag(File, name, FindRawS(name.c_str())) == false)
+	 if (WriteTag(File, name, FindRaw(name)) == false)
 	    return false;
       }
    }
@@ -798,7 +779,7 @@ bool pkgTagSection::Write(FileFd &File, char const * const * const Order, std::v
 	    continue;
       }
 
-      if (WriteTag(File, name, ((R->Action == Tag::RENAME) ? FindRawS(R->Name.c_str()) : R->Data)) == false)
+      if (WriteTag(File, name, ((R->Action == Tag::RENAME) ? FindRaw(R->Name) : R->Data)) == false)
 	 return false;
    }
    return true;
