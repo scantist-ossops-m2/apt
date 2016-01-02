@@ -72,15 +72,15 @@ string debListParser::Package() {
 // ---------------------------------------------------------------------
 /* This will return the Architecture of the package this section describes */
 string debListParser::Architecture() {
-   std::string const Arch = Section.FindS("Architecture");
-   return Arch.empty() ? "none" : Arch;
+   auto const Arch = Section.Find("Architecture");
+   return Arch.empty() ? "none" : Arch.to_string();
 }
 									/*}}}*/
 // ListParser::ArchitectureAll						/*{{{*/
 // ---------------------------------------------------------------------
 /* */
 bool debListParser::ArchitectureAll() {
-   return Section.FindS("Architecture") == "all";
+   return Section.Find("Architecture") == "all";
 }
 									/*}}}*/
 // ListParser::Version - Return the version string			/*{{{*/
@@ -96,7 +96,7 @@ string debListParser::Version()
 unsigned char debListParser::ParseMultiArch(bool const showErrors)	/*{{{*/
 {
    unsigned char MA;
-   string const MultiArch = Section.FindS("Multi-Arch");
+   auto const MultiArch = Section.Find("Multi-Arch");
    if (MultiArch.empty() == true || MultiArch == "no")
       MA = pkgCache::Version::No;
    else if (MultiArch == "same") {
@@ -118,7 +118,7 @@ unsigned char debListParser::ParseMultiArch(bool const showErrors)	/*{{{*/
    {
       if (showErrors == true)
 	 _error->Warning("Unknown Multi-Arch type '%s' for package '%s'",
-	       MultiArch.c_str(), Section.FindS("Package").c_str());
+	       MultiArch.to_string().c_str(), Section.FindS("Package").c_str());
       MA = pkgCache::Version::No;
    }
 
@@ -271,7 +271,7 @@ std::vector<std::string> debListParser::AvailableDescriptionLanguages()
  */
 MD5SumValue debListParser::Description_md5()
 {
-   string const value = Section.FindS("Description-md5");
+   auto const value = Section.Find("Description-md5");
    if (value.empty() == true)
    {
       std::string const desc = Description("") + "\n";
@@ -288,10 +288,10 @@ MD5SumValue debListParser::Description_md5()
       if (sumvalue.Set(value))
 	 return sumvalue;
 
-      _error->Error("Malformed Description-md5 line; includes invalid character '%s'", value.c_str());
+      _error->Error("Malformed Description-md5 line; includes invalid character '%.*s'", (int)value.length(), value.data());
       return MD5SumValue();
    }
-   _error->Error("Malformed Description-md5 line; doesn't have the required length (32 != %d) '%s'", (int)value.size(), value.c_str());
+   _error->Error("Malformed Description-md5 line; doesn't have the required length (32 != %d) '%.*s'", (int)value.size(), (int)value.length(), value.data());
    return MD5SumValue();
 }
                                                                         /*}}}*/

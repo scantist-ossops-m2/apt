@@ -13,6 +13,9 @@
 
 #include <string>
 #include <cstring>
+#if __cplusplus > 201103L
+#include <experimental/string_view>
+#endif
 
 #include <apt-pkg/strutl.h>
 
@@ -80,7 +83,16 @@ class HashSumValue
    {
       return Hex2Num(Str,Sum,sizeof(Sum));
    }
-
+#if __cplusplus > 201103L
+   bool Set(std::experimental::string_view Str)
+   {
+      return Hex2Num(Str,Sum,sizeof(Sum));
+   }
+   bool Set(const char *Str)
+   {
+      return Hex2Num(std::experimental::string_view(Str),Sum,sizeof(Sum));
+   }
+#endif
    inline void Set(unsigned char S[N/8])
    {
       for (int I = 0; I != sizeof(Sum); ++I)
@@ -92,6 +104,18 @@ class HashSumValue
          memset(Sum,0,sizeof(Sum));
          Set(Str);
    }
+#if __cplusplus > 201103L
+   explicit HashSumValue(std::experimental::string_view const &Str)
+   {
+         memset(Sum,0,sizeof(Sum));
+         Set(Str);
+   }
+   explicit HashSumValue(const char *Str)
+   {
+         memset(Sum,0,sizeof(Sum));
+         Set(Str);
+   }
+#endif
    HashSumValue()
    {
       memset(Sum,0,sizeof(Sum));

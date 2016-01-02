@@ -28,6 +28,7 @@
 									/*}}}*/
 
 using std::string;
+using std::experimental::string_view;
 
 class pkgTagFilePrivate
 {
@@ -494,15 +495,24 @@ bool pkgTagSection::Find(const char *Tag,const char *&Start,
 // TagSection::FindS - Find a string					/*{{{*/
 string pkgTagSection::FindS(const char *Tag) const
 {
+   return Find(Tag).to_string();
+}
+string_view pkgTagSection::Find(const char *Tag) const
+{
    const char *Start;
    const char *End;
    if (Find(Tag,Start,End) == false)
-      return string();
-   return string(Start,End);      
+      return string_view();
+   return string_view(Start, End - Start);
 }
 									/*}}}*/
 // TagSection::FindRawS - Find a string					/*{{{*/
 string pkgTagSection::FindRawS(const char *Tag) const
+{
+   return FindRawS(Tag);
+}
+
+string_view pkgTagSection::FindRaw(const char *Tag) const
 {
    unsigned int Pos;
    if (Find(Tag, Pos) == false)
@@ -516,7 +526,7 @@ string pkgTagSection::FindRawS(const char *Tag) const
 
    for (; isspace_ascii(End[-1]) != 0 && End > Start; --End);
 
-   return std::string(Start, End - Start);
+   return string_view(Start, End - Start);
 }
 									/*}}}*/
 // TagSection::FindI - Find an integer					/*{{{*/

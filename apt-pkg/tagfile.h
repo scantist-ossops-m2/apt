@@ -27,6 +27,9 @@
 #include <string>
 #include <vector>
 #include <list>
+#if __cplusplus > 201103L
+#include <experimental/string_view>
+#endif
 
 #ifndef APT_8_CLEANER_HEADERS
 #include <apt-pkg/fileutl.h>
@@ -53,6 +56,10 @@ class pkgTagSection
    bool Find(const char *Tag,const char *&Start, const char *&End) const;
    bool Find(const char *Tag,unsigned int &Pos) const;
    std::string FindS(const char *Tag) const;
+#if __cplusplus > 201103L
+   std::experimental::string_view Find(const char *Tag) const;
+   std::experimental::string_view FindRaw(const char *Tag) const;
+#endif
    std::string FindRawS(const char *Tag) const;
    signed int FindI(const char *Tag,signed long Default = 0) const;
    bool FindB(const char *Tag, bool const &Default = false) const;
