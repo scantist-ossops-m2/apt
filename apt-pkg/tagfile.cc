@@ -445,7 +445,7 @@ void pkgTagSection::Trim()
 bool pkgTagSection::Exists(const char* const Tag) const
 {
    unsigned int tmp;
-   return Find(Tag, tmp);
+   return Find(string_view(Tag), tmp);
 }
 									/*}}}*/
 // TagSection::Find - Locate a tag					/*{{{*/
@@ -507,7 +507,7 @@ bool pkgTagSection::Find(string_view Tag,const char *&Start,
 // TagSection::FindS - Find a string					/*{{{*/
 string pkgTagSection::FindS(const char *Tag) const
 {
-   return Find(Tag).to_string();
+   return Find(string_view(Tag)).to_string();
 }
 string_view pkgTagSection::Find(string_view Tag) const
 {
@@ -521,7 +521,7 @@ string_view pkgTagSection::Find(string_view Tag) const
 // TagSection::FindRawS - Find a string					/*{{{*/
 string pkgTagSection::FindRawS(const char *Tag) const
 {
-   return FindRawS(Tag);
+   return FindRaw(string_view(Tag)).to_string();
 }
 
 string_view pkgTagSection::FindRaw(string_view Tag) const
@@ -548,7 +548,7 @@ signed int pkgTagSection::FindI(const char *Tag,signed long Default) const
 {
    const char *Start;
    const char *Stop;
-   if (Find(Tag,Start,Stop) == false)
+   if (Find(string_view(Tag),Start,Stop) == false)
       return Default;
 
    // Copy it into a temp buffer so we can use strtol
@@ -578,7 +578,7 @@ unsigned long long pkgTagSection::FindULL(const char *Tag, unsigned long long co
 {
    const char *Start;
    const char *Stop;
-   if (Find(Tag,Start,Stop) == false)
+   if (Find(string_view(Tag),Start,Stop) == false)
       return Default;
 
    // Copy it into a temp buffer so we can use strtoull
@@ -601,7 +601,7 @@ unsigned long long pkgTagSection::FindULL(const char *Tag, unsigned long long co
 bool pkgTagSection::FindB(const char *Tag, bool const &Default) const
 {
    const char *Start, *Stop;
-   if (Find(Tag, Start, Stop) == false)
+   if (Find(string_view(Tag), Start, Stop) == false)
       return Default;
    return StringToBool(string(Start, Stop));
 }
@@ -614,7 +614,7 @@ bool pkgTagSection::FindFlag(const char * const Tag, uint8_t &Flags,
 {
    const char *Start;
    const char *Stop;
-   if (Find(Tag,Start,Stop) == false)
+   if (Find(string_view(Tag),Start,Stop) == false)
       return true;
    return FindFlag(Flags, Flag, Start, Stop);
 }
@@ -642,7 +642,7 @@ bool pkgTagSection::FindFlag(const char *Tag,unsigned long &Flags,
 {
    const char *Start;
    const char *Stop;
-   if (Find(Tag,Start,Stop) == false)
+   if (Find(string_view(Tag),Start,Stop) == false)
       return true;
    return FindFlag(Flags, Flag, Start, Stop);
 }
@@ -720,7 +720,7 @@ static bool RewriteTags(FileFd &File, pkgTagSection const * const This, char con
       }
       else if(R->Action == pkgTagSection::Tag::RENAME && R->Data.length() == TagLen &&
 	    strncasecmp(R->Data.c_str(), Tag, R->Data.length()) == 0)
-	 data = This->FindRawS(R->Name.c_str());
+	 data = This->FindRaw(R->Name.c_str()).to_string();
       else
 	 continue;
 
@@ -862,7 +862,7 @@ bool TFRewrite(FILE *Output,pkgTagSection const &Tags,const char *Order[],
 	    
          // See if it is in the fragment
          unsigned Pos;
-         if (Tags.Find(Order[I],Pos) == false)
+         if (Tags.Find(string_view(Order[I]),Pos) == false)
             continue;
          Visited[Pos] |= 1;
 
