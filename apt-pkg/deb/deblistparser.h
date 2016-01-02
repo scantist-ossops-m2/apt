@@ -19,6 +19,9 @@
 
 #include <string>
 #include <vector>
+#if __cplusplus > 201103L
+#include <experimental/string_view>
+#endif
 
 #ifndef APT_8_CLEANER_HEADERS
 #include <apt-pkg/indexfile.h>
@@ -50,7 +53,10 @@ class APT_HIDDEN debListParser : public pkgCacheListParser
    bool ParseDepends(pkgCache::VerIterator &Ver,const char *Tag,
 		     unsigned int Type);
    bool ParseProvides(pkgCache::VerIterator &Ver);
-   static bool GrabWord(std::string Word,const WordList *List,unsigned char &Out);
+
+#if __cplusplus > 201103L
+   APT_HIDDEN static bool GrabWord(std::experimental::string_view Word,const WordList *List,unsigned char &Out);
+#endif
    APT_HIDDEN unsigned char ParseMultiArch(bool const showErrors);
 
    public:

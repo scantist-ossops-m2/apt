@@ -205,7 +205,7 @@ bool debListParser::NewVersion(pkgCache::VerIterator &Ver)
    // Priority
    if (Section.Find("Priority",Start,Stop) == true)
    {
-      if (GrabWord(string(Start,Stop-Start),PrioList,Ver->Priority) == false)
+      if (GrabWord(string_view(Start,Stop-Start),PrioList,Ver->Priority) == false)
 	 Ver->Priority = pkgCache::State::Extra;
    }
 
@@ -411,7 +411,7 @@ bool debStatusListParser::ParseStatus(pkgCache::PkgIterator &Pkg,
                           {"deinstall",pkgCache::State::DeInstall},
                           {"purge",pkgCache::State::Purge},
                           {NULL, 0}};
-   if (GrabWord(string(Start,I-Start),WantList,Pkg->SelectedState) == false)
+   if (GrabWord(string_view(Start,I-Start),WantList,Pkg->SelectedState) == false)
       return _error->Error("Malformed 1st word in the Status line");
 
    // Isloate the next word
@@ -427,7 +427,7 @@ bool debStatusListParser::ParseStatus(pkgCache::PkgIterator &Pkg,
                           {"hold",pkgCache::State::HoldInst},
                           {"hold-reinstreq",pkgCache::State::HoldReInstReq},
                           {NULL, 0}};
-   if (GrabWord(string(Start,I-Start),FlagList,Pkg->InstState) == false)
+   if (GrabWord(string_view(Start,I-Start),FlagList,Pkg->InstState) == false)
       return _error->Error("Malformed 2nd word in the Status line");
 
    // Isloate the last word
@@ -447,7 +447,7 @@ bool debStatusListParser::ParseStatus(pkgCache::PkgIterator &Pkg,
                             {"triggers-pending",pkgCache::State::TriggersPending},
                             {"installed",pkgCache::State::Installed},
                             {NULL, 0}};
-   if (GrabWord(string(Start,I-Start),StatusList,Pkg->CurrentState) == false)
+   if (GrabWord(string_view(Start,I-Start),StatusList,Pkg->CurrentState) == false)
       return _error->Error("Malformed 3rd word in the Status line");
 
    /* A Status line marks the package as indicating the current
@@ -930,11 +930,12 @@ bool debListParser::ParseProvides(pkgCache::VerIterator &Ver)
 // ListParser::GrabWord - Matches a word and returns			/*{{{*/
 // ---------------------------------------------------------------------
 /* Looks for a word in a list of words - for ParseStatus */
-bool debListParser::GrabWord(string Word,const WordList *List,unsigned char &Out)
+bool debListParser::GrabWord(string_view Word,const WordList *List,unsigned char &Out)
 {
    for (unsigned int C = 0; List[C].Str != 0; C++)
    {
-      if (strcasecmp(Word.c_str(),List[C].Str) == 0)
+      if (Word.length() == strlen(List[C].Str) &&
+	  strncasecmp(Word.data(),List[C].Str,Word.length()) == 0)
       {
 	 Out = List[C].Val;
 	 return true;
