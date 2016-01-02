@@ -242,10 +242,15 @@ bool debListParser::NewVersion(pkgCache::VerIterator &Ver)
    only describe package properties */
 string debListParser::Description(std::string const &lang)
 {
+   return Description(string_view(lang)).to_string();
+}
+
+string_view debListParser::Description(string_view lang)
+{
    if (lang.empty())
-      return Section.Find("Description").to_string();
+      return Section.Find("Description");
    else
-      return Section.Find(string("Description-").append(lang).c_str()).to_string();
+      return Section.Find(string("Description-").append(lang.data(), lang.size()));
 }
 									/*}}}*/
 // ListParser::AvailableDescriptionLanguages				/*{{{*/
@@ -275,12 +280,13 @@ MD5SumValue debListParser::Description_md5()
    auto const value = Section.Find("Description-md5");
    if (value.empty() == true)
    {
-      std::string const desc = Description("") + "\n";
+      string_view desc = Description(string_view("", 0));
       if (desc == "\n")
 	 return MD5SumValue();
 
       MD5Summation md5;
-      md5.Add(desc.c_str());
+      md5.Add(desc.data(), desc.size());
+      md5.Add("\n");
       return md5.Result();
    }
    else if (likely(value.size() == 32))
