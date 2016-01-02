@@ -227,6 +227,9 @@ class pkgCache								/*{{{*/
    inline void *DataEnd() {return ((unsigned char *)Map.Data()) + Map.Size();}
       
    // String hashing function (512 range)
+#if __cplusplus > 201103L
+   inline map_id_t Hash(std::experimental::string_view S) const {return sHash(S);}
+#endif
    inline map_id_t Hash(const std::string &S) const {return sHash(S);}
    inline map_id_t Hash(const char *S) const {return sHash(S);}
 
