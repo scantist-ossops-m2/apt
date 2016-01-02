@@ -22,6 +22,9 @@
 #include <cstring>
 #include <vector>
 #include <iostream>
+#if __cplusplus > 201103L
+#include <experimental/string_view>
+#endif
 #include <time.h>
 #include <stddef.h>
 
@@ -75,7 +78,9 @@ bool StrToNum(const char *Str,unsigned long long &Res,unsigned Len,unsigned Base
 bool Base256ToNum(const char *Str,unsigned long &Res,unsigned int Len);
 bool Base256ToNum(const char *Str,unsigned long long &Res,unsigned int Len);
 bool Hex2Num(const std::string &Str,unsigned char *Num,unsigned int Length);
-
+#if __cplusplus > 201103L
+APT_HIDDEN bool Hex2Num(const std::experimental::string_view Str,unsigned char *Num,unsigned int Length);
+#endif
 // input changing string split
 bool TokSplitString(char Tok,char *Input,char **List,
 		    unsigned long ListMax);
