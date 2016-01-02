@@ -875,8 +875,8 @@ bool debListParser::ParseProvides(pkgCache::VerIterator &Ver)
    const char *Stop;
    if (Section.Find("Provides",Start,Stop) == true)
    {
-      string Package;
-      string Version;
+      string_view Package;
+      string_view Version;
       unsigned int Op;
 
       do
@@ -885,10 +885,10 @@ bool debListParser::ParseProvides(pkgCache::VerIterator &Ver)
 	 const size_t archfound = Package.rfind(':');
 	 if (Start == 0)
 	    return _error->Error("Problem parsing Provides line");
-	 if (Op != pkgCache::Dep::NoOp && Op != pkgCache::Dep::Equals) {
-	    _error->Warning("Ignoring Provides line with non-equal DepCompareOp for package %s", Package.c_str());
+	 if (unlikely(Op != pkgCache::Dep::NoOp && Op != pkgCache::Dep::Equals)) {
+	    _error->Warning("Ignoring Provides line with non-equal DepCompareOp for package %s", Package.to_string().c_str());
 	 } else if (archfound != string::npos) {
-	    std::string spzArch = Package.substr(archfound + 1);
+	    string_view spzArch = Package.substr(archfound + 1);
 	    if (spzArch != "any")
 	    {
 	       if (NewProvides(Ver, Package.substr(0, archfound), spzArch, Version, pkgCache::Flag::MultiArchImplicit | pkgCache::Flag::ArchSpecific) == false)
@@ -903,7 +903,7 @@ bool debListParser::ParseProvides(pkgCache::VerIterator &Ver)
 	 } else {
 	    if ((Ver->MultiArch & pkgCache::Version::Allowed) == pkgCache::Version::Allowed)
 	    {
-	       if (NewProvides(Ver, Package + ":any", "any", Version, pkgCache::Flag::MultiArchImplicit) == false)
+	       if (NewProvides(Ver, Package.to_string().append(":any"), "any", Version, pkgCache::Flag::MultiArchImplicit) == false)
 		  return false;
 	    }
 	    if (NewProvides(Ver, Package, Arch, Version, 0) == false)
@@ -911,7 +911,9 @@ bool debListParser::ParseProvides(pkgCache::VerIterator &Ver)
 	 }
 	 if (archfound == std::string::npos)
 	 {
-	    std::string const spzName = Package + ':' + Ver.ParentPkg().Arch();
+	    string spzName = Package.to_string();
+	    spzName.push_back(':');
+	    spzName.append(Ver.ParentPkg().Arch());
 	    pkgCache::PkgIterator const spzPkg = Ver.Cache()->FindPkg(spzName, "any");
 	    if (spzPkg.end() == false)
 	    {
