@@ -35,6 +35,9 @@
 #include<iterator>
 #include <iosfwd>
 #include <string>
+#if __cplusplus > 201103L
+#include <experimental/string_view>
+#endif
 
 #include<string.h>
 
@@ -114,6 +117,10 @@ class pkgCache::GrpIterator: public Iterator<Group, GrpIterator> {
 	inline const char *Name() const {return S->Name == 0?0:Owner->StrP + S->Name;}
 	inline PkgIterator PackageList() const;
 	PkgIterator FindPkg(std::string Arch = "any") const;
+#if __cplusplus > 201103L
+	PkgIterator FindPkg(std::experimental::string_view Arch = std::experimental::string_view("any", 3)) const;
+	PkgIterator FindPkg(const char *Arch) const;
+#endif
 	/** \brief find the package with the "best" architecture
 
 	    The best architecture is either the "native" or the first

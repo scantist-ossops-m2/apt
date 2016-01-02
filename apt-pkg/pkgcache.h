@@ -81,6 +81,10 @@
 #include <time.h>
 #include <stdint.h>
 
+#if __cplusplus >= 201103L
+#include <experimental/string_view>
+#endif
+
 #ifndef APT_8_CLEANER_HEADERS
 using std::string;
 #endif
@@ -193,7 +197,9 @@ class pkgCache								/*{{{*/
    // Memory mapped cache file
    std::string CacheFile;
    MMap &Map;
-
+#if __cplusplus > 201103L
+   map_id_t sHash(std::experimental::string_view S) const APT_PURE;
+#endif
    map_id_t sHash(const std::string &S) const APT_PURE;
    map_id_t sHash(const char *S) const APT_PURE;
    
@@ -230,6 +236,12 @@ class pkgCache								/*{{{*/
    static const char *Priority(unsigned char Priority);
    
    // Accessors
+#if __cplusplus > 201103L
+   GrpIterator FindGrp(std::experimental::string_view Name);
+   PkgIterator FindPkg(std::experimental::string_view Name);
+   PkgIterator FindPkg(std::experimental::string_view Name, std::experimental::string_view Arch);
+#endif
+
    GrpIterator FindGrp(const std::string &Name);
    PkgIterator FindPkg(const std::string &Name);
    PkgIterator FindPkg(const std::string &Name, const std::string &Arch);
