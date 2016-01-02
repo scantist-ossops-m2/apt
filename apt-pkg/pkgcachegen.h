@@ -29,6 +29,9 @@
 #if __cplusplus >= 201103L
 #include <unordered_map>
 #endif
+#if __cplusplus > 201103L
+#include <experimental/string_view>
+#endif
 
 class FileFd;
 class pkgSourceList;
@@ -79,8 +82,10 @@ class APT_HIDDEN pkgCacheGenerator					/*{{{*/
    std::string PkgFileName;
    pkgCache::PackageFile *CurrentFile;
 
-   bool NewGroup(pkgCache::GrpIterator &Grp,const std::string &Name);
-   bool NewPackage(pkgCache::PkgIterator &Pkg,const std::string &Name, const std::string &Arch);
+#if __cplusplus > 201103L
+   bool NewGroup(pkgCache::GrpIterator &Grp, std::experimental::string_view Name);
+   bool NewPackage(pkgCache::PkgIterator &Pkg, std::experimental::string_view Name, std::experimental::string_view Arch);
+#endif
    bool NewFileVer(pkgCache::VerIterator &Ver,ListParser &List);
    bool NewFileDesc(pkgCache::DescIterator &Desc,ListParser &List);
    bool NewDepends(pkgCache::PkgIterator &Pkg, pkgCache::VerIterator &Ver,
@@ -156,15 +161,16 @@ class APT_HIDDEN pkgCacheListParser
 
    inline map_stringitem_t WriteString(const std::string &S) {return Owner->WriteStringInMap(S);};
    inline map_stringitem_t WriteString(const char *S,unsigned int Size) {return Owner->WriteStringInMap(S,Size);};
-   bool NewDepends(pkgCache::VerIterator &Ver,const std::string &Package, const std::string &Arch,
-		   const std::string &Version,uint8_t const Op,
+#if __cplusplus > 201103L
+   bool NewDepends(pkgCache::VerIterator &Ver,std::experimental::string_view Package, std::experimental::string_view Arch,
+		   std::experimental::string_view Version,uint8_t const Op,
 		   uint8_t const Type);
-   bool NewProvides(pkgCache::VerIterator &Ver,const std::string &PkgName,
-		    const std::string &PkgArch, const std::string &Version,
+   bool NewProvides(pkgCache::VerIterator &Ver,std::experimental::string_view PkgName,
+		    std::experimental::string_view PkgArch, std::experimental::string_view Version,
 		    uint8_t const Flags);
-   bool NewProvidesAllArch(pkgCache::VerIterator &Ver, std::string const &Package,
-			   std::string const &Version, uint8_t const Flags);
-   
+   bool NewProvidesAllArch(pkgCache::VerIterator &Ver, std::experimental::string_view Package,
+			   std::experimental::string_view Version, uint8_t const Flags);
+#endif
    public:
    
    // These all operate against the current section
