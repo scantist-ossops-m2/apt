@@ -97,6 +97,14 @@ class APT_HIDDEN debListParser : public pkgCacheListParser
 	 bool const &ParseArchFlags, bool const &StripMultiArch,
 	 bool const &ParseRestrictionsList);
 
+#if __cplusplus > 201103L
+   APT_HIDDEN static const char *ParseDepends(const char *Start,const char *Stop,
+	 std::experimental::string_view &Package,
+    std::experimental::string_view &Ver,unsigned int &Op,
+	 bool const ParseArchFlags = false, bool StripMultiArch = true,
+	 bool const ParseRestrictionsList = false);
+#endif
+
    APT_PUBLIC static const char *ConvertRelation(const char *I,unsigned int &Op);
 
    debListParser(FileFd *File);

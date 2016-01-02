@@ -545,6 +545,22 @@ const char *debListParser::ParseDepends(const char *Start,const char *Stop,
 					bool const &StripMultiArch,
 					bool const &ParseRestrictionsList)
 {
+   string_view PackageView;
+   string_view VerView;
+
+   auto res = ParseDepends(Start, Stop, PackageView, VerView, Op, (bool)ParseArchFlags,
+   (bool) StripMultiArch, (bool) ParseRestrictionsList);
+   Package = PackageView.to_string();
+   Ver = VerView.to_string();
+
+   return res;
+}
+const char *debListParser::ParseDepends(const char *Start,const char *Stop,
+					string_view &Package,string_view &Ver,
+					unsigned int &Op, bool ParseArchFlags,
+					bool StripMultiArch,
+					bool ParseRestrictionsList)
+{
    // Strip off leading space
    for (;Start != Stop && isspace_ascii(*Start) != 0; ++Start);
    
@@ -562,16 +578,16 @@ const char *debListParser::ParseDepends(const char *Start,const char *Stop,
       return 0;
    
    // Stash the package name
-   Package.assign(Start,I - Start);
+   Package = string_view(Start, I - Start);
 
    // We don't want to confuse library users which can't handle MultiArch
    if (StripMultiArch == true) {
       string const arch = _config->Find("APT::Architecture");
       size_t const found = Package.rfind(':');
       if (found != string::npos &&
-	  (strcmp(Package.c_str() + found, ":any") == 0 ||
-	   strcmp(Package.c_str() + found, ":native") == 0 ||
-	   strcmp(Package.c_str() + found + 1, arch.c_str()) == 0))
+	  (Package.compare(found, Package.size(), ":any") == 0 ||
+	   Package.compare(found, Package.size(), ":native") == 0||
+	   Package.compare(found +1, Package.size(), arch) == 0))
 	 Package = Package.substr(0,found);
    }
 
@@ -598,12 +614,12 @@ const char *debListParser::ParseDepends(const char *Start,const char *Stop,
       const char *End = I;
       for (; End > Start && isspace_ascii(End[-1]); End--);
       
-      Ver.assign(Start,End-Start);
+      Ver = string_view(Start,End-Start);
       I++;
    }
    else
    {
-      Ver.clear();
+      Ver = string_view();
       Op = pkgCache::Dep::NoOp;
    }
    
