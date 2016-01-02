@@ -12,7 +12,7 @@
 									/*}}}*/
 // Include Files							/*{{{*/
 #include<config.h>
-
+#define APT_COMPILING_TAGFILE__
 #include <apt-pkg/tagfile.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/strutl.h>
@@ -453,7 +453,13 @@ bool pkgTagSection::Exists(const char* const Tag) const
 /* This searches the section for a tag that matches the given string. */
 bool pkgTagSection::Find(const char *Tag,unsigned int &Pos) const
 {
-   size_t const Length = strlen(Tag);
+   return Find(string_view(Tag), Pos);
+}
+
+bool pkgTagSection::Find(string_view TagView,unsigned int &Pos) const
+{
+   const char * const Tag = TagView.data();
+   size_t const Length = TagView.length();
    unsigned int Bucket = AlphaIndexes[AlphaHash(Tag, Length)];
    if (Bucket == 0)
       return false;
@@ -477,6 +483,12 @@ bool pkgTagSection::Find(const char *Tag,unsigned int &Pos) const
 bool pkgTagSection::Find(const char *Tag,const char *&Start,
 		         const char *&End) const
 {
+   return Find(string_view(Tag), Start, End);
+}
+
+bool pkgTagSection::Find(string_view Tag,const char *&Start,
+		         const char *&End) const
+{
    unsigned int Pos;
    if (Find(Tag, Pos) == false)
       return false;
@@ -497,7 +509,7 @@ string pkgTagSection::FindS(const char *Tag) const
 {
    return Find(Tag).to_string();
 }
-string_view pkgTagSection::Find(const char *Tag) const
+string_view pkgTagSection::Find(string_view Tag) const
 {
    const char *Start;
    const char *End;
@@ -512,7 +524,7 @@ string pkgTagSection::FindRawS(const char *Tag) const
    return FindRawS(Tag);
 }
 
-string_view pkgTagSection::FindRaw(const char *Tag) const
+string_view pkgTagSection::FindRaw(string_view Tag) const
 {
    unsigned int Pos;
    if (Find(Tag, Pos) == false)

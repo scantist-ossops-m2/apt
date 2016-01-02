@@ -34,6 +34,7 @@
 									/*}}}*/
 
 using std::string;
+using std::experimental::string_view;
 
 static const debListParser::WordList PrioList[] = {
    {"required",pkgCache::State::Required},
@@ -57,7 +58,7 @@ debListParser::debListParser(FileFd *File) :
 // ---------------------------------------------------------------------
 /* This is to return the name of the package this section describes */
 string debListParser::Package() {
-   string Result = Section.FindS("Package");
+   string Result = Section.Find("Package").to_string();
 
    // Normalize mixed case package names to lower case, like dpkg does
    // See Bug#807012 for details
@@ -90,7 +91,7 @@ bool debListParser::ArchitectureAll() {
    entry is assumed to only describe package properties */
 string debListParser::Version()
 {
-   return Section.FindS("Version");
+   return Section.Find("Version").to_string();
 }
 									/*}}}*/
 unsigned char debListParser::ParseMultiArch(bool const showErrors)	/*{{{*/
@@ -242,9 +243,9 @@ bool debListParser::NewVersion(pkgCache::VerIterator &Ver)
 string debListParser::Description(std::string const &lang)
 {
    if (lang.empty())
-      return Section.FindS("Description");
+      return Section.Find("Description").to_string();
    else
-      return Section.FindS(string("Description-").append(lang).c_str());
+      return Section.Find(string("Description-").append(lang).c_str()).to_string();
 }
 									/*}}}*/
 // ListParser::AvailableDescriptionLanguages				/*{{{*/
@@ -332,21 +333,21 @@ bool debListParser::UsePackage(pkgCache::PkgIterator &Pkg,
 /* */
 unsigned short debListParser::VersionHash()
 {
-   const char *Sections[] ={"Installed-Size",
+   static const string_view Sections[] ={"Installed-Size",
                             "Depends",
                             "Pre-Depends",
 //                            "Suggests",
 //                            "Recommends",
                             "Conflicts",
                             "Breaks",
-                            "Replaces",0};
+                            "Replaces"};
    unsigned long Result = INIT_FCS;
    char S[1024];
-   for (const char * const *I = Sections; *I != 0; ++I)
+   for (string_view I : Sections)
    {
       const char *Start;
       const char *End;
-      if (Section.Find(*I,Start,End) == false || End - Start >= (signed)sizeof(S))
+      if (Section.Find(I,Start,End) == false || End - Start >= (signed)sizeof(S))
 	 continue;
       
       /* Strip out any spaces from the text, this undoes dpkgs reformatting

@@ -53,13 +53,18 @@ class pkgTagSection
    inline bool operator ==(const pkgTagSection &rhs) {return Section == rhs.Section;};
    inline bool operator !=(const pkgTagSection &rhs) {return Section != rhs.Section;};
 
+#if defined(APT_COMPILING_TAGFILE__) || __cplusplus <= 201103L
    bool Find(const char *Tag,const char *&Start, const char *&End) const;
    bool Find(const char *Tag,unsigned int &Pos) const;
-   std::string FindS(const char *Tag) const;
-#if __cplusplus > 201103L
-   std::experimental::string_view Find(const char *Tag) const;
-   std::experimental::string_view FindRaw(const char *Tag) const;
 #endif
+
+#if __cplusplus > 201103L
+   bool Find(std::experimental::string_view Tag,const char *&Start, const char *&End) const;
+   bool Find(std::experimental::string_view Tag,unsigned int &Pos) const;
+   std::experimental::string_view Find(std::experimental::string_view Tag) const;
+   std::experimental::string_view FindRaw(std::experimental::string_view Tag) const;
+#endif
+   std::string FindS(const char *Tag) const;
    std::string FindRawS(const char *Tag) const;
    signed int FindI(const char *Tag,signed long Default = 0) const;
    bool FindB(const char *Tag, bool const &Default = false) const;
