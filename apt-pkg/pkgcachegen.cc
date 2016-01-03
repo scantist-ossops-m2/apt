@@ -73,8 +73,8 @@ pkgCacheGenerator::pkgCacheGenerator(DynamicMMap *pMap,OpProgress *Prog) :
       // Starting header
       *Cache.HeaderP = pkgCache::Header();
 
-      // make room for the hashtables for packages and groups
-      if (Map.RawAllocate(2 * (Cache.HeaderP->GetHashTableSize() * sizeof(map_pointer_t))) == 0)
+      // make room for the hashtables for groups
+      if (Map.RawAllocate(1 * (Cache.HeaderP->GetHashTableSize() * sizeof(map_pointer_t))) == 0)
 	 return;
 
       map_stringitem_t const idxVerSysName = WriteStringInMap(_system->VS->Label);
@@ -564,13 +564,6 @@ bool pkgCacheGenerator::NewPackage(pkgCache::PkgIterator &Pkg,const string &Name
    if (Grp->FirstPackage == 0) // the group is new
    {
       Grp->FirstPackage = Package;
-      // Insert it into the hash table
-      map_id_t const Hash = Cache.Hash(Name);
-      map_pointer_t *insertAt = &Cache.HeaderP->PkgHashTableP()[Hash];
-      while (*insertAt != 0 && strcasecmp(Name.c_str(), Cache.StrP + (Cache.GrpP + (Cache.PkgP + *insertAt)->Group)->Name) > 0)
-	 insertAt = &(Cache.PkgP + *insertAt)->NextPackage;
-      Pkg->NextPackage = *insertAt;
-      *insertAt = Package;
    }
    else // Group the Packages together
    {

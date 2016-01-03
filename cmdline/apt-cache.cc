@@ -336,7 +336,6 @@ static bool Stats(CommandLine &CmdL)
 #undef APT_CACHESIZE
 
    // hashtable stats
-   ShowHashTableStats<pkgCache::Package>("PkgHashTable", Cache->PkgP, Cache->Head().PkgHashTableP(), Cache->Head().GetHashTableSize(), PackageNext);
    ShowHashTableStats<pkgCache::Group>("GrpHashTable", Cache->GrpP, Cache->Head().GrpHashTableP(), Cache->Head().GetHashTableSize(), GroupNext);
 
    return true;

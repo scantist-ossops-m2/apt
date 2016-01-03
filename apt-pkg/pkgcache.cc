@@ -57,8 +57,8 @@ pkgCache::Header::Header()
 
    /* Whenever the structures change the major version should be bumped,
       whenever the generator changes the minor version should be bumped. */
-   APT_HEADER_SET(MajorVersion, 10);
-   APT_HEADER_SET(MinorVersion, 3);
+   APT_HEADER_SET(MajorVersion, 11);
+   APT_HEADER_SET(MinorVersion, 0);
    APT_HEADER_SET(Dirty, false);
 
    APT_HEADER_SET(HeaderSz, sizeof(pkgCache::Header));
@@ -433,19 +433,27 @@ pkgCache::GrpIterator& pkgCache::GrpIterator::operator++()
 									/*}}}*/
 // PkgIterator::operator++ - Prefix incr				/*{{{*/
 // ---------------------------------------------------------------------
-/* This will advance to the next logical package in the hash table. */
+/* This will advance to the next logical package in the group table. */
 pkgCache::PkgIterator& pkgCache::PkgIterator::operator++()
 {
-   // Follow the current links
+   // Follow the current links in the group
    if (S != Owner->PkgP)
       S = Owner->PkgP + S->NextPackage;
 
-   // Follow the hash table
-   while (S == Owner->PkgP && (HashIndex+1) < (signed)Owner->HeaderP->GetHashTableSize())
-   {
-      ++HashIndex;
-      S = Owner->PkgP + Owner->HeaderP->PkgHashTableP()[HashIndex];
+   // Follow the group hash table
+   if (S == Owner->PkgP) {
+      pkgCache::Group *group = Owner->GrpP;
+      // Locate the next group based on the hash index.
+      while (group == Owner->GrpP && (HashIndex+1) < (signed)Owner->HeaderP->GetHashTableSize())
+      {
+         ++HashIndex;
+         group = Owner->GrpP + Owner->HeaderP->GrpHashTableP()[HashIndex];
+      }
+
+      if (group != Owner->GrpP)
+         S = Owner->PkgP + group->FirstPackage;
    }
+
    return *this;
 }
 									/*}}}*/
