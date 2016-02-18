@@ -15,3 +15,19 @@ script:
  - ./test/integration/run-tests -q
  - sudo adduser --force-badname --system --home /nonexistent --no-create-home --quiet _apt || true
  - sudo ./test/integration/run-tests -q
+
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "VrmE21W4ciFupWp4v83rK/YdEfy7wBygBsYU6rITLmYcVUkf34ZPf7FScrl/UTAE7bc4F64jRQ3nf9KnxHcknnlFRWoJ3WXW0mOM8amCvVw7Lp473+63RPPGKh24n4Fw0n0HdQ3DuhUAFTrYbJ4bSJcc7hswdz8lb57XG5dp7Ss="
+
+addons:
+  coverity_scan:
+    project:
+      name: "Debian/apt"
+      description: "Build submitted via Travis CI"
+    notification_email: jak@jak-linux.org
+    build_command_prepend: "make startup"
+    build_command:   "make"
+    branch_pattern: coverity_scan
