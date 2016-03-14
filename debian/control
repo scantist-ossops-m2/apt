@@ -37,7 +37,7 @@ Description: commandline package manager
   * apt-config as an interface to the configuration settings
   * apt-key as an interface to manage authentication keys
 
-Package: libapt-pkg5.0
+Package: libapt-pkg4.90
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends}
@@ -61,7 +61,7 @@ Description: package management runtime library
     http, rsh as well as an interface to add more transports like
     https (apt-transport-https) and debtorrent (apt-transport-debtorrent).
 
-Package: libapt-inst2.0
+Package: libapt-inst1.90
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends}

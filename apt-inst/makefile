@@ -14,7 +14,7 @@ include ../buildlib/libversion.mak
 
 # The library name
 LIBRARY=apt-inst
-MAJOR=2.0
+MAJOR=1.90
 MINOR=0
 SLIBS=$(PTHREADLIB) -lapt-pkg
 APT_DOMAIN:=libapt-inst$(MAJOR)
