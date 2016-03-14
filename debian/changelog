@@ -2,8 +2,9 @@ apt (1.2.6~bpo8+1) jessie-backports; urgency=medium
 
   * Rebuild for jessie-backports.
   * Change soname 5.0->4.90, 2.0->1.90 for backport
+  * Drop lz4 support
 
- -- Julian Andres Klode <jak@debian.org>  Mon, 14 Mar 2016 11:19:17 +0100
+ -- Julian Andres Klode <jak@debian.org>  Mon, 14 Mar 2016 11:24:48 +0100
 
 apt (1.2.6) unstable; urgency=high
 
