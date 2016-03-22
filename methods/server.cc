@@ -297,12 +297,12 @@ ServerMethod::DealWithHeaders(FetchResult &Res)
             NextURI = URI::SiteOnly(Uri);
 	 else
 	    NextURI.clear();
-	 NextURI.append(DeQuoteString(Server->Location));
+	 NextURI.append(Server->Location);
 	 return TRY_AGAIN_OR_REDIRECT;
       }
       else
       {
-	 NextURI = DeQuoteString(Server->Location);
+	 NextURI = Server->Location;
 	 URI tmpURI = NextURI;
 	 URI Uri = Queue->Uri;
 	 // same protocol redirects are okay

@@ -42,7 +42,7 @@ class FileMethod : public aptMethod
 /* */
 bool FileMethod::Fetch(FetchItem *Itm)
 {
-   URI Get = Itm->Uri;
+   URI Get = DeQuoteString(Itm->Uri);
    std::string File = Get.Path;
    FetchResult Res;
    if (Get.Host.empty() == false)

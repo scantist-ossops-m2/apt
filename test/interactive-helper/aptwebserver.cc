@@ -511,7 +511,8 @@ static bool parseFirstLine(int const client, std::string const &request,/*{{{*/
       filename.erase(paramspos);
    }
 
-   filename = DeQuoteString(filename);
+   if (_config->FindB("aptwebserver::dequote", true) == true && filename.find("_config") == std::string::npos)
+      filename = DeQuoteString(filename);
 
    // this is not a secure server, but at least prevent the obvious …
    if (filename.empty() == true || filename[0] != '/' ||
@@ -634,6 +635,10 @@ static void * handleClient(void * voidclient)				/*{{{*/
 	 if (filename.length() > 1 && filename[0] == '_')
 	 {
 	    std::vector<std::string> parts = VectorizeString(filename, '/');
+	    std::clog << ">>>>>>>>>>>>>>> PARTS" << std::endl;
+	    for (auto const & s : parts)
+	       std::clog << "  " << s << std::endl;
+	    std::clog << "<<<<<<<<<<<<<<<<<<<<<<<<<" << std::endl;
 	    if (parts[0] == "_config")
 	    {
 	       handleOnTheFlyReconfiguration(client, *m, parts, headers);

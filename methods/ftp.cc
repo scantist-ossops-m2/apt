@@ -998,7 +998,7 @@ bool FtpMethod::Configuration(string Message)
 /* Fetch a single file, called by the base class..  */
 bool FtpMethod::Fetch(FetchItem *Itm)
 {
-   URI Get = Itm->Uri;
+   URI Get = DeQuoteString(Itm->Uri);
    const char *File = Get.Path.c_str();
    FetchResult Res;
    Res.Filename = Itm->DestFile;

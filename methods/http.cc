@@ -698,10 +698,6 @@ void HttpMethod::SendReq(FetchItem *Itm)
    else
       requesturi = Itm->Uri;
 
-   // The "+" is encoded as a workaround for a amazon S3 bug
-   // see LP bugs #1003633 and #1086997.
-   requesturi = QuoteString(requesturi, "+~ ");
-
    /* Build the request. No keep-alive is included as it is the default
       in 1.1, can cause problems with proxies, and we are an HTTP/1.1
       client anyway.

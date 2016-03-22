@@ -2897,7 +2897,9 @@ bool pkgAcqArchive::QueueNext()
 			      "field for package %s."),
 			      Version.ParentPkg().Name());
 
-      Desc.URI = Index->ArchiveURI(PkgFile);
+      // The "+" is encoded as a workaround for a amazon S3 bug
+      // see LP bugs #1003633 and #1086997.
+      Desc.URI = QuoteString(Index->ArchiveURI(PkgFile), "+~ ");
       Desc.Description = Index->ArchiveInfo(Version);
       Desc.Owner = this;
       Desc.ShortDesc = Version.ParentPkg().FullName(true);
@@ -3201,7 +3203,9 @@ std::string pkgAcqChangelog::URI(pkgCache::VerIterator const &Ver)	/*{{{*/
       std::string const uri = URI(RF, PF.Component(), SrcName, SrcVersion);
       if (uri.empty())
 	 continue;
-      return uri;
+      // The "+" is encoded as a workaround for a amazon S3 bug
+      // see LP bugs #1003633 and #1086997.
+      return QuoteString(uri, "+~ ");
    }
    return "";
 }
