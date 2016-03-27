@@ -95,12 +95,24 @@ The following NEW packages will be installed:
 Inst foobar (1.0 stable [i386])
 Conf foobar (1.0 stable [i386])" aptget install foobar/stable -st testing
 
+testfailureequal "Reading package lists...
+Building dependency tree...
+Reading state information...
+Selected version '1.0' (stable [amd64]) for 'foobar:amd64'
+Some packages could not be installed. This may mean that you have
+requested an impossible situation or if you are using the unstable
+distribution that some required packages have not yet been created
+or been moved out of Incoming.
+The following information may help to resolve the situation:
+
+The following packages have unmet dependencies:
+ foobar:amd64 : Depends: libc6:amd64 but it is not installable
+E: Unable to correct problems, you have held broken packages." aptget install foobar:amd64/stable -st testing
 testsuccessequal "Reading package lists...
 Building dependency tree...
 Reading state information...
 Selected version '1.0' (stable [amd64]) for 'foobar:amd64'
-The following additional packages will be installed:
-  libc6:amd64
+Selected version '1.0' (stable [amd64]) for 'libc6:amd64'
 The following packages will be REMOVED:
   libc6
 The following NEW packages will be installed:
@@ -110,7 +122,7 @@ Remv libc6 [2.0]
 Inst libc6:amd64 (1.0 stable [amd64])
 Inst foobar:amd64 (1.0 stable [amd64])
 Conf libc6:amd64 (1.0 stable [amd64])
-Conf foobar:amd64 (1.0 stable [amd64])" aptget install foobar:amd64/stable -st testing
+Conf foobar:amd64 (1.0 stable [amd64])" aptget install foobar:amd64/stable libc6:amd64/stable -st testing
 
 
 testsuccessequal "Reading package lists...
@@ -207,12 +219,25 @@ The following NEW packages will be installed:
 Inst foobar-same (1.0 stable [i386])
 Conf foobar-same (1.0 stable [i386])" aptget install foobar-same/stable -st testing
 
+testfailureequal "Reading package lists...
+Building dependency tree...
+Reading state information...
+Selected version '1.0' (stable [amd64]) for 'foobar-same:amd64'
+Some packages could not be installed. This may mean that you have
+requested an impossible situation or if you are using the unstable
+distribution that some required packages have not yet been created
+or been moved out of Incoming.
+The following information may help to resolve the situation:
+
+The following packages have unmet dependencies:
+ foobar-same:amd64 : Depends: libc6-same:amd64 but it is not installable
+E: Unable to correct problems, you have held broken packages." aptget install foobar-same:amd64/stable -st testing
+
 testsuccessequal "Reading package lists...
 Building dependency tree...
 Reading state information...
 Selected version '1.0' (stable [amd64]) for 'foobar-same:amd64'
-The following additional packages will be installed:
-  libc6-same:amd64
+Selected version '1.0' (stable [amd64]) for 'libc6-same:amd64'
 The following packages will be REMOVED:
   libc6-same
 The following NEW packages will be installed:
@@ -222,4 +247,4 @@ Remv libc6-same [2.0]
 Inst libc6-same:amd64 (1.0 stable [amd64])
 Inst foobar-same:amd64 (1.0 stable [amd64])
 Conf libc6-same:amd64 (1.0 stable [amd64])
-Conf foobar-same:amd64 (1.0 stable [amd64])" aptget install foobar-same:amd64/stable -st testing
+Conf foobar-same:amd64 (1.0 stable [amd64])" aptget install foobar-same:amd64/stable libc6-same:amd64/stable -st testing

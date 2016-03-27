@@ -30,6 +30,7 @@
 #include <ctype.h>
 #include <stddef.h>
 #include <string.h>
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -230,10 +231,19 @@ pkgCache::VerIterator pkgPolicy::GetCandidateVer(pkgCache::PkgIterator const &Pk
 pkgCache::VerIterator pkgPolicy::GetCandidateVerNew(pkgCache::PkgIterator const &Pkg)
 {
    // TODO: Replace GetCandidateVer()
+   pkgCache::GrpIterator group;
    pkgCache::VerIterator cand;
-   pkgCache::VerIterator cur = Pkg.CurrentVer();
+   std::vector<pkgCache::VerIterator> curs;
    int candPriority = -1;
    pkgVersioningSystem *vs = Cache->VS;
+
+   // Find all installed versions, across all architectures
+   group = Pkg.Group();
+   for (auto p = group.PackageList(); p.end() == false; p = group.NextPkg(p)) {
+      auto cur = p.CurrentVer();
+      if (cur.end() == false)
+	 curs.push_back(cur);
+   }
 
    for (pkgCache::VerIterator ver = Pkg.VersionList(); ver.end() == false; ++ver) {
       int priority = GetPriority(ver, true);
@@ -241,9 +251,11 @@ pkgCache::VerIterator pkgPolicy::GetCandidateVerNew(pkgCache::PkgIterator const 
       if (priority == 0 || priority <= candPriority)
 	 continue;
 
-      // TODO: Maybe optimize to not compare versions
-      if (!cur.end() && priority < 1000
-	  && (vs->CmpVersion(ver.VerStr(), cur.VerStr()) < 0))
+      // Check that we do not downgrade, even across architectures, unless
+      // priority is >= 1000.
+      if (!curs.empty() && priority < 1000 &&
+	  std::any_of(curs.begin(), curs.end(), [&vs, &ver](pkgCache::VerIterator const &cur) {
+	     return vs->CmpVersion(ver.VerStr(), cur.VerStr()) < 0; }))
 	 continue;
 
       candPriority = priority;
