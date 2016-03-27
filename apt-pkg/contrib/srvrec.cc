@@ -129,7 +129,7 @@ bool GetSrvRecords(std::string name, std::vector<SrvRec> &Result)
    {
       if (_config->FindB("Debug::Acquire::SrvRecs", false) == true)
       {
-         std::cerr << "SrvRecs: got " << I->target
+         std::clog << "SrvRecs: got " << I->target
                    << " prio: " << I->priority
                    << " weight: " << I->weight
                    << std::endl;
@@ -161,7 +161,7 @@ SrvRec PopFromSrvRecs(std::vector<SrvRec> &Recs)
       prev_priority = I->priority;
 
       if (_config->FindB("Debug::Acquire::SrvRecs", false) == true)
-         std::cerr << "SrvRecs: got " << I->target
+         std::clog << "SrvRecs: got " << I->target
                    << " prio: " << I->priority
                    << " weight: " << I->weight
                    << std::endl;
@@ -190,7 +190,7 @@ SrvRec PopFromSrvRecs(std::vector<SrvRec> &Recs)
    Recs.erase(I);
 
    if (_config->FindB("Debug::Acquire::SrvRecs", false) == true)
-      std::cerr << "PopFromSrvRecs: selecting " << selected.target << std::endl;
+      std::clog << "PopFromSrvRecs: selecting " << selected.target << std::endl;
 
    return selected;
 }

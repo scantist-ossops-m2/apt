@@ -284,17 +284,17 @@ string GPGVMethod::VerifyGetSigners(const char *file, const char *outfile,
 
    if (Debug)
    {
-      std::cerr << "Summary:" << std::endl << "  Good: ";
+      std::clog << "Summary:" << std::endl << "  Good: ";
       std::copy(GoodSigners.begin(), GoodSigners.end(), std::ostream_iterator<std::string>(std::cerr, ", "));
-      std::cerr << std::endl << "  Bad: ";
+      std::clog << std::endl << "  Bad: ";
       std::copy(BadSigners.begin(), BadSigners.end(), std::ostream_iterator<std::string>(std::cerr, ", "));
-      std::cerr << std::endl << "  Worthless: ";
+      std::clog << std::endl << "  Worthless: ";
       std::copy(WorthlessSigners.begin(), WorthlessSigners.end(), std::ostream_iterator<std::string>(std::cerr, ", "));
-      std::cerr << std::endl << "  SoonWorthless: ";
+      std::clog << std::endl << "  SoonWorthless: ";
       std::for_each(SoonWorthlessSigners.begin(), SoonWorthlessSigners.end(), [](Signer const &sig) { std::cerr << sig.key << ", "; });
-      std::cerr << std::endl << "  NoPubKey: ";
+      std::clog << std::endl << "  NoPubKey: ";
       std::copy(NoPubKeySigners.begin(), NoPubKeySigners.end(), std::ostream_iterator<std::string>(std::cerr, ", "));
-      std::cerr << std::endl;
+      std::clog << std::endl;
    }
 
    if (WEXITSTATUS(status) == 0)

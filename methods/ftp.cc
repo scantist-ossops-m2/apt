@@ -383,7 +383,7 @@ bool FTPConn::ReadResp(unsigned int &Ret,string &Text)
    if (*End == ' ')
    {
       if (Debug == true)
-	 cerr << "<- '" << QuoteString(Text,"") << "'" << endl;
+	 clog << "<- '" << QuoteString(Text,"") << "'" << endl;
       return true;
    }
    
@@ -425,7 +425,7 @@ bool FTPConn::ReadResp(unsigned int &Ret,string &Text)
    }	   
 
    if (Debug == true && _error->PendingError() == false)
-      cerr << "<- '" << QuoteString(Text,"") << "'" << endl;
+      clog << "<- '" << QuoteString(Text,"") << "'" << endl;
       
    return !_error->PendingError();
 }
@@ -445,7 +445,7 @@ bool FTPConn::WriteMsg(unsigned int &Ret,string &Text,const char *Fmt,...)
    va_end(args);
  
    if (Debug == true)
-      cerr << "-> '" << QuoteString(S,"") << "'" << endl;
+      clog << "-> '" << QuoteString(S,"") << "'" << endl;
 
    // Send it off
    unsigned long Len = strlen(S);

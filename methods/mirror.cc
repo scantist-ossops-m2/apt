@@ -348,7 +348,7 @@ string MirrorMethod::GetMirrorFileName(string mirror_uri_str)
    */
    string name;
    if(Debug)
-      std::cerr << "GetMirrorFileName: " << mirror_uri_str << std::endl;
+      std::clog << "GetMirrorFileName: " << mirror_uri_str << std::endl;
 
    // read sources.list and find match
    vector<metaIndex *>::const_iterator I;
@@ -358,14 +358,14 @@ string MirrorMethod::GetMirrorFileName(string mirror_uri_str)
    {
       string uristr = (*I)->GetURI();
       if(Debug)
-	 std::cerr << "Checking: " << uristr << std::endl;
+	 std::clog << "Checking: " << uristr << std::endl;
       if(uristr.substr(0,strlen("mirror://")) != string("mirror://"))
 	 continue;
       // find matching uri in sources.list
       if(mirror_uri_str.substr(0,uristr.size()) == uristr)
       {
 	 if(Debug)
-	    std::cerr << "found BaseURI: " << uristr << std::endl;
+	    std::clog << "found BaseURI: " << uristr << std::endl;
 	 BaseUri = uristr.substr(0,uristr.size()-1);
          Dist = (*I)->GetDist();
       }
@@ -375,8 +375,8 @@ string MirrorMethod::GetMirrorFileName(string mirror_uri_str)
 
    if(Debug) 
    {
-      cerr << "base-uri: " << BaseUri << endl;
-      cerr << "mirror-file: " << name << endl;
+      clog << "base-uri: " << BaseUri << endl;
+      clog << "mirror-file: " << name << endl;
    }
    return name;
 }

@@ -143,7 +143,7 @@ bool PackageManagerProgressFd::StatusChanged(std::string PackageName,
    WriteToStatusFd(status.str());
 
    if(_config->FindB("Debug::APT::Progress::PackageManagerFd", false) == true)
-      std::cerr << "progress: " << PackageName << " " << xStepsDone
+      std::clog << "progress: " << PackageName << " " << xStepsDone
                 << " " << xTotalSteps << " " << pkg_action
                 << std::endl;
 
@@ -266,7 +266,7 @@ PackageManagerFancy::GetTerminalSize()
       return s;
 
    if(_config->FindB("Debug::InstallProgress::Fancy", false) == true)
-      std::cerr << "GetTerminalSize: " << win.ws_row << " x " << win.ws_col << std::endl;
+      std::clog << "GetTerminalSize: " << win.ws_row << " x " << win.ws_col << std::endl;
 
    s.rows = win.ws_row;
    s.columns = win.ws_col;
@@ -276,7 +276,7 @@ PackageManagerFancy::GetTerminalSize()
 void PackageManagerFancy::SetupTerminalScrollArea(int nr_rows)
 {
      if(_config->FindB("Debug::InstallProgress::Fancy", false) == true)
-        std::cerr << "SetupTerminalScrollArea: " << nr_rows << std::endl;
+        std::clog << "SetupTerminalScrollArea: " << nr_rows << std::endl;
 
      if (unlikely(nr_rows <= 1))
 	return;

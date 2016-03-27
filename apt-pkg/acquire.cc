@@ -843,7 +843,7 @@ bool pkgAcquire::Queue::Enqueue(ItemDesc &Item)
       if (Item.URI == (*I)->URI)
       {
 	 if (_config->FindB("Debug::pkgAcquire::Worker",false) == true)
-	    std::cerr << " @ Queue: Action combined for " << Item.URI << " and " << (*I)->URI << std::endl;
+	    std::clog << " @ Queue: Action combined for " << Item.URI << " and " << (*I)->URI << std::endl;
 	 (*I)->Owners.push_back(Item.Owner);
 	 Item.Owner->Status = (*I)->Owner->Status;
 	 return false;

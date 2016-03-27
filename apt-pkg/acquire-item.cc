@@ -56,12 +56,12 @@ static void printHashSumComparison(std::string const &URI, HashStringList const 
 {
    if (_config->FindB("Debug::Acquire::HashSumMismatch", false) == false)
       return;
-   std::cerr << std::endl << URI << ":" << std::endl << " Expected Hash: " << std::endl;
+   std::clog << std::endl << URI << ":" << std::endl << " Expected Hash: " << std::endl;
    for (HashStringList::const_iterator hs = Expected.begin(); hs != Expected.end(); ++hs)
-      std::cerr <<  "\t- " << hs->toStr() << std::endl;
-   std::cerr << " Actual Hash: " << std::endl;
+      std::clog <<  "\t- " << hs->toStr() << std::endl;
+   std::clog << " Actual Hash: " << std::endl;
    for (HashStringList::const_iterator hs = Actual.begin(); hs != Actual.end(); ++hs)
-      std::cerr <<  "\t- " << hs->toStr() << std::endl;
+      std::clog <<  "\t- " << hs->toStr() << std::endl;
 }
 									/*}}}*/
 static std::string GetPartialFileName(std::string const &file)		/*{{{*/
@@ -1056,7 +1056,7 @@ bool pkgAcqMetaBase::CheckAuthDone(string const &Message)		/*{{{*/
    }
 
    if (_config->FindB("Debug::pkgAcquire::Auth", false))
-      std::cerr << "Signature verification succeeded: "
+      std::clog << "Signature verification succeeded: "
                 << DestFile << std::endl;
 
    // Download further indexes with verification
@@ -1288,9 +1288,9 @@ bool pkgAcqMetaBase::VerifyVendor(string const &Message)		/*{{{*/
 
    if (_config->FindB("Debug::pkgAcquire::Auth", false)) 
    {
-      std::cerr << "Got Codename: " << TransactionManager->MetaIndexParser->GetCodename() << std::endl;
-      std::cerr << "Expecting Dist: " << TransactionManager->MetaIndexParser->GetExpectedDist() << std::endl;
-      std::cerr << "Transformed Dist: " << Transformed << std::endl;
+      std::clog << "Got Codename: " << TransactionManager->MetaIndexParser->GetCodename() << std::endl;
+      std::clog << "Expecting Dist: " << TransactionManager->MetaIndexParser->GetExpectedDist() << std::endl;
+      std::clog << "Transformed Dist: " << Transformed << std::endl;
    }
 
    if (TransactionManager->MetaIndexParser->CheckDist(Transformed) == false)
@@ -2834,7 +2834,7 @@ pkgAcqArchive::pkgAcqArchive(pkgAcquire * const Owner,pkgSourceList * const Sour
          continue;
 
       if (debugAuth == true)
-         std::cerr << "Checking index: " << Index->Describe()
+         std::clog << "Checking index: " << Index->Describe()
                    << "(Trusted=" << Index->IsTrusted() << ")" << std::endl;
 
       if (Index->IsTrusted() == true)
