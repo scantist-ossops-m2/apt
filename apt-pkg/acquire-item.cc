@@ -2837,7 +2837,21 @@ pkgAcqArchive::pkgAcqArchive(pkgAcquire * const Owner,pkgSourceList * const Sour
          std::cerr << "Checking index: " << Index->Describe()
                    << "(Trusted=" << Index->IsTrusted() << ")" << std::endl;
 
-      if (Index->IsTrusted() == true)
+      // Local sources don't have a hash, so their no-hashes are trusted.
+      bool HashesTrusted = i.File().Flagged(pkgCache::Flag::LocalSource);
+      // Otherwise: Check if the hashes themselves are trustable
+      if (HashesTrusted == false)
+      {
+	 // Grab the text package record
+	 pkgRecords::Parser &Parse = Recs->Lookup(Vf);
+	 if (_error->PendingError() == true)
+	    return;
+
+	 auto ThisExpectedHashes = Parse.Hashes();
+	 HashesTrusted = ThisExpectedHashes.usable() == true && ThisExpectedHashes.deprecated() == false;
+      }
+
+      if (Index->IsTrusted() == true && HashesTrusted == true)
       {
          Trusted = true;
 	 if (allowUnauth == false)
