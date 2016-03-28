@@ -2851,7 +2851,7 @@ pkgAcqArchive::pkgAcqArchive(pkgAcquire * const Owner,pkgSourceList * const Sour
 	 HashesTrusted = ThisExpectedHashes.usable() == true && ThisExpectedHashes.deprecated() == false;
       }
 
-      if (Index->IsTrusted() == true && HashesTrusted == true)
+      if (Index->IsTrusted() == true && (HashesTrusted == true || Index->IsForceTrusted() == true))
       {
          Trusted = true;
 	 if (allowUnauth == false)

@@ -728,19 +728,19 @@ std::vector <pkgIndexFile *> *debReleaseIndex::GetIndexFiles()		/*{{{*/
       std::string error;
       ReleaseFileName(this, file);
       // Cannot read release file, do not trust it
-      if (Load(file, &error) == false)
+      if (Load(file, &error) == false && IsForceTrusted() == false)
 	 istrusted = false;
    }
 
    for (auto const &T: GetIndexTargets())
    {
       auto sum = Lookup(T.MetaKey);
-      bool thisIsTrusted = istrusted && (sum == NULL || (sum->Hashes.usable() && !sum->Hashes.deprecated()));
+      bool thisIsTrusted = istrusted && (IsForceTrusted() == true || sum == NULL || (sum->Hashes.usable() && !sum->Hashes.deprecated()));
       std::string const TargetName = T.Option(IndexTarget::CREATED_BY);
       if (TargetName == "Packages")
-	 Indexes->push_back(new debPackagesIndex(T, thisIsTrusted));
+	 Indexes->push_back(new debPackagesIndex(T, thisIsTrusted, IsForceTrusted()));
       else if (TargetName == "Sources")
-	 Indexes->push_back(new debSourcesIndex(T, thisIsTrusted));
+	 Indexes->push_back(new debSourcesIndex(T, thisIsTrusted,  IsForceTrusted()));
       else if (TargetName == "Translations")
 	 Indexes->push_back(new debTranslationsIndex(T));
    }
