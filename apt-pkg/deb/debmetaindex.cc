@@ -435,13 +435,13 @@ bool debReleaseIndex::Load(std::string const &Filename, std::string * const Erro
 	 strprintf(*ErrorText, _("No Hash entry in Release file %s"), Filename.c_str());
       return false;
    }
-   if(FoundStrongHashSum == false)
+   if(FoundStrongHashSum == false && IsForceTrusted() == false)
    {
       if (ErrorText != NULL)
 	 strprintf(*ErrorText, _("No Hash entry in Release file %s which is considered strong enough for security purposes"), Filename.c_str());
       return false;
    }
-   else if(AllDeprecatedHashSum == true)
+   else if(AllDeprecatedHashSum == true || FoundStrongHashSum == false)
    {
       _error->Warning(_("No Hash entry in Release file %s which is considered strong enough for security purposes"), Filename.c_str());
    }
