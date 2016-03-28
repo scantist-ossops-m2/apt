@@ -40,6 +40,10 @@ static  pkgIndexFile::Type *ItmList[10];
 pkgIndexFile::Type **pkgIndexFile::Type::GlobalList = ItmList;
 unsigned long pkgIndexFile::Type::GlobalListLen = 0;
 
+struct pkgIndexFile::Private {
+   bool ForceTrusted;
+};
+
 // Type::Type - Constructor						/*{{{*/
 // ---------------------------------------------------------------------
 /* */
@@ -62,7 +66,11 @@ pkgIndexFile::Type *pkgIndexFile::Type::GetType(const char *Type)
 }
 									/*}}}*/
 pkgIndexFile::pkgIndexFile(bool const Trusted) :			/*{{{*/
-   d(NULL), Trusted(Trusted)
+   pkgIndexFile(Trusted, false)
+{
+}
+pkgIndexFile::pkgIndexFile(bool const Trusted, bool ForceTrusted) :			/*{{{*/
+   d(new Private {ForceTrusted}), Trusted(Trusted)
 {
 }
 									/*}}}*/
@@ -112,6 +120,11 @@ APT_IGNORE_DEPRECATED_PUSH
 		return "";
 	return APT::Configuration::getLanguages()[0];
 APT_IGNORE_DEPRECATED_POP
+}
+									/*}}}*/
+// IndexFile::IsForceTrusted			/*{{{*/
+bool pkgIndexFile::IsForceTrusted() const {
+   return d != NULL && d->ForceTrusted;
 }
 									/*}}}*/
 
@@ -187,7 +200,12 @@ std::string IndexTarget::Format(std::string format) const		/*{{{*/
 									/*}}}*/
 
 pkgDebianIndexTargetFile::pkgDebianIndexTargetFile(IndexTarget const &Target, bool const Trusted) :/*{{{*/
-   pkgDebianIndexFile(Trusted), d(NULL), Target(Target)
+   pkgDebianIndexTargetFile(Target, Trusted, false)
+{
+}
+
+pkgDebianIndexTargetFile::pkgDebianIndexTargetFile(IndexTarget const &Target, bool const Trusted, bool const ForceTrusted) :/*{{{*/
+   pkgDebianIndexFile(Trusted, ForceTrusted), d(NULL), Target(Target)
 {
 }
 									/*}}}*/
@@ -265,7 +283,12 @@ std::string pkgDebianIndexTargetFile::GetProgressDescription() const
 }
 
 pkgDebianIndexRealFile::pkgDebianIndexRealFile(std::string const &pFile, bool const Trusted) :/*{{{*/
-   pkgDebianIndexFile(Trusted), d(NULL)
+   pkgDebianIndexRealFile(pFile, Trusted, false)
+{
+}
+
+pkgDebianIndexRealFile::pkgDebianIndexRealFile(std::string const &pFile, bool const Trusted, bool ForceTrusted) :/*{{{*/
+   pkgDebianIndexFile(Trusted, ForceTrusted), d(NULL)
 {
    if (pFile.empty())
       ;
@@ -316,7 +339,10 @@ bool pkgDebianIndexRealFile::OpenListFile(FileFd &Pkg, std::string const &FileNa
 }
 									/*}}}*/
 
-pkgDebianIndexFile::pkgDebianIndexFile(bool const Trusted) : pkgIndexFile(Trusted)
+pkgDebianIndexFile::pkgDebianIndexFile(bool const Trusted) : pkgDebianIndexFile(Trusted, false)
+{
+}
+pkgDebianIndexFile::pkgDebianIndexFile(bool const Trusted, bool const ForceTrusted) : pkgIndexFile(Trusted, ForceTrusted)
 {
 }
 pkgDebianIndexFile::~pkgDebianIndexFile()

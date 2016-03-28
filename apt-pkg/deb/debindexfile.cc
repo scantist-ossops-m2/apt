@@ -33,8 +33,11 @@
 									/*}}}*/
 
 // Sources Index							/*{{{*/
-debSourcesIndex::debSourcesIndex(IndexTarget const &Target,bool const Trusted) :
-     pkgDebianIndexTargetFile(Target, Trusted), d(NULL)
+debSourcesIndex::debSourcesIndex(IndexTarget const &Target,bool const Trusted) : debSourcesIndex(Target, Trusted, false)
+{
+}
+debSourcesIndex::debSourcesIndex(IndexTarget const &Target,bool const Trusted, bool const ForceTrusted) :
+     pkgDebianIndexTargetFile(Target, Trusted, ForceTrusted), d(NULL)
 {
 }
 std::string debSourcesIndex::SourceInfo(pkgSrcRecords::Parser const &Record,
@@ -73,8 +76,11 @@ uint8_t debSourcesIndex::GetIndexFlags() const
 }
 									/*}}}*/
 // Packages Index							/*{{{*/
-debPackagesIndex::debPackagesIndex(IndexTarget const &Target, bool const Trusted) :
-                  pkgDebianIndexTargetFile(Target, Trusted), d(NULL)
+debPackagesIndex::debPackagesIndex(IndexTarget const &Target, bool const Trusted) : debPackagesIndex(Target, Trusted, false)
+{
+}
+debPackagesIndex::debPackagesIndex(IndexTarget const &Target, bool const Trusted, bool const ForceTrusted) :
+                  pkgDebianIndexTargetFile(Target, Trusted, ForceTrusted), d(NULL)
 {
 }
 std::string debPackagesIndex::ArchiveInfo(pkgCache::VerIterator const &Ver) const

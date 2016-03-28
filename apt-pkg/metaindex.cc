@@ -118,4 +118,11 @@ bool metaIndex::IsArchitectureAllSupportedFor(IndexTarget const &target) const/*
       return deb->IsArchitectureAllSupportedFor(target);
    return true;
 }
+bool metaIndex::IsForceTrusted() const/*{{{*/
+{
+   debReleaseIndex const * const deb = dynamic_cast<debReleaseIndex const *>(this);
+   if (deb != NULL)
+      return deb->IsForceTrusted();
+   return false;
+}
 									/*}}}*/

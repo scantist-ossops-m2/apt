@@ -672,6 +672,19 @@ bool debReleaseIndex::IsTrusted() const
    return FileExists(MetaIndexFile("InRelease"));
 }
 									/*}}}*/
+// ReleaseIndex::IsForceTrusted						/*{{{*/
+bool debReleaseIndex::IsForceTrusted() const
+{
+   if (Trusted == TRI_YES)
+      return true;
+
+   if(_config->FindB("APT::Authentication::TrustCDROM", false))
+      if(URI.substr(0,strlen("cdrom:")) == "cdrom:")
+	 return true;
+
+   return false;
+}
+									/*}}}*/
 bool debReleaseIndex::IsArchitectureSupported(std::string const &arch) const/*{{{*/
 {
    if (d->Architectures.empty())

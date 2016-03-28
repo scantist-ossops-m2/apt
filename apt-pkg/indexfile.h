@@ -100,7 +100,8 @@ class IndexTarget							/*{{{*/
 
 class pkgIndexFile
 {
-   void * const d;
+   struct Private;
+   Private * const d;
    protected:
    bool Trusted;
 
@@ -154,8 +155,10 @@ class pkgIndexFile
    APT_DEPRECATED_MSG("These methods make no sense anymore with multi-language support") static std::string LanguageCode();
 
    bool IsTrusted() const { return Trusted; };
+   bool IsForceTrusted() const;
 
    explicit pkgIndexFile(bool const Trusted);
+   explicit pkgIndexFile(bool const Trusted, bool const ForceTrusted);
    virtual ~pkgIndexFile();
 };
 
@@ -175,6 +178,7 @@ public:
    virtual pkgCache::PkgFileIterator FindInCache(pkgCache &Cache) const APT_OVERRIDE;
 
    explicit pkgDebianIndexFile(bool const Trusted);
+   explicit pkgDebianIndexFile(bool const Trusted, bool const ForceTrusted);
    virtual ~pkgDebianIndexFile();
 };
 
@@ -197,6 +201,7 @@ public:
    virtual unsigned long Size() const APT_OVERRIDE;
 
    pkgDebianIndexTargetFile(IndexTarget const &Target, bool const Trusted);
+   pkgDebianIndexTargetFile(IndexTarget const &Target, bool const Trusted, bool const ForceTrusted);
    virtual ~pkgDebianIndexTargetFile();
 };
 
@@ -216,6 +221,7 @@ public:
    virtual std::string ArchiveURI(std::string const &/*File*/) const APT_OVERRIDE;
 
    pkgDebianIndexRealFile(std::string const &File, bool const Trusted);
+   pkgDebianIndexRealFile(std::string const &File, bool const Trusted, bool const ForceTrusted);
    virtual ~pkgDebianIndexRealFile();
 };
 

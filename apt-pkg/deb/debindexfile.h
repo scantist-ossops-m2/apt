@@ -65,6 +65,7 @@ public:
    virtual bool HasPackages() const APT_OVERRIDE {return true;};
 
    debPackagesIndex(IndexTarget const &Target, bool const Trusted);
+   debPackagesIndex(IndexTarget const &Target, bool const Trusted, bool const ForceTrusted);
    virtual ~debPackagesIndex();
 };
 
@@ -110,6 +111,7 @@ class debSourcesIndex : public pkgDebianIndexTargetFile
    virtual bool HasPackages() const APT_OVERRIDE {return false;};
 
    debSourcesIndex(IndexTarget const &Target, bool const Trusted);
+   debSourcesIndex(IndexTarget const &Target, bool const Trusted, bool const ForceTrusted);
    virtual ~debSourcesIndex();
 };
 
