@@ -686,27 +686,6 @@ bool debReleaseIndex::IsArchitectureAllSupportedFor(IndexTarget const &target) c
    return std::find(d->NoSupportForAll.begin(), d->NoSupportForAll.end(), target.Option(IndexTarget::CREATED_BY)) == d->NoSupportForAll.end();
 }
 									/*}}}*/
-std::vector <pkgIndexFile *> *debReleaseIndex::GetIndexFiles()		/*{{{*/
-{
-   if (Indexes != NULL)
-      return Indexes;
-
-   Indexes = new std::vector<pkgIndexFile*>();
-   bool const istrusted = IsTrusted();
-   for (auto const &T: GetIndexTargets())
-   {
-      std::string const TargetName = T.Option(IndexTarget::CREATED_BY);
-      if (TargetName == "Packages")
-	 Indexes->push_back(new debPackagesIndex(T, istrusted));
-      else if (TargetName == "Sources")
-	 Indexes->push_back(new debSourcesIndex(T, istrusted));
-      else if (TargetName == "Translations")
-	 Indexes->push_back(new debTranslationsIndex(T));
-   }
-   return Indexes;
-}
-									/*}}}*/
-
 static bool ReleaseFileName(debReleaseIndex const * const That, std::string &ReleaseFile)/*{{{*/
 {
    ReleaseFile = That->MetaIndexFile("InRelease");
@@ -722,6 +701,40 @@ static bool ReleaseFileName(debReleaseIndex const * const That, std::string &Rel
    return releaseExists;
 }
 									/*}}}*/
+std::vector <pkgIndexFile *> *debReleaseIndex::GetIndexFiles()		/*{{{*/
+{
+   if (Indexes != NULL)
+      return Indexes;
+
+   Indexes = new std::vector<pkgIndexFile*>();
+   bool istrusted = IsTrusted();
+
+   if (istrusted && LoadedSuccessfully != TRI_YES)
+   {
+      std::string file;
+      std::string error;
+      ReleaseFileName(this, file);
+      // Cannot read release file, do not trust it
+      if (Load(file, &error) == false)
+	 istrusted = false;
+   }
+
+   for (auto const &T: GetIndexTargets())
+   {
+      auto sum = Lookup(T.MetaKey);
+      bool thisIsTrusted = istrusted && (sum == NULL || (sum->Hashes.usable() && !sum->Hashes.deprecated()));
+      std::string const TargetName = T.Option(IndexTarget::CREATED_BY);
+      if (TargetName == "Packages")
+	 Indexes->push_back(new debPackagesIndex(T, thisIsTrusted));
+      else if (TargetName == "Sources")
+	 Indexes->push_back(new debSourcesIndex(T, thisIsTrusted));
+      else if (TargetName == "Translations")
+	 Indexes->push_back(new debTranslationsIndex(T));
+   }
+   return Indexes;
+}
+									/*}}}*/
+
 bool debReleaseIndex::Merge(pkgCacheGenerator &Gen,OpProgress * /*Prog*/) const/*{{{*/
 {
    std::string ReleaseFile;

@@ -974,7 +974,7 @@ getoriginfromsuite() { true; }
 getarchitecturesfromreleasefile() { echo "all $(getarchitectures)"; }
 
 aptftparchiverelease() {
-	aptftparchive -qq release "$@" | sed -e '/0 Release$/ d' # remove the self reference
+	aptftparchive -qq --md5 --sha1 release "$@" | sed -e '/0 Release$/ d' # remove the self reference
 }
 generatereleasefiles() {
 	# $1 is the Date header and $2 is the ValidUntil header to be set

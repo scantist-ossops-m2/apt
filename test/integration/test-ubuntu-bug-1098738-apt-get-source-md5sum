@@ -247,11 +247,13 @@ E: Failed to fetch some archives."
 
 	if [ "$2" != '--allow-unauthenticated' ]; then
 		rm -f ${1}_1.0.dsc ${1}_1.0.tar.gz
-		testsuccessequal "Reading package lists...
+		testfailureequal "Reading package lists...
 Skipping download of file '${1}_1.0.dsc' as requested hashsum is not available for authentication
 Skipping download of file '${1}_1.0.tar.gz' as requested hashsum is not available for authentication
 Need to get 0 B of source archives.
-Download complete and in download only mode" aptget source -d "$@" -o Acquire::ForceHash=ROT26
+WARNING: The following packages cannot be authenticated!
+  $1
+E: Some packages could not be authenticated" aptget source -d "$@" -o Acquire::ForceHash=ROT26
 		msgtest 'Files were not download as hash is unavailable for' "$1"
 		testfailure --nomsg test -e ${1}_1.0.dsc -a -e ${1}_1.0.tar.gz
 	fi
@@ -260,6 +262,9 @@ Download complete and in download only mode" aptget source -d "$@" -o Acquire::F
 		rm -f ${1}_1.0.dsc ${1}_1.0.tar.gz
 		testsuccessequal "Reading package lists...
 Need to get 6 B of source archives.
+WARNING: The following packages cannot be authenticated!
+  $1
+Authentication warning overridden.
 Get:1 http://localhost:${APTHTTPPORT}  $1 1.0 (dsc) [3 B]
 Get:2 http://localhost:${APTHTTPPORT}  $1 1.0 (tar) [3 B]
 Download complete and in download only mode" aptget source --allow-unauthenticated -d "$@" -o Acquire::ForceHash=ROT26
