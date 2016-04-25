@@ -75,11 +75,11 @@ class pkgPolicy : public pkgDepCache::Policy
    // Things for manipulating pins
    void CreatePin(pkgVersionMatch::MatchType Type,std::string Pkg,
 		  std::string Data,signed short Priority);
-   pkgCache::VerIterator GetMatch(pkgCache::PkgIterator const &Pkg);
+   pkgCache::VerIterator GetMatch(pkgCache::PkgIterator const &Pkg) APT_DEPRECATED_MSG("Makes no sense anymore, same as GetCandidateVer now");
 
    // Things for the cache interface.
    virtual pkgCache::VerIterator GetCandidateVer(pkgCache::PkgIterator const &Pkg) APT_OVERRIDE;
-   virtual signed short GetPriority(pkgCache::PkgIterator const &Pkg) APT_OVERRIDE;
+   virtual signed short GetPriority(pkgCache::PkgIterator const &Pkg) APT_OVERRIDE APT_DEPRECATED_MSG("Get the priority of the candidate version instead");
    virtual signed short GetPriority(pkgCache::VerIterator const &Ver, bool ConsiderFiles = true) APT_OVERRIDE;
    virtual signed short GetPriority(pkgCache::PkgFileIterator const &File) APT_OVERRIDE;
 

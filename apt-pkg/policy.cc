@@ -252,12 +252,7 @@ void pkgPolicy::CreatePin(pkgVersionMatch::MatchType Type,string Name,
 /* */
 pkgCache::VerIterator pkgPolicy::GetMatch(pkgCache::PkgIterator const &Pkg)
 {
-   const Pin &PPkg = Pins[Pkg->ID];
-   if (PPkg.Type == pkgVersionMatch::None)
-      return pkgCache::VerIterator(*Pkg.Cache());
-
-   pkgVersionMatch Match(PPkg.Data,PPkg.Type);
-   return Match.Find(Pkg);
+   return GetCandidateVer(Pkg);
 }
 									/*}}}*/
 // Policy::GetPriority - Get the priority of the package pin		/*{{{*/
@@ -265,9 +260,10 @@ pkgCache::VerIterator pkgPolicy::GetMatch(pkgCache::PkgIterator const &Pkg)
 /* */
 APT_PURE signed short pkgPolicy::GetPriority(pkgCache::PkgIterator const &Pkg)
 {
-   if (Pins[Pkg->ID].Type != pkgVersionMatch::None)
-      return Pins[Pkg->ID].Priority;
-   return 0;
+   auto cand = GetCandidateVer(Pkg);
+   if (cand.end() == true)
+      return 0;
+   return GetPriority(cand);
 }
 APT_PURE signed short pkgPolicy::GetPriority(pkgCache::VerIterator const &Ver, bool ConsiderFiles)
 {
