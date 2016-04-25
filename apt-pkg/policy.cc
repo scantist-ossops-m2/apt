@@ -349,7 +349,7 @@ bool ReadPinFile(pkgPolicy &Plcy,string File)
 
       string Name = Tags.FindS("Package");
       if (Name.empty() == true)
-	 return _error->Error(_("Invalid record in the preferences file %s, no Package header"), File.c_str());
+	 return _error->Error(_("%s: Invalid record in preferences file: no Package header"), File.c_str());
       if (Name == "*")
 	 Name = string();
       
@@ -371,7 +371,7 @@ bool ReadPinFile(pkgPolicy &Plcy,string File)
 	 Type = pkgVersionMatch::Origin;
       else
       {
-	 _error->Warning(_("Did not understand pin type %s"),string(Start,Word).c_str());
+	 _error->Warning(_("%s: Did not understand pin type %s"),File.c_str(), string(Start,Word).c_str());
 	 continue;
       }
       for (; Word != End && isspace(*Word) != 0; Word++);
@@ -390,7 +390,7 @@ bool ReadPinFile(pkgPolicy &Plcy,string File)
       }
       if (priority == 0)
       {
-         return _error->Error(_("No priority (or zero) specified for pin"));
+         return _error->Error(_("%s: No priority (or zero) specified for a pin"), File.c_str());
       }
 
       istringstream s(Name);
