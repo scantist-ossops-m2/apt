@@ -18,6 +18,7 @@
 #include <stddef.h>
 
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -97,6 +98,30 @@ void ExecGPGV(std::string const &File, std::string const &FileGPG,
    std::vector<std::string> dataHeader;
    char * sig = NULL;
    char * data = NULL;
+   char * conf = GenerateTemporaryFileTemplate("apt.conf");
+
+   if (conf == nullptr) {
+      ioprintf(std::cerr, "Couldn't create tempfile name for apt config to pass to apt-key");
+      exit(EINTERNAL);
+   }
+
+   // Dump the current configuration state to a temporary file,
+   // so apt-key can read it.
+   {
+      int const confFd = mkstemp(conf);
+      close(confFd);
+      std::ofstream configStream(conf);
+
+      _config->Dump(configStream);
+
+      if (configStream.fail() == true) {
+	 ioprintf(std::cerr, "Couldn't write temporary apt config file %s to pass to apt-key", conf);
+	 unlink(conf);
+	 exit(EINTERNAL);
+      }
+
+      setenv("APT_CONFIG", conf, 1);
+   }
 
    if (releaseSignature == DETACHED)
    {
@@ -180,7 +205,7 @@ void ExecGPGV(std::string const &File, std::string const &FileGPG,
    else
    {
 //#define UNLINK_EXIT(X) exit(X)
-#define UNLINK_EXIT(X) unlink(sig);unlink(data);exit(X)
+#define UNLINK_EXIT(X) unlink(sig);unlink(data);unlink(conf);exit(X)
 
       // for clear-signed files we have created tempfiles we have to clean up
       // and we do an additional check, so fork yet another time …
@@ -211,8 +236,10 @@ void ExecGPGV(std::string const &File, std::string const &FileGPG,
       // we don't need the files any longer
       unlink(sig);
       unlink(data);
+      unlink(conf);
       free(sig);
       free(data);
+      free(conf);
 
       // check if it exit'ed normally …
       if (WIFEXITED(Status) == false)
