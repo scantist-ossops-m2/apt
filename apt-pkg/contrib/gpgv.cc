@@ -18,9 +18,11 @@
 #include <stddef.h>
 
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
+#include <ext/stdio_filebuf.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -30,6 +32,22 @@ static char * GenerateTemporaryFileTemplate(const char *basename)	/*{{{*/
    std::string tmpdir = GetTempDir();
    strprintf(out,  "%s/%s.XXXXXX", tmpdir.c_str(), basename);
    return strdup(out.c_str());
+}
+									/*}}}*/
+static int OpenAnonymousTemporaryFile(const char *basename)	/*{{{*/
+{
+   char * filename = GenerateTemporaryFileTemplate(basename);
+
+   if (filename == nullptr)
+      return -1;
+
+   int const fd = mkstemp(filename);
+   if (fd == -1)
+      return -1;
+
+   unlink(filename);
+   free(filename);
+   return fd;
 }
 									/*}}}*/
 // ExecGPGV - returns the command needed for verify			/*{{{*/
@@ -97,6 +115,29 @@ void ExecGPGV(std::string const &File, std::string const &FileGPG,
    std::vector<std::string> dataHeader;
    char * sig = NULL;
    char * data = NULL;
+
+   int confFd = OpenAnonymousTemporaryFile("apt.conf");
+
+   if (confFd == -1) {
+      ioprintf(std::cerr, "Couldn't create tempfile names for passing config to apt-key during verification of %s", File.c_str());
+      exit(EINTERNAL);
+   }
+
+   __gnu_cxx::stdio_filebuf<char> filebuf(confFd, std::ios::out);
+   std::ostream configStream(&filebuf);
+   {
+      _config->Dump(configStream);
+      configStream.flush();
+
+      if (configStream.fail() == true) {
+	 ioprintf(std::cerr, "Couldn't write temporary apt config file to pass to apt-key");
+	 exit(EINTERNAL);
+      }
+
+      setenv("APT_CONFIG", "-", 1);
+      // Dup the conf fd to stdin, so we can pass it to apt-key anonymously
+      dup2(confFd, STDIN_FILENO);
+   }
 
    if (releaseSignature == DETACHED)
    {
