@@ -22,6 +22,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <ext/stdio_filebuf.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -107,20 +108,26 @@ void ExecGPGV(std::string const &File, std::string const &FileGPG,
 
    // Dump the current configuration state to a temporary file,
    // so apt-key can read it.
+   int const confFd = mkstemp(conf);
+   if (confFd == -1) {
+      ioprintf(std::cerr, "Couldn't create tempfile name for apt config to pass to apt-key");
+      exit(EINTERNAL);
+   }
+   unlink(conf);
+   
+   __gnu_cxx::stdio_filebuf<char> filebuf(confFd, std::ios::out);
+   std::ostream configStream(&filebuf);
    {
-      int const confFd = mkstemp(conf);
-      close(confFd);
-      std::ofstream configStream(conf);
-
       _config->Dump(configStream);
+      configStream.flush();
 
       if (configStream.fail() == true) {
 	 ioprintf(std::cerr, "Couldn't write temporary apt config file %s to pass to apt-key", conf);
-	 unlink(conf);
 	 exit(EINTERNAL);
       }
 
-      setenv("APT_CONFIG", conf, 1);
+      setenv("APT_CONFIG", "/dev/stdin", 1);
+      dup2(confFd, STDIN_FILENO);
    }
 
    if (releaseSignature == DETACHED)
@@ -209,7 +216,7 @@ void ExecGPGV(std::string const &File, std::string const &FileGPG,
 
       // for clear-signed files we have created tempfiles we have to clean up
       // and we do an additional check, so fork yet another time …
-      pid_t pid = ExecFork();
+      pid_t pid = ExecFork({confFd});
       if(pid < 0) {
 	 ioprintf(std::cerr, "Fork failed for %s to check %s", Args[0], File.c_str());
 	 UNLINK_EXIT(EINTERNAL);

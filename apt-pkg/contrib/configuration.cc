@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <ext/stdio_filebuf.h>
 #include <algorithm>
 #include <string>
 #include <stack>
@@ -686,11 +687,22 @@ static void leaveCurrentScope(std::stack<std::string> &Stack, std::string &Paren
       Stack.pop();
    }
 }
+
+
 bool ReadConfigFile(Configuration &Conf,const string &FName,bool const &AsSectional,
 		    unsigned const &Depth)
 {
-   // Open the stream for reading
-   ifstream F(FName.c_str(),ios::in);
+   istream *FPtr;
+   if (FName == "=") {
+      int fdNo = std::stoi(FName.substr(strlen("fd://")));
+      std::cerr << "READ FILE DESCRIPTOR " << fdNo << std::endl;
+      
+      FPtr = new std::istream(new __gnu_cxx::stdio_filebuf<char>(fdNo, std::ios::in));
+   } else {
+      // Open the stream for reading
+      FPtr = new ifstream(FName.c_str(),ios::in);
+   }
+   istream &F = *FPtr;
    if (F.fail() == true)
       return _error->Errno("ifstream::ifstream",_("Opening configuration file %s"),FName.c_str());
 
