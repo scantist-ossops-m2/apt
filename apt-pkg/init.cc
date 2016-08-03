@@ -128,7 +128,7 @@ bool pkgInitConfig(Configuration &Cnf)
    const char *Cfg = getenv("APT_CONFIG");
    if (Cfg != 0 && strlen(Cfg) != 0)
    {
-      if (RealFileExists(Cfg) == true)
+      if (RealFileExists(Cfg) == true || strcmp(Cfg, "-") == 0)
 	 Res &= ReadConfigFile(Cnf,Cfg);
       else
 	 _error->WarningE("RealFileExists",_("Unable to read %s"),Cfg);

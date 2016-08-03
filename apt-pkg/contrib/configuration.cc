@@ -681,8 +681,13 @@ static void leaveCurrentScope(std::stack<std::string> &Stack, std::string &Paren
 bool ReadConfigFile(Configuration &Conf,const string &FName,bool const &AsSectional,
 		    unsigned const &Depth)
 {
-   // Open the stream for reading
-   ifstream F(FName.c_str(),ios::in);
+   if (FName == "-") {
+      lseek(STDIN_FILENO, 0, SEEK_SET);
+   }
+
+   ifstream FStream(FName.c_str(),ios::in);
+   istream &F = FName == "-" ? cin : FStream;
+
    if (F.fail() == true)
       return _error->Errno("ifstream::ifstream",_("Opening configuration file %s"),FName.c_str());
 
