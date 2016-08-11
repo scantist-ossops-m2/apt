@@ -24,6 +24,11 @@
 # SOFTWARE.
 
 
+find_program(PO4A_EXECUTABLE po4a)
+find_program(XSLTPROC_EXECUTABLE xsltproc)
+find_program(W3M_EXECUTABLE w3m)
+
+
 # Split up a string of the form DOCUMENT[.DOCUMENT][.LANGUAGE][.SECTION].EXTENSION
 #
 # There might be up to two parts in the document name. The language must be
@@ -74,7 +79,7 @@ function(po4a_one stamp_out out full_document language deps)
     add_custom_command(
         OUTPUT ${stamp}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/${language}
-        COMMAND po4a --previous --no-backups
+        COMMAND ${PO4A_EXECUTABLE} --previous --no-backups
                      --package-name='${PROJECT}-doc'
                      --package-version='${PACKAGE_VERSION}'
                      --msgid-bugs-address='${PACKAGE_MAIL}'
@@ -142,7 +147,7 @@ function(xsltproc_one)
                 OPTIONAL)
 
     endif()
-    if (DOC_TEXT)
+    if (DOC_TEXT AND W3M_EXECUTABLE)
         if (language)
         set(text_output "${CMAKE_CURRENT_BINARY_DIR}/${language}/${document}.${language}.text")
         else()
@@ -157,7 +162,7 @@ function(xsltproc_one)
                             COMMAND ${PROJECT_SOURCE_DIR}/CMake/run_if_exists.sh
                                     --stdout ${text_output}
                                     ${text_output}.html
-                                    env LC_ALL=C.UTF-8 w3m -cols 78 -dump
+                                    env LC_ALL=C.UTF-8 ${W3M_EXECUTABLE} -cols 78 -dump
                                     -o display_charset=UTF-8
                                     -no-graph -T text/html ${text_output}.html
                             COMMAND ${CMAKE_COMMAND} -E touch ${text_output}.w3m-stamp
@@ -185,7 +190,7 @@ function(xsltproc_one)
         add_custom_command(OUTPUT ${output}.xsltproc-stamp
                 COMMAND ${PROJECT_SOURCE_DIR}/CMake/run_if_exists.sh
                         ${full_input_path}
-                        xsltproc ${params} ${type_params} -o ${output}
+                        ${XSLTPROC_EXECUTABLE} ${params} ${type_params} -o ${output}
                                  ${stylesheet}
                                  ${full_input_path}
                 COMMAND ${CMAKE_COMMAND} -E touch ${output}.xsltproc-stamp
@@ -234,24 +239,27 @@ function(add_docbook target)
         list(APPEND formats MANPAGE)
     endif()
 
+
     foreach(document ${DOC_DOCUMENTS})
-        foreach(lang ${DOC_LINGUAS})
-            po4a_one(po4a_stamp po4a_out ${document} "${lang}" "${DOC_DEPENDS}")
-            xsltproc_one(STAMP_OUT xslt_stamp
-                         STAMP ${po4a_stamp}
-                         FULL_DOCUMENT ${po4a_out}
-                         INSTALL ${DOC_INSTALL}
-                         ${formats})
+        if (PO4A_EXECUTABLE)
+            foreach(lang ${DOC_LINGUAS})
+                po4a_one(po4a_stamp po4a_out ${document} "${lang}" "${DOC_DEPENDS}")
+                xsltproc_one(STAMP_OUT xslt_stamp
+                             STAMP ${po4a_stamp}
+                             FULL_DOCUMENT ${po4a_out}
+                             INSTALL ${DOC_INSTALL}
+                             ${formats})
 
-            list(APPEND stamps ${xslt_stamp})
-        endforeach()
-            xsltproc_one(STAMP_OUT xslt_stamp
-                         STAMP ${document}
-                         FULL_DOCUMENT ${document}
-                         INSTALL ${DOC_INSTALL}
-                         ${formats})
+                list(APPEND stamps ${xslt_stamp})
+            endforeach()
+        endif()
+        xsltproc_one(STAMP_OUT xslt_stamp
+                     STAMP ${document}
+                     FULL_DOCUMENT ${document}
+                     INSTALL ${DOC_INSTALL}
+                     ${formats})
 
-            list(APPEND stamps ${xslt_stamp})
+        list(APPEND stamps ${xslt_stamp})
     endforeach()
 
     if (DOC_ALL)
