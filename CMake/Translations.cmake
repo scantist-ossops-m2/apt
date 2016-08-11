@@ -1,6 +1,9 @@
 # translations.cmake - Translations using APT's translation system.
 # Copyright (C) 2009, 2016 Julian Andres Klode <jak@debian.org>
 
+find_package(Gettext REQUIRED)
+find_package(MoreGettext REQUIRED)
+
 function(apt_add_translation_domain)
     set(options)
     set(oneValueArgs DOMAIN)
@@ -45,7 +48,7 @@ function(apt_add_translation_domain)
         set(sh_pot ${CMAKE_CURRENT_BINARY_DIR}/${domain}.sh.pot)
         # Create the template for this specific sub-domain
         add_custom_command (OUTPUT ${sh_pot}
-            COMMAND xgettext ${xgettext_params} -L Shell
+            COMMAND ${XGETTEXT_EXECUTABLE} ${xgettext_params} -L Shell
                              -o ${sh_pot} ${scripts}
             DEPENDS ${abs_scripts}
             VERBATIM
@@ -55,7 +58,7 @@ function(apt_add_translation_domain)
 
 
     add_custom_command (OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${domain}.c.pot
-        COMMAND xgettext ${xgettext_params} -k_ -kN_
+        COMMAND ${XGETTEXT_EXECUTABLE} ${xgettext_params} -k_ -kN_
                          --keyword=P_:1,2
                          -o ${CMAKE_CURRENT_BINARY_DIR}/${domain}.c.pot ${files}
         DEPENDS ${abs_files}
@@ -69,11 +72,11 @@ function(apt_add_translation_domain)
     # does not have to be rerun if nothing in the template changed.
     add_custom_command (OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${domain}.pot
         BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/${domain}.pot-tmp
-        COMMAND msgcomm --more-than=0 --sort-by-file
+        COMMAND ${MSGCOMM_EXECUTABLE} --more-than=0 --sort-by-file
                          ${sh_pot}
                          ${CMAKE_CURRENT_BINARY_DIR}/${domain}.c.pot
                          --output=${CMAKE_CURRENT_BINARY_DIR}/${domain}.pot
-        COMMAND msgcomm --more-than=0 --omit-header --sort-by-file
+        COMMAND ${MSGCOMM_EXECUTABLE} --more-than=0 --omit-header --sort-by-file
                          ${sh_pot}
                          ${CMAKE_CURRENT_BINARY_DIR}/${domain}.c.pot
                          --output=${CMAKE_CURRENT_BINARY_DIR}/${domain}.pot-tmp0
@@ -102,11 +105,11 @@ function(apt_add_translation_domain)
         # Command to merge and compile the messages. As explained in the custom
         # command for msgcomm, this depends on byproduct to avoid reruns
         add_custom_command(OUTPUT ${outdir}/${domain}.po
-            COMMAND msgmerge -qo ${outdir}/${domain}.po ${file} ${CMAKE_CURRENT_BINARY_DIR}/${domain}.pot-tmp
+            COMMAND ${GETTEXT_MSGMERGE_EXECUTABLE} -qo ${outdir}/${domain}.po ${file} ${CMAKE_CURRENT_BINARY_DIR}/${domain}.pot-tmp
             DEPENDS ${file} ${CMAKE_CURRENT_BINARY_DIR}/${domain}.pot-tmp
         )
         add_custom_command(OUTPUT ${outdir}/${domain}.mo
-            COMMAND msgfmt --statistics -o ${outdir}/${domain}.mo  ${outdir}/${domain}.po
+            COMMAND ${GETTEXT_MSGFMT_EXECUTABLE} --statistics -o ${outdir}/${domain}.mo  ${outdir}/${domain}.po
             DEPENDS ${outdir}/${domain}.po
         )
 
@@ -131,7 +134,7 @@ function(apt_add_update_po)
 
     get_filename_component(master_name ${output} NAME_WE)
     add_custom_target(nls-${master_name}
-                       COMMAND msgcomm --sort-by-file --add-location=file
+                       COMMAND ${MSGCOMM_EXECUTABLE} --sort-by-file --add-location=file
                                         --more-than=0 --output=${output}
                                 ${potfiles}
                        DEPENDS ${potfiles})
@@ -146,7 +149,7 @@ function(apt_add_update_po)
                 continue()
             endif()
             add_custom_target(update-po-${langcode}
-                COMMAND msgmerge -q --update --backup=none ${translation} ${output}
+                COMMAND ${GETTEXT_MSGMERGE_EXECUTABLE} -q --update --backup=none ${translation} ${output}
                 DEPENDS nls-${master_name}
             )
             add_dependencies(update-po update-po-${langcode})
@@ -171,7 +174,7 @@ function(apt_add_po_statistics excluded)
             add_custom_command(
                 TARGET statistics PRE_BUILD
                 COMMAND printf "%-6s " "${langcode}:"
-                COMMAND msgfmt --statistics -o /dev/null ${translation}
+                COMMAND ${GETTEXT_MSGFMT_EXECUTABLE} --statistics -o /dev/null ${translation}
                 VERBATIM
             )
     endforeach()
