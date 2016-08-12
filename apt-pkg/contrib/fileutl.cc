@@ -1120,21 +1120,31 @@ public:
 
       if ((openmode & FileFd::ReadOnly) != FileFd::ReadOnly)
 	 return filefd->FileFdError("Reopen is only implemented for read-only files!");
-      InternalClose(filefd->FileName);
-      if (filefd->iFd != -1)
-	 close(filefd->iFd);
+
+
+      int fd = filefd->iFd;
       filefd->iFd = -1;
-      if (filefd->TemporaryFileName.empty() == false)
-	 filefd->iFd = open(filefd->TemporaryFileName.c_str(), O_RDONLY);
-      else if (filefd->FileName.empty() == false)
-	 filefd->iFd = open(filefd->FileName.c_str(), O_RDONLY);
-      else
-      {
-	 if (compressed_fd > 0)
-	    if (lseek(compressed_fd, 0, SEEK_SET) != 0)
-	       filefd->iFd = compressed_fd;
-	 if (filefd->iFd < 0)
-	    return filefd->FileFdError("Reopen is not implemented for pipes opened with FileFd::OpenDescriptor()!");
+      InternalClose(filefd->FileName);
+      // If the file is seekable, just seek it to 0 before restarting the
+      // compressor. That's better than close() + open()
+      if (fd != 1 && lseek(fd, 0, SEEK_SET) == 0) {
+	 filefd->iFd = fd;
+      } else {
+	 if (filefd->iFd != -1)
+	    close(filefd->iFd);
+	 filefd->iFd = -1;
+	 if (filefd->TemporaryFileName.empty() == false)
+	    filefd->iFd = open(filefd->TemporaryFileName.c_str(), O_RDONLY);
+	 else if (filefd->FileName.empty() == false)
+	    filefd->iFd = open(filefd->FileName.c_str(), O_RDONLY);
+	 else
+	 {
+	    if (compressed_fd > 0)
+	       if (lseek(compressed_fd, 0, SEEK_SET) != 0)
+		  filefd->iFd = compressed_fd;
+	    if (filefd->iFd < 0)
+	       return filefd->FileFdError("Reopen is not implemented for pipes opened with FileFd::OpenDescriptor()!");
+	 }
       }
 
       if (filefd->OpenInternDescriptor(openmode, compressor) == false)
