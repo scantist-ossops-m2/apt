@@ -8,6 +8,14 @@ export DEB_BUILD_MAINT_OPTIONS := hardening=+all
 # do not fail as we are just experimenting with symbol files for now
 export DPKG_GENSYMBOLS_CHECK_LEVEL=0
 
+# Avoid building with -O3 - see http://bugs.launchpad.net/bugs/1473674
+export DEB_CXXFLAGS_MAINT_STRIP = -O3
+export DEB_CFLAGS_MAINT_STRIP = -O3
+ifeq (,$(filter noopt,$(DEB_BUILD_OPTIONS)))
+export DEB_CXXFLAGS_MAINT_PREPEND = -O2
+export DEB_CFLAGS_MAINT_PREPEND = -O2
+endif
+
 export CTEST_OUTPUT_ON_FAILURE=1
 
 %:
