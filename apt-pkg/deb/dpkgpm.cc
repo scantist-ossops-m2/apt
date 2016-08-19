@@ -479,7 +479,7 @@ bool pkgDPkgPM::RunScriptsWithPkgs(const char *Cnf)
 
 	 debSystem::DpkgChrootDirectory();
 	 const char *Args[4];
-	 Args[0] = "/bin/sh";
+	 Args[0] = _config->Find("Dir::Bin::sh", APT_SHELL).c_str();
 	 Args[1] = "-c";
 	 Args[2] = Opts->Value.c_str();
 	 Args[3] = 0;

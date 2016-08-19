@@ -361,6 +361,9 @@ Dir "/"
      dpkg-buildpackage "/usr/bin/dpkg-buildpackage";
      apt-get "/usr/bin/apt-get";
      apt-cache "/usr/bin/apt-cache";
+     // A shell that does not exit on its own due to a signal when running
+     // a command via -c. Default determined at build time (default bash).
+     sh "/bin/bash";
   };
 
   // Location of the logfile

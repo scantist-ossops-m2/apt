@@ -55,3 +55,6 @@
 
 /* unrolling is faster combined with an optimizing compiler */
 #define SHA2_UNROLL_TRANSFORM
+
+/* The shell to use for invoking hooks */
+#define APT_SHELL "${APT_SHELL}"

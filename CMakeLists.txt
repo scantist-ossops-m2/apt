@@ -48,6 +48,8 @@ add_optional_compile_options(Wnoexcept)
 add_optional_compile_options(Wsign-promo)
 add_optional_compile_options(Wundef)
 
+set(APT_SHELL "/bin/bash" CACHE PATH "Shell to use for invoking hooks. Should not error out on signal when hook traps it.")
+
 # apt-ftparchive dependencies
 find_package(BerkeleyDB REQUIRED)
 if (BERKELEY_DB_FOUND)
