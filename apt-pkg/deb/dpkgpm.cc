@@ -620,7 +620,7 @@ void pkgDPkgPM::ProcessDpkgStatusLine(char *line)
    }
    // "status" has the form: "status: pkg: state"
    // with state in ["half-installed", "unpacked", "half-configured",
-   //                "installed", "config-files", "not-installed"]
+   //                "installed", "virtual", "config-files", "not-installed"]
    else if (prefix == "status")
    {
       pkgname = APT::String::Strip(list[1]);
@@ -1160,7 +1160,7 @@ void pkgDPkgPM::BuildPackagesProgressMap()
    static_assert(Item::Purge == 3, "Enum item has unexpected index for mapping array");
 
    // init the PackageOps map, go over the list of packages that
-   // that will be [installed|configured|removed|purged] and add
+   // that will be [installed|virtual|configured|removed|purged] and add
    // them to the PackageOps map (the dpkg states it goes through)
    // and the PackageOpsTranslations (human readable strings)
    for (auto &&I : List)

@@ -46,7 +46,7 @@ debSystem debSys;
 
 class APT_HIDDEN debSystemPrivate {
 public:
-   debSystemPrivate() : LockFD(-1), LockCount(0), StatusFile(0)
+   debSystemPrivate() : LockFD(-1), LockCount(0), StatusFile(0), VirtStatusFile(0)
    {
    }
    // For locking support
@@ -54,6 +54,7 @@ public:
    unsigned LockCount;
    
    debStatusIndex *StatusFile;
+   debStatusIndex *VirtStatusFile;
 };
 
 // System::debSystem - Constructor					/*{{{*/
@@ -69,6 +70,7 @@ debSystem::debSystem() : pkgSystem("Debian dpkg interface", &debVS), d(new debSy
 debSystem::~debSystem()
 {
    delete d->StatusFile;
+   delete d->VirtStatusFile;
    delete d;
 }
 									/*}}}*/
@@ -217,6 +219,10 @@ bool debSystem::Initialize(Configuration &Cnf)
      delete d->StatusFile;
      d->StatusFile = 0;
    }
+   if (d->VirtStatusFile) {
+      delete d->VirtStatusFile;
+      d->VirtStatusFile = 0;
+   }
 
    return true;
 }
@@ -255,7 +261,11 @@ bool debSystem::AddStatusFiles(std::vector<pkgIndexFile *> &List)
 {
    if (d->StatusFile == 0)
       d->StatusFile = new debStatusIndex(_config->FindFile("Dir::State::status"));
+   if (d->VirtStatusFile == 0 && _config->Exists("Dir::State::virtstatus"))
+      d->VirtStatusFile = new debStatusIndex(_config->FindFile("Dir::State::virtstatus"));
    List.push_back(d->StatusFile);
+   if (d->VirtStatusFile != nullptr)
+      List.push_back(d->VirtStatusFile);
    return true;
 }
 									/*}}}*/
@@ -265,11 +275,15 @@ bool debSystem::AddStatusFiles(std::vector<pkgIndexFile *> &List)
 bool debSystem::FindIndex(pkgCache::PkgFileIterator File,
 			  pkgIndexFile *&Found) const
 {
-   if (d->StatusFile == 0)
-      return false;
-   if (d->StatusFile->FindInCache(*File.Cache()) == File)
+   if (d->StatusFile != 0 && d->StatusFile->FindInCache(*File.Cache()) == File)
    {
       Found = d->StatusFile;
+      return true;
+   }
+
+   if (d->VirtStatusFile != 0 && d->VirtStatusFile->FindInCache(*File.Cache()) == File)
+   {
+      Found = d->VirtStatusFile;
       return true;
    }
    
