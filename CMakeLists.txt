@@ -120,6 +120,13 @@ endif()
 
 CHECK_STRUCT_HAS_MEMBER("struct statfs" f_type sys/vfs.h HAVE_STRUCT_STATFS_F_TYPE)
 
+# Symbols
+check_function_exists(memrchr HAVE_MEMRCHR)
+check_function_exists(strchrnul HAVE_STRCHRNUL)
+if (NOT HAVE_MEMRCHR OR NOT HAVE_STRCHRNUL)
+  configure_file(CMake/string.h.in ${PROJECT_BINARY_DIR}/include/string.h COPYONLY)
+endif()
+
 # Other checks
 check_function_exists(getresuid HAVE_GETRESUID)
 check_function_exists(getresgid HAVE_GETRESGID)

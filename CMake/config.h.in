@@ -31,6 +31,12 @@
 /* Define if we have machine/endian.h */
 #cmakedefine HAVE_MACHINE_ENDIAN_H
 
+/* Define if we have memrchr() */
+#cmakedefine HAVE_MEMRCHR
+
+/* Define if we have strchrnul() */
+#cmakedefine HAVE_STRCHRNUL
+
 /* Define if we have enabled pthread support */
 #cmakedefine HAVE_PTHREAD
 

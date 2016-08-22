@@ -1,0 +1,18 @@
+#ifndef APT_STRING_H
+#define APT_STRING_H
+#include <config.h>
+#include_next <string.h>
+
+#ifndef HAVE_STRCHRNUL
+char *apt_strchrnul(const char *p, int ch);
+
+#define strchrnul apt_strchrnul
+#endif
+
+
+#ifndef HAVE_MEMRCHR
+void *apt_memrchr(const void *s, int c, size_t n);
+#define memrchr apt_memrchr
+#endif
+
+#endif
