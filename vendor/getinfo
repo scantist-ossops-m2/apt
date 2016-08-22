@@ -67,6 +67,9 @@ debian-stable-codename|debian-oldstable-codename|debian-testing-codename|ubuntu-
 sourceslist-list-format|keyring-package|keyring-filename|keyring-master-filename|keyring-removed-filename|keyring-uri|current-codename)
 	exec $0 --vendor $CURRENT_VENDOR 'vendor' "$@"
 	;;
+osx-version)
+	echo $(sw_vers -productVersion | cut -d"." -f1-2)
+	;;
 vendor)
 	getfield "$2"
 	;;

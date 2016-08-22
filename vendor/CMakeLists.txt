@@ -18,7 +18,9 @@ add_vendor_file(OUTPUT sources.list
                           debian-oldstable-codename
                           debian-testing-codename
                           ubuntu-codename
-                          current-codename)
+                          current-codename
+                          osx-version
+)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sources.list
         DESTINATION ${CMAKE_INSTALL_DOCDIR}/examples)
 
