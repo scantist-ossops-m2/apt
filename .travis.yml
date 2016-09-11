@@ -4,7 +4,7 @@ sudo: required
 dist: trusty
 script:
  - sudo adduser --force-badname --system --home /nonexistent --no-create-home --quiet _apt || true
- - sudo chmod -R go+rwx /home/travis
+ - sudo chmod -R go+rwX /home/travis/build
  - sudo -u _apt test -d /home/travis
  - sudo -u _apt test -d /home/travis/build
  - sudo -u _apt test -d /home/travis/build/julian-klode
