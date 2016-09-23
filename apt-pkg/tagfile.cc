@@ -91,8 +91,9 @@ public:
       unsigned int EndTag;
       unsigned int StartValue;
       unsigned int NextInBucket;
+      unsigned int LongHash;
 
-      explicit TagData(unsigned int const StartTag) : StartTag(StartTag), EndTag(0), StartValue(0), NextInBucket(0) {}
+      explicit TagData(unsigned int const StartTag) : StartTag(StartTag), EndTag(0), StartValue(0), NextInBucket(0), LongHash(0) {}
    };
    std::vector<TagData> Tags;
 };
@@ -110,7 +111,7 @@ static unsigned long AlphaHash(const char *Text, size_t Length)		/*{{{*/
    unsigned long Res = 0;
    for (size_t i = 0; i < Length; ++i)
       Res = ((unsigned long)(Text[i]) & 0xDF) ^ (Res << 1);
-   return Res & 0xFF;
+   return Res;
 }
 									/*}}}*/
 
@@ -511,6 +512,18 @@ bool pkgTagSection::Scan(const char *Start,unsigned long MaxLength, bool const R
    pkgTagSectionPrivate::TagData lastTagData(0);
    lastTagData.EndTag = 0;
    unsigned long lastTagHash = 0;
+
+   auto put = [this, &lastTagHash, &lastTagData, &TagCount]() {
+      if (AlphaIndexes[lastTagHash] != 0)
+	 lastTagData.NextInBucket = AlphaIndexes[lastTagHash];
+
+
+      APT_IGNORE_DEPRECATED_PUSH
+      AlphaIndexes[lastTagHash] = TagCount;
+      APT_IGNORE_DEPRECATED_POP
+      d->Tags.push_back(lastTagData);
+   };
+
    while (Stop < End)
    {
       TrimRecord(true,End);
@@ -526,12 +539,7 @@ bool pkgTagSection::Scan(const char *Start,unsigned long MaxLength, bool const R
 	 // store the last found tag
 	 if (lastTagData.EndTag != 0)
 	 {
-	    if (AlphaIndexes[lastTagHash] != 0)
-	       lastTagData.NextInBucket = AlphaIndexes[lastTagHash];
-	    APT_IGNORE_DEPRECATED_PUSH
-	    AlphaIndexes[lastTagHash] = TagCount;
-	    APT_IGNORE_DEPRECATED_POP
-	    d->Tags.push_back(lastTagData);
+	    put();
 	 }
 
 	 APT_IGNORE_DEPRECATED(++TagCount;)
@@ -547,7 +555,9 @@ bool pkgTagSection::Scan(const char *Start,unsigned long MaxLength, bool const R
 	    ;
 	 ++EndTag;
 	 lastTagData.EndTag = EndTag - Section;
-	 lastTagHash = AlphaHash(Stop, EndTag - Stop);
+	 lastTagData.LongHash = AlphaHash(Stop, EndTag - Stop);
+	 lastTagHash = lastTagData.LongHash & 0xFF;
+
 	 // find the beginning of the value
 	 Stop = Colon + 1;
 	 for (; Stop < End && isspace_ascii(*Stop) != 0; ++Stop)
@@ -572,10 +582,7 @@ bool pkgTagSection::Scan(const char *Start,unsigned long MaxLength, bool const R
       {
 	 if (lastTagData.EndTag != 0)
 	 {
-	    if (AlphaIndexes[lastTagHash] != 0)
-	       lastTagData.NextInBucket = AlphaIndexes[lastTagHash];
-	    APT_IGNORE_DEPRECATED(AlphaIndexes[lastTagHash] = TagCount;)
-	    d->Tags.push_back(lastTagData);
+	    put();
 	 }
 
 	 pkgTagSectionPrivate::TagData const td(Stop - Section);
@@ -622,12 +629,15 @@ bool pkgTagSection::Find(StringView TagView,unsigned int &Pos) const
 {
    const char * const Tag = TagView.data();
    size_t const Length = TagView.length();
-   unsigned int Bucket = AlphaIndexes[AlphaHash(Tag, Length)];
+   unsigned int LongHash = AlphaHash(Tag, Length);
+   unsigned int Bucket = AlphaIndexes[LongHash & 0xFF];
    if (Bucket == 0)
       return false;
 
    for (; Bucket != 0; Bucket = d->Tags[Bucket - 1].NextInBucket)
    {
+      if (d->Tags[Bucket - 1].LongHash != LongHash)
+	 continue;
       if ((d->Tags[Bucket - 1].EndTag - d->Tags[Bucket - 1].StartTag) != Length)
 	 continue;
 
