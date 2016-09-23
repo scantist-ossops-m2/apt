@@ -28,11 +28,9 @@ template<typename ValueType> APT_HIDDEN class Trie {
    /** \brief A node in the trie */
    struct node {
       /** \brief The id of the node, used by the bitset */
-      unsigned int id;
+      unsigned int id = 0;
       /** \brief Children of the node */
       node *next[256] = {0};
-      /** \brief Constructor with explicit id information */
-      node(size_t id) : id(id) {}
 
       ~node() {
 	 for (size_t i = 0; i < sizeof(next) / sizeof(next[0]); i++)
@@ -42,8 +40,8 @@ template<typename ValueType> APT_HIDDEN class Trie {
 
    /** A value that may be set or unset */
    struct Value {
-      bool isDefined;
-      ValueType value;
+      bool isDefined = false;
+      ValueType value = ValueType();
    };
 
    /** \brief The root node (id 0) */
@@ -75,7 +73,7 @@ template<typename ValueType> APT_HIDDEN class Trie {
 	 if (cur->next[v] == nullptr)
 	 {
 	    if (create)
-	       cur->next[v] = new node(next_node_id++);
+	       cur->next[v] = new node();
 	    else
 	       return nullptr;
 	 }
@@ -86,9 +84,6 @@ template<typename ValueType> APT_HIDDEN class Trie {
    }
 
 public:
-   /** \brief Constructor */
-   Trie() : root(0) {
-   }
    /**
     * \brief Inserts a value into the trie at key
     *
@@ -99,6 +94,9 @@ public:
    void insert(const char *begin, const char *end, ValueType value)
    {
       node *nod = find_node<true>(begin, end);
+
+      if (nod->id == 0)
+	 nod->id = next_node_id++;
 
       if (nod->id >= values.size())
          values.resize(nod->id + 1);
@@ -119,7 +117,7 @@ public:
    {
       const node *nod = find_node<false>(begin, end);
 
-      if (nod == nullptr || nod->id > values.size() || !values[nod->id].isDefined)
+      if (nod == nullptr || nod->id == 0 || nod->id >= values.size() || !values[nod->id].isDefined)
       {
 	 value = ValueType();
 	 return false;
