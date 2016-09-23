@@ -85,6 +85,38 @@ template<typename ValueType> APT_HIDDEN class Trie {
 
 public:
    /**
+    * \brief Registers a key with the trie.
+    *
+    * \param begin The start of the key
+    * \param end The end of the key
+    * \return An ID that can be passed to find later on instead of a key
+    */
+   unsigned int register_key(const char *begin, const char *end)
+   {
+      node *nod = find_node<true>(begin, end);
+
+      if (nod->id == 0)
+	 nod->id = next_node_id++;
+
+      return nod->id;
+   }
+
+   /**
+    * \brief Find a value by ID
+    *
+    * \param id A value returned by register_key()
+    * \param value Output variable for the value
+    */
+   bool find(unsigned int id, ValueType& value)
+   {
+      if (id == 0 || id >= values.size() || values[id].isDefined == false)
+	 return false;
+
+      value = values[id].value;
+      return true;
+   }
+
+   /**
     * \brief Inserts a value into the trie at key
     *
     * \param begin The start of the key
@@ -93,16 +125,13 @@ public:
     */
    void insert(const char *begin, const char *end, ValueType value)
    {
-      node *nod = find_node<true>(begin, end);
+      unsigned int id = register_key(begin, end);
 
-      if (nod->id == 0)
-	 nod->id = next_node_id++;
+      if (id >= values.size())
+         values.resize(id + 1);
 
-      if (nod->id >= values.size())
-         values.resize(nod->id + 1);
-
-      values[nod->id].isDefined = true;
-      values[nod->id].value = value;
+      values[id].isDefined = true;
+      values[id].value = value;
    }
 
    /**
@@ -117,14 +146,7 @@ public:
    {
       const node *nod = find_node<false>(begin, end);
 
-      if (nod == nullptr || nod->id == 0 || nod->id >= values.size() || !values[nod->id].isDefined)
-      {
-	 value = ValueType();
-	 return false;
-      }
-
-      value = values[nod->id].value;
-      return true;
+      return find(nod ? nod->id : 0, value);
    }
 
    /** \brief Convenience interface for more complex insert() */
