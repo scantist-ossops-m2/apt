@@ -59,11 +59,11 @@ template<typename ValueType> APT_HIDDEN class Trie {
     * This function finds the node for the given key, and can optionally create
     * the node and any intermediate nodes if the node does not yet exist.
     *
-    * \tparam create If this find_node() instantation shall generate nodes
     * \param begin Beginning of the key
     * \param end End of the key (e.g. the NUL byte)
+    * \param allow_create If this find_node() call shall generate nodes
     */
-   template<bool create> node *find_node(const char *begin, const char *end)
+   node *find_node(const char *begin, const char *end, bool allow_create)
    {
       node *cur = &root;
 
@@ -72,7 +72,7 @@ template<typename ValueType> APT_HIDDEN class Trie {
 	 int v = tolower_ascii(*c);
 	 if (cur->next[v] == nullptr)
 	 {
-	    if (create)
+	    if (allow_create)
 	       cur->next[v] = new node();
 	    else
 	       return nullptr;
@@ -91,9 +91,12 @@ public:
     * \param end The end of the key
     * \return An ID that can be passed to find later on instead of a key
     */
-   unsigned int register_key(const char *begin, const char *end)
+   unsigned int register_key(const char *begin, const char *end, bool allow_create=true)
    {
-      node *nod = find_node<true>(begin, end);
+      node *nod = find_node(begin, end, allow_create);
+
+      if (nod == 0)
+	 return 0;
 
       if (nod->id == 0)
 	 nod->id = next_node_id++;
@@ -123,9 +126,12 @@ public:
     * \param end The end of the key
     * \param value Value to store in the trie
     */
-   void insert(const char *begin, const char *end, ValueType value)
+   void insert(const char *begin, const char *end, ValueType value, bool allow_create=true)
    {
-      unsigned int id = register_key(begin, end);
+      unsigned int id = register_key(begin, end, allow_create);
+
+      if (id == 0)
+	 return;
 
       if (id >= values.size())
          values.resize(id + 1);
@@ -144,7 +150,7 @@ public:
     */
    bool find(const char *begin, const char *end, ValueType &value)
    {
-      const node *nod = find_node<false>(begin, end);
+      const node *nod = find_node(begin, end, false);
 
       return find(nod ? nod->id : 0, value);
    }
