@@ -78,6 +78,8 @@ class pkgTagSection
    std::string FindRawS(const char *Tag) const;
 
 #ifdef APT_PKG_EXPOSE_STRING_VIEW
+   APT_HIDDEN int RegisterKey(APT::StringView Tag);
+   APT_HIDDEN void IgnoreExtraKeys(bool value = true);
    APT_HIDDEN bool Find(APT::StringView Tag,const char *&Start, const char *&End) const;
    APT_HIDDEN bool Find(APT::StringView Tag,unsigned int &Pos) const;
    APT_HIDDEN APT::StringView Find(APT::StringView Tag) const;

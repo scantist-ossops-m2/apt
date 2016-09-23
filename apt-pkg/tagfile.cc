@@ -96,6 +96,7 @@ public:
    };
    std::vector<TagData> Tags;
    APT::Trie<unsigned int> trie;
+   bool IgnoreExtraKeys = false;
 };
 									/*}}}*/
 
@@ -462,6 +463,18 @@ pkgTagSection::pkgTagSection()
 APT_IGNORE_DEPRECATED_POP
 									/*}}}*/
 // TagSection::Scan - Scan for the end of the header information	/*{{{*/
+int pkgTagSection::RegisterKey(APT::StringView Tag)
+{
+   return d->trie.register_key(Tag.data(), Tag.data() + Tag.size());
+}
+									/*}}}*/
+// TagSection::IgnoreExtraKeys - 	/*{{{*/
+void pkgTagSection::IgnoreExtraKeys(bool value)
+{
+   d->IgnoreExtraKeys = value;
+}
+									/*}}}*/
+// TagSection::Scan - Scan for the end of the header information	/*{{{*/
 bool pkgTagSection::Scan(const char *Start,unsigned long MaxLength, bool const Restart)
 {
    Section = Start;
@@ -509,7 +522,7 @@ bool pkgTagSection::Scan(const char *Start,unsigned long MaxLength, bool const R
 	 // store the last found tag
 	 if (lastTagData.EndTag != 0)
 	 {
-	    d->trie.insert(Section + lastTagData.StartTag, Section +lastTagData.EndTag, d->Tags.size());
+	    d->trie.insert(Section + lastTagData.StartTag, Section +lastTagData.EndTag, d->Tags.size(), !d->IgnoreExtraKeys);
 	    d->Tags.push_back(lastTagData);
 	 }
 
@@ -550,7 +563,7 @@ bool pkgTagSection::Scan(const char *Start,unsigned long MaxLength, bool const R
       {
 	 if (lastTagData.EndTag != 0)
 	 {
-	    d->trie.insert(Section + lastTagData.StartTag, Section +lastTagData.EndTag, d->Tags.size());
+	    d->trie.insert(Section + lastTagData.StartTag, Section +lastTagData.EndTag, d->Tags.size(), !d->IgnoreExtraKeys);
 	    d->Tags.push_back(lastTagData);
 	 }
 
