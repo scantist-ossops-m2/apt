@@ -29,8 +29,6 @@ template<typename ValueType> APT_HIDDEN class Trie {
    struct node {
       /** \brief The id of the node, used by the bitset */
       unsigned int id;
-      /** \brief The value of the node */
-      ValueType value;
       /** \brief Children of the node */
       node *next[256] = {0};
       /** \brief Constructor with explicit id information */
@@ -42,11 +40,17 @@ template<typename ValueType> APT_HIDDEN class Trie {
       }
    };
 
+   /** A value that may be set or unset */
+   struct Value {
+      bool isDefined;
+      ValueType value;
+   };
+
    /** \brief The root node (id 0) */
    node root;
 
-   /** \brief A bitset indicating whether a node has a bit set */
-   std::vector<bool> node_has_value;
+   /** \brief Values of nodes */
+   std::vector<Value> values;
 
    /** \brief The next free node id */
    unsigned int next_node_id = 1;
@@ -96,11 +100,11 @@ public:
    {
       node *nod = find_node<true>(begin, end);
 
-      nod->value = value;
-      if (nod->id >= node_has_value.size())
-	 node_has_value.resize(nod->id + 1);
+      if (nod->id >= values.size())
+         values.resize(nod->id + 1);
 
-      node_has_value[nod->id] = true;
+      values[nod->id].isDefined = true;
+      values[nod->id].value = value;
    }
 
    /**
@@ -115,13 +119,13 @@ public:
    {
       const node *nod = find_node<false>(begin, end);
 
-      if (nod == nullptr || nod->id > node_has_value.size() || !node_has_value[nod->id])
+      if (nod == nullptr || nod->id > values.size() || !values[nod->id].isDefined)
       {
 	 value = ValueType();
 	 return false;
       }
 
-      value = nod->value;
+      value = values[nod->id].value;
       return true;
    }
 
@@ -144,7 +148,7 @@ public:
     * which is checked if a value exists for a node.
     */
    void clear() {
-      node_has_value.clear();
+      values.clear();
    }
 };
 
