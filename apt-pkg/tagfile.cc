@@ -18,6 +18,7 @@
 #include <apt-pkg/strutl.h>
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/string_view.h>
+#include <apt-pkg/trie.h>
 
 #include <list>
 
@@ -90,28 +91,12 @@ public:
       unsigned int StartTag;
       unsigned int EndTag;
       unsigned int StartValue;
-      unsigned int NextInBucket;
 
-      explicit TagData(unsigned int const StartTag) : StartTag(StartTag), EndTag(0), StartValue(0), NextInBucket(0) {}
+      explicit TagData(unsigned int const StartTag) : StartTag(StartTag), EndTag(0), StartValue(0) {}
    };
    std::vector<TagData> Tags;
+   APT::Trie<unsigned int> trie;
 };
-									/*}}}*/
-
-static unsigned long AlphaHash(const char *Text, size_t Length)		/*{{{*/
-{
-   /* This very simple hash function for the last 8 letters gives
-      very good performance on the debian package files */
-   if (Length > 8)
-   {
-    Text += (Length - 8);
-    Length = 8;
-   }
-   unsigned long Res = 0;
-   for (size_t i = 0; i < Length; ++i)
-      Res = ((unsigned long)(Text[i]) & 0xDF) ^ (Res << 1);
-   return Res & 0xFF;
-}
 									/*}}}*/
 
 // TagFile::pkgTagFile - Constructor					/*{{{*/
@@ -473,7 +458,6 @@ APT_IGNORE_DEPRECATED_PUSH
 pkgTagSection::pkgTagSection()
    : Section(0), d(new pkgTagSectionPrivate()), Stop(0)
 {
-   memset(&AlphaIndexes, 0, sizeof(AlphaIndexes));
 }
 APT_IGNORE_DEPRECATED_POP
 									/*}}}*/
@@ -498,8 +482,8 @@ bool pkgTagSection::Scan(const char *Start,unsigned long MaxLength, bool const R
       Stop = Section;
       if (d->Tags.empty() == false)
       {
-	 memset(&AlphaIndexes, 0, sizeof(AlphaIndexes));
 	 d->Tags.clear();
+	 d->trie.clear();
       }
       d->Tags.reserve(0x100);
    }
@@ -510,7 +494,6 @@ bool pkgTagSection::Scan(const char *Start,unsigned long MaxLength, bool const R
 
    pkgTagSectionPrivate::TagData lastTagData(0);
    lastTagData.EndTag = 0;
-   unsigned long lastTagHash = 0;
    while (Stop < End)
    {
       TrimRecord(true,End);
@@ -526,11 +509,7 @@ bool pkgTagSection::Scan(const char *Start,unsigned long MaxLength, bool const R
 	 // store the last found tag
 	 if (lastTagData.EndTag != 0)
 	 {
-	    if (AlphaIndexes[lastTagHash] != 0)
-	       lastTagData.NextInBucket = AlphaIndexes[lastTagHash];
-	    APT_IGNORE_DEPRECATED_PUSH
-	    AlphaIndexes[lastTagHash] = TagCount;
-	    APT_IGNORE_DEPRECATED_POP
+	    d->trie.insert(Section + lastTagData.StartTag, Section +lastTagData.EndTag, d->Tags.size());
 	    d->Tags.push_back(lastTagData);
 	 }
 
@@ -547,7 +526,6 @@ bool pkgTagSection::Scan(const char *Start,unsigned long MaxLength, bool const R
 	    ;
 	 ++EndTag;
 	 lastTagData.EndTag = EndTag - Section;
-	 lastTagHash = AlphaHash(Stop, EndTag - Stop);
 	 // find the beginning of the value
 	 Stop = Colon + 1;
 	 for (; Stop < End && isspace_ascii(*Stop) != 0; ++Stop)
@@ -572,9 +550,7 @@ bool pkgTagSection::Scan(const char *Start,unsigned long MaxLength, bool const R
       {
 	 if (lastTagData.EndTag != 0)
 	 {
-	    if (AlphaIndexes[lastTagHash] != 0)
-	       lastTagData.NextInBucket = AlphaIndexes[lastTagHash];
-	    APT_IGNORE_DEPRECATED(AlphaIndexes[lastTagHash] = TagCount;)
+	    d->trie.insert(Section + lastTagData.StartTag, Section +lastTagData.EndTag, d->Tags.size());
 	    d->Tags.push_back(lastTagData);
 	 }
 
@@ -622,25 +598,11 @@ bool pkgTagSection::Find(StringView TagView,unsigned int &Pos) const
 {
    const char * const Tag = TagView.data();
    size_t const Length = TagView.length();
-   unsigned int Bucket = AlphaIndexes[AlphaHash(Tag, Length)];
-   if (Bucket == 0)
-      return false;
 
-   for (; Bucket != 0; Bucket = d->Tags[Bucket - 1].NextInBucket)
-   {
-      if ((d->Tags[Bucket - 1].EndTag - d->Tags[Bucket - 1].StartTag) != Length)
-	 continue;
 
-      char const * const St = Section + d->Tags[Bucket - 1].StartTag;
-      if (strncasecmp(Tag,St,Length) != 0)
-	 continue;
-
-      Pos = Bucket - 1;
-      return true;
-   }
-
-   Pos = 0;
-   return false;
+   unsigned int PosT;
+   bool ResT;
+   return d->trie.find(Tag, Tag + Length, Pos);
 }
 
 bool pkgTagSection::Find(StringView Tag,const char *&Start,
