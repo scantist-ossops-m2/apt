@@ -13,6 +13,7 @@
 // Include Files							/*{{{*/
 #include<config.h>
 
+#include <apt-taghash.h>
 #include <apt-pkg/tagfile.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/strutl.h>
@@ -96,22 +97,6 @@ public:
    };
    std::vector<TagData> Tags;
 };
-									/*}}}*/
-
-static unsigned long AlphaHash(const char *Text, size_t Length)		/*{{{*/
-{
-   /* This very simple hash function for the last 8 letters gives
-      very good performance on the debian package files */
-   if (Length > 8)
-   {
-    Text += (Length - 8);
-    Length = 8;
-   }
-   unsigned long Res = 0;
-   for (size_t i = 0; i < Length; ++i)
-      Res = ((unsigned long)(Text[i]) & 0xDF) ^ (Res << 1);
-   return Res & 0xFF;
-}
 									/*}}}*/
 
 // TagFile::pkgTagFile - Constructor					/*{{{*/
@@ -547,7 +532,7 @@ bool pkgTagSection::Scan(const char *Start,unsigned long MaxLength, bool const R
 	    ;
 	 ++EndTag;
 	 lastTagData.EndTag = EndTag - Section;
-	 lastTagHash = AlphaHash(Stop, EndTag - Stop);
+	 lastTagHash = PerfectHash(Stop, EndTag - Stop);
 	 // find the beginning of the value
 	 Stop = Colon + 1;
 	 for (; Stop < End && isspace_ascii(*Stop) != 0; ++Stop)
@@ -618,13 +603,30 @@ bool pkgTagSection::Exists(StringView Tag) const
 // TagSection::Find - Locate a tag					/*{{{*/
 // ---------------------------------------------------------------------
 /* This searches the section for a tag that matches the given string. */
+
+bool pkgTagSection::FindByID(unsigned int Hash, unsigned int &Pos) const
+{
+   if (Hash != 0) {
+      unsigned int Bucket = AlphaIndexes[Hash];
+      if (Bucket == 0)
+	 return false;
+      Pos = Bucket - 1;
+      return true;
+   }
+}
+
 bool pkgTagSection::Find(StringView TagView,unsigned int &Pos) const
 {
    const char * const Tag = TagView.data();
    size_t const Length = TagView.length();
-   unsigned int Bucket = AlphaIndexes[AlphaHash(Tag, Length)];
+   unsigned int Hash = PerfectHash(Tag, Length);
+   unsigned int Bucket = AlphaIndexes[Hash];
    if (Bucket == 0)
       return false;
+   if (Hash != 0) {
+      Pos = Bucket - 1;
+      return true;
+   }
 
    for (; Bucket != 0; Bucket = d->Tags[Bucket - 1].NextInBucket)
    {
@@ -641,6 +643,23 @@ bool pkgTagSection::Find(StringView TagView,unsigned int &Pos) const
 
    Pos = 0;
    return false;
+}
+bool pkgTagSection::FindByID(unsigned int Hash,const char *&Start,
+		         const char *&End) const
+{
+   unsigned int Pos;
+   if (FindByID(Hash, Pos) == false)
+      return false;
+
+   Start = Section + d->Tags[Pos].StartValue;
+   // Strip off the gunk from the end
+   End = Section + d->Tags[Pos + 1].StartTag;
+   if (unlikely(Start > End))
+      return _error->Error("Internal parsing error");
+
+   for (; isspace_ascii(End[-1]) != 0 && End > Start; --End);
+
+   return true;
 }
 
 bool pkgTagSection::Find(StringView Tag,const char *&Start,
@@ -662,6 +681,18 @@ bool pkgTagSection::Find(StringView Tag,const char *&Start,
 }
 									/*}}}*/
 // TagSection::FindS - Find a string					/*{{{*/
+StringView pkgTagSection::FindByID(unsigned int Hash) const
+{
+   const char *Start;
+   const char *End;
+   if (Hash == 0)
+      abort();
+
+   if (FindByID(Hash,Start,End) == false)
+      return StringView();
+   return StringView(Start, End - Start);
+}
+
 StringView pkgTagSection::Find(StringView Tag) const
 {
    const char *Start;
@@ -742,6 +773,26 @@ unsigned long long pkgTagSection::FindULL(StringView Tag, unsigned long long con
       return Default;
    return Result;
 }
+unsigned long long pkgTagSection::FindULLByID(unsigned int Tag, unsigned long long const &Default) const
+{
+   const char *Start;
+   const char *Stop;
+   if (FindByID(Tag,Start,Stop) == false)
+      return Default;
+
+   // Copy it into a temp buffer so we can use strtoull
+   char S[100];
+   if ((unsigned)(Stop - Start) >= sizeof(S))
+      return Default;
+   strncpy(S,Start,Stop-Start);
+   S[Stop - Start] = 0;
+
+   char *End;
+   unsigned long long Result = strtoull(S,&End,10);
+   if (S == End)
+      return Default;
+   return Result;
+}
 									/*}}}*/
 // TagSection::FindB - Find boolean value                		/*{{{*/
 // ---------------------------------------------------------------------
@@ -763,6 +814,15 @@ bool pkgTagSection::FindFlag(StringView Tag, uint8_t &Flags,
    const char *Start;
    const char *Stop;
    if (Find(Tag,Start,Stop) == false)
+      return true;
+   return FindFlag(Flags, Flag, Start, Stop);
+}
+bool pkgTagSection::FindFlagByID(unsigned int Tag, uint8_t &Flags,
+			     uint8_t const Flag) const
+{
+   const char *Start;
+   const char *Stop;
+   if (FindByID(Tag,Start,Stop) == false)
       return true;
    return FindFlag(Flags, Flag, Start, Stop);
 }

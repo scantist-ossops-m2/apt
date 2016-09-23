@@ -78,6 +78,13 @@ class pkgTagSection
    std::string FindRawS(const char *Tag) const;
 
 #ifdef APT_PKG_EXPOSE_STRING_VIEW
+   APT_HIDDEN bool FindByID(unsigned int Hash, const char *&Start, const char *&End) const;
+   APT_HIDDEN bool FindByID(unsigned int Hash,unsigned int &Pos) const;
+   APT_HIDDEN APT::StringView FindByID(unsigned int Tag) const;
+   APT_HIDDEN bool FindFlagByID(unsigned int Tag,uint8_t &Flags,
+		 uint8_t const Flag) const;
+   APT_HIDDEN unsigned long long FindULLByID(unsigned int Tag, unsigned long long const &Default = 0) const;
+
    APT_HIDDEN bool Find(APT::StringView Tag,const char *&Start, const char *&End) const;
    APT_HIDDEN bool Find(APT::StringView Tag,unsigned int &Pos) const;
    APT_HIDDEN APT::StringView Find(APT::StringView Tag) const;
