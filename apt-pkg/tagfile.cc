@@ -514,6 +514,23 @@ bool pkgTagSection::Scan(const char *Start,unsigned long MaxLength, bool const R
    unsigned long lastTagHash = 0;
 
    auto put = [this, &lastTagHash, &lastTagData, &TagCount]() {
+      if (AlphaIndexes[lastTagHash] != 0) {
+	 unsigned int Bucket = AlphaIndexes[lastTagHash];
+	 for (; Bucket != 0; Bucket = d->Tags[Bucket - 1].NextInBucket)
+	 {
+	    if (d->Tags[Bucket - 1].LongHash != lastTagData.LongHash)
+	       continue;
+	    if ((d->Tags[Bucket - 1].EndTag - d->Tags[Bucket - 1].StartTag) != lastTagData.EndTag - lastTagData.StartTag)
+	       continue;
+
+	    char const * const St = Section + d->Tags[Bucket - 1].StartTag;
+	    if (strncasecmp(Section + lastTagData.StartTag,St,lastTagData.EndTag - lastTagData.StartTag) != 0)
+	       continue;
+
+	    d->Tags[Bucket - 1] = lastTagData;
+	    return;
+	 }
+      }
       if (AlphaIndexes[lastTagHash] != 0)
 	 lastTagData.NextInBucket = AlphaIndexes[lastTagHash];
 
