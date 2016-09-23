@@ -336,21 +336,21 @@ bool debListParser::UsePackage(pkgCache::PkgIterator &Pkg,
 /* */
 unsigned short debListParser::VersionHash()
 {
-   static const StringView Sections[] ={"Installed-Size",
-                            "Depends",
-                            "Pre-Depends",
-//                            "Suggests",
-//                            "Recommends",
-                            "Conflicts",
-                            "Breaks",
-                            "Replaces"};
+   static constexpr PerfectKey Sections[] ={PerfectKey::Installed_Size,
+                            PerfectKey::Depends,
+                            PerfectKey::Pre_Depends,
+//                           PerfectKey::Suggests,
+//                            PerfectKey::Recommends,
+                            PerfectKey::Conflicts,
+                            PerfectKey::Breaks,
+                            PerfectKey::Replaces};
    unsigned long Result = INIT_FCS;
    char S[1024];
-   for (StringView I : Sections)
+   for (PerfectKey I : Sections)
    {
       const char *Start;
       const char *End;
-      if (Section.Find(I,Start,End) == false)
+      if (Section.FindByID((unsigned int)I,Start,End) == false)
 	 continue;
       
       /* Strip out any spaces from the text, this undoes dpkgs reformatting
