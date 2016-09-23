@@ -3,6 +3,12 @@ include_directories(${PROJECT_BINARY_DIR}/include/apt-pkg)
 
 add_definitions("-DAPT_PKG_EXPOSE_STRING_VIEW")
 
+execute_process(COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/generate-hashes.py
+                                ${CMAKE_CURRENT_SOURCE_DIR}/tagkeys.in
+                OUTPUT_FILE ${PROJECT_BINARY_DIR}/include/apt-taghash.h)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "tagkeys.in")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "generate-hashes.py")
+
 # Set the version of the library
 execute_process(COMMAND awk -v ORS=. "/^\#define APT_PKG_M/ {print \$3}"
                 COMMAND sed "s/\\.\$//"
