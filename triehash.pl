@@ -209,7 +209,7 @@ package Trie {
         }
 
         if ($ignore_case && $can_use_bit && $want_use_bit) {
-            printf $fh (("    " x $indent) . "switch((char)(string[%d] | (char)32)) {\n", $index);
+            printf $fh (("    " x $indent) . "switch(string[%d] | 32) {\n", $index);
         } else {
             printf $fh (("    " x $indent) . "switch(string[%d]) {\n", $index);
         }
