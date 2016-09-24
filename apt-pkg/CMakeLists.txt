@@ -4,8 +4,9 @@ include_directories(${PROJECT_BINARY_DIR}/include/apt-pkg)
 add_definitions("-DAPT_PKG_EXPOSE_STRING_VIEW")
 
 execute_process(COMMAND perl ${PROJECT_SOURCE_DIR}/triehash/triehash.pl --ignore-case
-                             ${CMAKE_CURRENT_SOURCE_DIR}/tagkeys.in
-                OUTPUT_FILE ${PROJECT_BINARY_DIR}/include/apt-taghash.h)
+                             --header ${PROJECT_BINARY_DIR}/include/apt-taghash.h
+                             --code ${CMAKE_CURRENT_BINARY_DIR}/apt-taghash.cc
+                             ${CMAKE_CURRENT_SOURCE_DIR}/tagkeys.in)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "tagkeys.in")
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "generate-hashes.py")
 
@@ -23,7 +24,7 @@ message(STATUS "Building libapt-pkg ${MAJOR} (release ${MINOR})")
 set(APT_PKG_MAJOR ${MAJOR} PARENT_SCOPE) # exporting for methods/CMakeLists.txt
 
 # Definition of the C++ files used to build the library
-file(GLOB_RECURSE library "*.cc")
+file(GLOB_RECURSE library "*.cc" "${CMAKE_CURRENT_BINARY_DIR}/apt-taghash.cc")
 file(GLOB_RECURSE headers "*.h")
 
 # Create a library using the C++ files
