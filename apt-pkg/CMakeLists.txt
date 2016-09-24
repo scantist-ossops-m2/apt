@@ -3,8 +3,8 @@ include_directories(${PROJECT_BINARY_DIR}/include/apt-pkg)
 
 add_definitions("-DAPT_PKG_EXPOSE_STRING_VIEW")
 
-execute_process(COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/generate-hashes.py
-                                ${CMAKE_CURRENT_SOURCE_DIR}/tagkeys.in
+execute_process(COMMAND perl ${PROJECT_SOURCE_DIR}/triehash/triehash.pl --ignore-case
+                             ${CMAKE_CURRENT_SOURCE_DIR}/tagkeys.in
                 OUTPUT_FILE ${PROJECT_BINARY_DIR}/include/apt-taghash.h)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "tagkeys.in")
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "generate-hashes.py")
