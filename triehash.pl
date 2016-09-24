@@ -198,7 +198,11 @@ package Trie {
         
         printf $fh (("    " x $indent) . "switch(string[%d]) {\n", $index);
 
+        my $notfirst = 0;
         foreach my $key (sort keys %{$self->{children}}) {
+            if ($notfirst) {
+                printf $fh ("    " x $indent . "    break;\n");
+            }
             if ($ignore_case) {
                 printf $fh ("    " x $indent . "case '%s':\n", lc($key));
                 printf $fh ("    " x $indent . "case '%s':\n", uc($key)) if lc($key) ne uc($key);
@@ -207,9 +211,10 @@ package Trie {
             }
 
             $self->{children}{$key}->print_table($fh, $indent + 1, $index + 1);
+
+            $notfirst=1;
         }
 
-        printf $fh ("    " x $indent . "default: return %s$unknown_label;\n", ($enum_class ? "${enum_name}::" : ""));
         printf $fh ("    " x $indent . "}\n");
     }
 
@@ -291,15 +296,24 @@ print $header ("};\n");
 print $header ("$static enum ${enum_name} ${function_name}(const char *string, size_t length);\n");
 
 print $code ("#include \"$header_name\"\n") if ($header_name ne $code_name);
+
+
+foreach my $local_length (sort { $a <=> $b } (keys %lengths)) {
+    print $code ("static enum ${enum_name} ${function_name}${local_length}(const char *string, size_t length)\n");
+    print $code ("{\n");
+    $trie->filter_depth($local_length)->print_table($code, 1);
+    printf $code ("    return %s$unknown_label;\n", ($enum_class ? "${enum_name}::" : ""));
+    print $code ("}\n");
+}
 print $code ("$static enum ${enum_name} ${function_name}(const char *string, size_t length)\n");
 print $code ("{\n");
 print $code ("    switch (length) {\n");
 foreach my $local_length (sort { $a <=> $b } (keys %lengths)) {
     print $code ("    case $local_length:\n");
-    $trie->filter_depth($local_length)->print_table($code, 2);
+    print $code ("        return ${function_name}${local_length}(string, length);\n");
 }
 print $code ("    default:\n");
-print $code ("        return $unknown_label;\n");
+printf $code ("        return %s$unknown_label;\n", ($enum_class ? "${enum_name}::" : ""));
 print $code ("    }\n");
 print $code ("}\n");
 
