@@ -204,7 +204,7 @@ package Trie {
         my $want_use_bit = 0;
         my $can_use_bit = 1;
         foreach my $key (sort keys %{$self->{children}}) {
-            $can_use_bit &= ord(lc($key)) == (ord(lc($key)) | 32);
+            $can_use_bit &= ($key =~ /[a-zA-Z]/);
             $want_use_bit |= ($key =~ /[a-zA-Z]/);
         }
 
