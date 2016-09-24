@@ -315,7 +315,7 @@ print $code ("#include \"$header_name\"\n") if ($header_name ne $code_name);
 
 
 foreach my $local_length (sort { $a <=> $b } (keys %lengths)) {
-    print $code ("static enum ${enum_name} ${function_name}${local_length}(const char *string, size_t length)\n");
+    print $code ("static enum ${enum_name} ${function_name}${local_length}(const char *string)\n");
     print $code ("{\n");
     $trie->filter_depth($local_length)->print_table($code, 1);
     printf $code ("    return %s$unknown_label;\n", ($enum_class ? "${enum_name}::" : ""));
@@ -326,7 +326,7 @@ print $code ("{\n");
 print $code ("    switch (length) {\n");
 foreach my $local_length (sort { $a <=> $b } (keys %lengths)) {
     print $code ("    case $local_length:\n");
-    print $code ("        return ${function_name}${local_length}(string, length);\n");
+    print $code ("        return ${function_name}${local_length}(string);\n");
 }
 print $code ("    default:\n");
 printf $code ("        return %s$unknown_label;\n", ($enum_class ? "${enum_name}::" : ""));
