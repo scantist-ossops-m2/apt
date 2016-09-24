@@ -23,7 +23,9 @@ class Trie(object):
     def print_table(self, index=0):
         print(index * "    ", "switch(%d < length ? string[%d] : 0) {" % (index, index))
         for key, sub in sorted(self.children.items()):
-            print(index * "    ", """case '%c':""" % key)
+            print(index * "    ", """case '%c':""" % key.lower())
+            if key.upper() != key.lower():
+                print(index * "    ", """case '%c':""" % key.upper())
             sub.print_table(index = index + 1)
 
         if self.value is not None:
