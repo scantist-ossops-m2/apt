@@ -2,7 +2,7 @@ import collections, sys
 
 class Trie(object):
 
-    count = 1
+    count = 0
 
     def __init__(self):
         self.key = None
