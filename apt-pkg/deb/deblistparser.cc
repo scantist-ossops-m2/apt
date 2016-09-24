@@ -251,10 +251,11 @@ std::vector<std::string> debListParser::AvailableDescriptionLanguages()
    static constexpr int prefixLen = 12;
    static constexpr int avgLanguageLen = 5;
    std::string tagname;
+   unsigned int dummy;
 
    tagname.reserve(prefixLen + avgLanguageLen);
    tagname.assign("Description-");
-   if (Section.Exists("Description") == true)
+   if (Section.FindByID((unsigned int)PerfectKey::Description, dummy) == true)
       avail.push_back("");
    for (std::vector<std::string>::const_iterator lang = understood.begin(); lang != understood.end(); ++lang)
    {
