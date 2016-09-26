@@ -50,7 +50,10 @@ class pkgTagFilePrivate;
 class pkgTagSection
 {
    const char *Section;
-   unsigned int AlphaIndexes[0x100];
+   /* Used by the perfect hash function */
+   unsigned int AlphaIndexes[128];
+   /* Fallback table if the key is not known to the perfect hash function */
+   unsigned int BetaIndexes[128];
 
    pkgTagSectionPrivate * const d;
 
