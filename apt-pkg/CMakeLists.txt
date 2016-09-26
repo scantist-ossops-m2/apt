@@ -6,6 +6,7 @@ add_definitions("-DAPT_PKG_EXPOSE_STRING_VIEW")
 execute_process(COMMAND perl ${PROJECT_SOURCE_DIR}/triehash/triehash.pl --ignore-case
                              --header ${PROJECT_BINARY_DIR}/include/apt-taghash.h
                              --code ${CMAKE_CURRENT_BINARY_DIR}/apt-taghash.cc
+                             --enum-class
                              ${CMAKE_CURRENT_SOURCE_DIR}/tagkeys.in)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "tagkeys.in")
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "generate-hashes.py")

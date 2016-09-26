@@ -37,11 +37,6 @@
 using std::string;
 using APT::StringView;
 
-static unsigned int PerfectHash(const char *s)
-{
-   return PerfectHash(s, strlen(s));
-}
-
 static const debListParser::WordList PrioList[] = {
    {"required",pkgCache::State::Required},
    {"important",pkgCache::State::Important},

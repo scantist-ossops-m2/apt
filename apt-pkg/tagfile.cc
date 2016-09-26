@@ -82,7 +82,7 @@ public:
 };
 									/*}}}*/
 constexpr unsigned int BetaIndexCount = 193;
-unsigned int DjbHash(const char *s, size_t l)
+static unsigned int DjbHash(const char *s, size_t l)
 {
 	unsigned int r = 5381;
 
@@ -509,7 +509,7 @@ bool pkgTagSection::Scan(const char *Start,unsigned long MaxLength, bool const R
 
    pkgTagSectionPrivate::TagData lastTagData(0);
    lastTagData.EndTag = 0;
-   unsigned long lastTagHash = 0;
+   PerfectKey lastTagHash = PerfectKey::Unknown;
    while (Stop < End)
    {
       TrimRecord(true,End);
@@ -525,15 +525,15 @@ bool pkgTagSection::Scan(const char *Start,unsigned long MaxLength, bool const R
 	 // store the last found tag
 	 if (lastTagData.EndTag != 0)
 	 {
-	    if (unlikely(lastTagHash == 0)) {
-	       lastTagHash = DjbHash(lastTagData.StartTag + Section, lastTagData.EndTag - lastTagData.StartTag) % BetaIndexCount;
-	       if (d->BetaIndexes[lastTagHash] != 0)
-		  lastTagData.NextInBucket = d->BetaIndexes[lastTagHash];
+	    if (unlikely(lastTagHash == PerfectKey::Unknown)) {
+	       auto djbHash = DjbHash(lastTagData.StartTag + Section, lastTagData.EndTag - lastTagData.StartTag) % BetaIndexCount;
+	       if (d->BetaIndexes[djbHash] != 0)
+		  lastTagData.NextInBucket = d->BetaIndexes[djbHash];
 	       APT_IGNORE_DEPRECATED_PUSH
-	       d->BetaIndexes[lastTagHash] = TagCount;
+	       d->BetaIndexes[djbHash] = TagCount;
 	       APT_IGNORE_DEPRECATED_POP
 	    } else {
-	       AlphaIndexes[lastTagHash] = TagCount;
+	       AlphaIndexes[static_cast<size_t>(lastTagHash)] = TagCount;
 	    }
 	    d->Tags.push_back(lastTagData);
 	 }
@@ -576,15 +576,15 @@ bool pkgTagSection::Scan(const char *Start,unsigned long MaxLength, bool const R
       {
 	 if (lastTagData.EndTag != 0)
 	 {
-	    if (unlikely(lastTagHash == 0)) {
-	       lastTagHash = DjbHash(lastTagData.StartTag + Section, lastTagData.EndTag - lastTagData.StartTag) % BetaIndexCount;
-	       if (d->BetaIndexes[lastTagHash] != 0)
-		  lastTagData.NextInBucket = d->BetaIndexes[lastTagHash];
+	    if (unlikely(lastTagHash == PerfectKey::Unknown)) {
+	       auto djbHash =  DjbHash(lastTagData.StartTag + Section, lastTagData.EndTag - lastTagData.StartTag) % BetaIndexCount;
+	       if (d->BetaIndexes[djbHash] != 0)
+		  lastTagData.NextInBucket = d->BetaIndexes[djbHash];
 	       APT_IGNORE_DEPRECATED_PUSH
-	       d->BetaIndexes[lastTagHash] = TagCount;
+	       d->BetaIndexes[djbHash] = TagCount;
 	       APT_IGNORE_DEPRECATED_POP
 	    } else {
-	       AlphaIndexes[lastTagHash] = TagCount;
+	       AlphaIndexes[static_cast<size_t>(lastTagHash)] = TagCount;
 	    }
 	    d->Tags.push_back(lastTagData);
 	 }
@@ -647,15 +647,15 @@ bool pkgTagSection::Find(StringView TagView,unsigned int &Pos) const
 {
    const char * const Tag = TagView.data();
    size_t const Length = TagView.length();
-   unsigned int Hash = PerfectHash(Tag, Length);
-   if (likely(Hash != 0)) {
-      if (AlphaIndexes[Hash] != 0) {
-	 Pos = AlphaIndexes[Hash] - 1;
+   PerfectKey ThisPerfHash = PerfectHash(Tag, Length);
+   if (likely(ThisPerfHash != PerfectKey::Unknown)) {
+      if (AlphaIndexes[static_cast<size_t>(ThisPerfHash)] != 0) {
+	 Pos = AlphaIndexes[static_cast<size_t>(ThisPerfHash)] - 1;
 	 return true;
       }
       return false;
    }
-   Hash = DjbHash(Tag, Length) % BetaIndexCount;
+   auto Hash = DjbHash(Tag, Length) % BetaIndexCount;
    unsigned int Bucket = d->BetaIndexes[Hash];
    if (Bucket == 0)
       return false;
