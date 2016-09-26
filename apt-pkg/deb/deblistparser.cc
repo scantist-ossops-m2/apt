@@ -59,7 +59,7 @@ debListParser::debListParser(FileFd *File) :
 // ---------------------------------------------------------------------
 /* This is to return the name of the package this section describes */
 string debListParser::Package() {
-   string Result = Section.FindByID((unsigned int)PerfectKey::Package).to_string();
+   string Result = Section.FindByID(PerfectKey::Package).to_string();
 
    // Normalize mixed case package names to lower case, like dpkg does
    // See Bug#807012 for details
@@ -74,7 +74,7 @@ string debListParser::Package() {
 // ---------------------------------------------------------------------
 /* This will return the Architecture of the package this section describes */
 APT::StringView debListParser::Architecture() {
-   auto const Arch = Section.FindByID((unsigned int)PerfectKey::Architecture);
+   auto const Arch = Section.FindByID(PerfectKey::Architecture);
    return Arch.empty() ? "none" : Arch;
 }
 									/*}}}*/
@@ -82,7 +82,7 @@ APT::StringView debListParser::Architecture() {
 // ---------------------------------------------------------------------
 /* */
 bool debListParser::ArchitectureAll() {
-   return Section.FindByID((unsigned int)PerfectKey::Architecture) == "all";
+   return Section.FindByID(PerfectKey::Architecture) == "all";
 }
 									/*}}}*/
 // ListParser::Version - Return the version string			/*{{{*/
@@ -92,13 +92,13 @@ bool debListParser::ArchitectureAll() {
    entry is assumed to only describe package properties */
 APT::StringView debListParser::Version()
 {
-   return Section.FindByID((unsigned int)PerfectKey::Version);
+   return Section.FindByID(PerfectKey::Version);
 }
 									/*}}}*/
 unsigned char debListParser::ParseMultiArch(bool const showErrors)	/*{{{*/
 {
    unsigned char MA;
-   auto const MultiArch = Section.FindByID((unsigned int)PerfectKey::Multi_Arch);
+   auto const MultiArch = Section.FindByID(PerfectKey::Multi_Arch);
    if (MultiArch.empty() == true || MultiArch == "no")
       MA = pkgCache::Version::No;
    else if (MultiArch == "same") {
@@ -139,7 +139,7 @@ bool debListParser::NewVersion(pkgCache::VerIterator &Ver)
    const char *Stop;
 
    // Parse the section
-   if (Section.FindByID((unsigned int)PerfectKey::Section,Start,Stop) == true)
+   if (Section.FindByID(PerfectKey::Section,Start,Stop) == true)
    {
       map_stringitem_t const idx = StoreString(pkgCacheGenerator::SECTION, Start, Stop - Start);
       Ver->Section = idx;
@@ -148,7 +148,7 @@ bool debListParser::NewVersion(pkgCache::VerIterator &Ver)
    pkgCache::GrpIterator G = Ver.ParentPkg().Group();
    Ver->SourcePkgName = G->Name;
    Ver->SourceVerStr = Ver->VerStr;
-   if (Section.FindByID((unsigned int)PerfectKey::Source,Start,Stop) == true)
+   if (Section.FindByID(PerfectKey::Source,Start,Stop) == true)
    {
       const char * const Space = (const char * const) memchr(Start, ' ', Stop - Start);
       pkgCache::VerIterator V;
@@ -200,36 +200,36 @@ bool debListParser::NewVersion(pkgCache::VerIterator &Ver)
 
    Ver->MultiArch = ParseMultiArch(true);
    // Archive Size
-   Ver->Size = Section.FindULLByID((unsigned int)PerfectKey::Size);
+   Ver->Size = Section.FindULLByID(PerfectKey::Size);
    // Unpacked Size (in K)
-   Ver->InstalledSize = Section.FindULLByID((unsigned int)PerfectKey::Installed_Size);
+   Ver->InstalledSize = Section.FindULLByID(PerfectKey::Installed_Size);
    Ver->InstalledSize *= 1024;
 
    // Priority
-   if (Section.FindByID((unsigned int)PerfectKey::Priority,Start,Stop) == true)
+   if (Section.FindByID(PerfectKey::Priority,Start,Stop) == true)
    {
       if (GrabWord(StringView(Start,Stop-Start),PrioList,Ver->Priority) == false)
 	 Ver->Priority = pkgCache::State::Extra;
    }
 
-   if (ParseDepends(Ver,(unsigned int)PerfectKey::Pre_Depends,pkgCache::Dep::PreDepends) == false)
+   if (ParseDepends(Ver,PerfectKey::Pre_Depends,pkgCache::Dep::PreDepends) == false)
       return false;
-   if (ParseDepends(Ver,(unsigned int)PerfectKey::Depends,pkgCache::Dep::Depends) == false)
+   if (ParseDepends(Ver,PerfectKey::Depends,pkgCache::Dep::Depends) == false)
       return false;
-   if (ParseDepends(Ver,(unsigned int)PerfectKey::Conflicts,pkgCache::Dep::Conflicts) == false)
+   if (ParseDepends(Ver,PerfectKey::Conflicts,pkgCache::Dep::Conflicts) == false)
       return false;
-   if (ParseDepends(Ver,(unsigned int)PerfectKey::Breaks,pkgCache::Dep::DpkgBreaks) == false)
+   if (ParseDepends(Ver,PerfectKey::Breaks,pkgCache::Dep::DpkgBreaks) == false)
       return false;
-   if (ParseDepends(Ver,(unsigned int)PerfectKey::Recommends,pkgCache::Dep::Recommends) == false)
+   if (ParseDepends(Ver,PerfectKey::Recommends,pkgCache::Dep::Recommends) == false)
       return false;
-   if (ParseDepends(Ver,(unsigned int)PerfectKey::Suggests,pkgCache::Dep::Suggests) == false)
+   if (ParseDepends(Ver,PerfectKey::Suggests,pkgCache::Dep::Suggests) == false)
       return false;
-   if (ParseDepends(Ver,(unsigned int)PerfectKey::Replaces,pkgCache::Dep::Replaces) == false)
+   if (ParseDepends(Ver,PerfectKey::Replaces,pkgCache::Dep::Replaces) == false)
       return false;
-   if (ParseDepends(Ver,(unsigned int)PerfectKey::Enhances,pkgCache::Dep::Enhances) == false)
+   if (ParseDepends(Ver,PerfectKey::Enhances,pkgCache::Dep::Enhances) == false)
       return false;
    // Obsolete.
-   if (ParseDepends(Ver,(unsigned int)PerfectKey::Optional,pkgCache::Dep::Suggests) == false)
+   if (ParseDepends(Ver,PerfectKey::Optional,pkgCache::Dep::Suggests) == false)
       return false;
    
    if (ParseProvides(Ver) == false)
@@ -250,7 +250,7 @@ std::vector<std::string> debListParser::AvailableDescriptionLanguages()
 
    tagname.reserve(prefixLen + avgLanguageLen);
    tagname.assign("Description-");
-   if (Section.FindByID((unsigned int)PerfectKey::Description, dummy) == true)
+   if (Section.FindByID(PerfectKey::Description, dummy) == true)
       avail.push_back("");
    for (std::vector<std::string>::const_iterator lang = understood.begin(); lang != understood.end(); ++lang)
    {
@@ -270,10 +270,10 @@ std::vector<std::string> debListParser::AvailableDescriptionLanguages()
  */
 MD5SumValue debListParser::Description_md5()
 {
-   StringView const value = Section.FindByID((unsigned int)PerfectKey::Description_md5);
+   StringView const value = Section.FindByID(PerfectKey::Description_md5);
    if (value.empty() == true)
    {
-      StringView const desc = Section.FindByID((unsigned int)PerfectKey::Description);
+      StringView const desc = Section.FindByID(PerfectKey::Description);
       if (desc == "\n")
 	 return MD5SumValue();
 
@@ -308,9 +308,9 @@ bool debListParser::UsePackage(pkgCache::PkgIterator &Pkg,
    string const static essential = _config->Find("pkgCacheGen::Essential", "all");
    if (essential == "all" ||
        (essential == "native" && Pkg->Arch != 0 && myArch == Pkg.Arch()))
-      if (Section.FindFlagByID((unsigned int)PerfectKey::Essential,Pkg->Flags,pkgCache::Flag::Essential) == false)
+      if (Section.FindFlagByID(PerfectKey::Essential,Pkg->Flags,pkgCache::Flag::Essential) == false)
 	 return false;
-   if (Section.FindFlagByID((unsigned int)PerfectKey::Important,Pkg->Flags,pkgCache::Flag::Important) == false)
+   if (Section.FindFlagByID(PerfectKey::Important,Pkg->Flags,pkgCache::Flag::Important) == false)
       return false;
 
    if (strcmp(Pkg.Name(),"apt") == 0)
@@ -346,7 +346,7 @@ unsigned short debListParser::VersionHash()
    {
       const char *Start;
       const char *End;
-      if (Section.FindByID((unsigned int)I,Start,End) == false)
+      if (Section.FindByID(I,Start,End) == false)
 	 continue;
       
       /* Strip out any spaces from the text, this undoes dpkgs reformatting
@@ -386,13 +386,13 @@ bool debStatusListParser::ParseStatus(pkgCache::PkgIterator &Pkg,
 {
    const char *Start;
    const char *Stop;
-   if (Section.FindByID((unsigned int)PerfectKey::Status,Start,Stop) == false)
+   if (Section.FindByID(PerfectKey::Status,Start,Stop) == false)
       return true;
 
    // UsePackage() is responsible for setting the flag in the default case
    bool const static essential = _config->Find("pkgCacheGen::Essential", "") == "installed";
    if (essential == true &&
-       Section.FindFlagByID((unsigned int)PerfectKey::Essential,Pkg->Flags,pkgCache::Flag::Essential) == false)
+       Section.FindFlagByID(PerfectKey::Essential,Pkg->Flags,pkgCache::Flag::Essential) == false)
       return false;
 
    // Isolate the first word
@@ -792,7 +792,7 @@ const char *debListParser::ParseDepends(const char *Start,const char *Stop,
 /* This is the higher level depends parser. It takes a tag and generates
    a complete depends tree for the given version. */
 bool debListParser::ParseDepends(pkgCache::VerIterator &Ver,
-				 unsigned int Tag,unsigned int Type)
+				 PerfectKey Tag,unsigned int Type)
 {
    const char *Start;
    const char *Stop;
@@ -866,7 +866,7 @@ bool debListParser::ParseProvides(pkgCache::VerIterator &Ver)
    string const Arch = Ver.Arch();
    const char *Start;
    const char *Stop;
-   if (Section.FindByID((unsigned int)PerfectKey::Provides,Start,Stop) == true)
+   if (Section.FindByID(PerfectKey::Provides,Start,Stop) == true)
    {
       StringView Package;
       StringView Version;
@@ -994,7 +994,7 @@ bool debListParser::SameVersion(unsigned short const Hash,		/*{{{*/
    // status file has no (Download)Size, but all others are fair game
    // status file is parsed last, so the first version we encounter is
    // probably also the version we have downloaded
-   unsigned long long const Size = Section.FindULLByID((unsigned int)PerfectKey::Size);
+   unsigned long long const Size = Section.FindULLByID(PerfectKey::Size);
    if (Size != 0 && Ver->Size != 0 && Size != Ver->Size)
       return false;
    // available everywhere, but easier to check here than to include in VersionHash

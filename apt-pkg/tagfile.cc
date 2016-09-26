@@ -630,10 +630,10 @@ bool pkgTagSection::Exists(StringView Tag) const
 // ---------------------------------------------------------------------
 /* This searches the section for a tag that matches the given string. */
 
-bool pkgTagSection::FindByID(unsigned int Hash, unsigned int &Pos) const
+bool pkgTagSection::FindByID(PerfectKey Hash, unsigned int &Pos) const
 {
-   if (Hash != 0) {
-      unsigned int Bucket = AlphaIndexes[Hash];
+   if (Hash != PerfectKey::Unknown) {
+      unsigned int Bucket = AlphaIndexes[static_cast<size_t>(Hash)];
       if (Bucket == 0)
 	 return false;
       Pos = Bucket - 1;
@@ -676,7 +676,7 @@ bool pkgTagSection::Find(StringView TagView,unsigned int &Pos) const
    Pos = 0;
    return false;
 }
-bool pkgTagSection::FindByID(unsigned int Hash,const char *&Start,
+bool pkgTagSection::FindByID(PerfectKey Hash,const char *&Start,
 		         const char *&End) const
 {
    unsigned int Pos;
@@ -713,12 +713,10 @@ bool pkgTagSection::Find(StringView Tag,const char *&Start,
 }
 									/*}}}*/
 // TagSection::FindS - Find a string					/*{{{*/
-StringView pkgTagSection::FindByID(unsigned int Hash) const
+StringView pkgTagSection::FindByID(PerfectKey Hash) const
 {
    const char *Start;
    const char *End;
-   if (Hash == 0)
-      abort();
 
    if (FindByID(Hash,Start,End) == false)
       return StringView();
@@ -805,7 +803,7 @@ unsigned long long pkgTagSection::FindULL(StringView Tag, unsigned long long con
       return Default;
    return Result;
 }
-unsigned long long pkgTagSection::FindULLByID(unsigned int Tag, unsigned long long const &Default) const
+unsigned long long pkgTagSection::FindULLByID(PerfectKey Tag, unsigned long long const &Default) const
 {
    const char *Start;
    const char *Stop;
@@ -849,7 +847,7 @@ bool pkgTagSection::FindFlag(StringView Tag, uint8_t &Flags,
       return true;
    return FindFlag(Flags, Flag, Start, Stop);
 }
-bool pkgTagSection::FindFlagByID(unsigned int Tag, uint8_t &Flags,
+bool pkgTagSection::FindFlagByID(PerfectKey Tag, uint8_t &Flags,
 			     uint8_t const Flag) const
 {
    const char *Start;
