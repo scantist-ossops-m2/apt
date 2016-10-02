@@ -5,6 +5,8 @@ dist: trusty
 before_install:
  - sudo add-apt-repository 'deb http://archive.ubuntu.com/ubuntu/ wily main universe' -y
  - sudo add-apt-repository 'deb http://archive.ubuntu.com/ubuntu/ xenial main' -y
+ - sudo add-apt-repository 'deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.9 main' -y
+ - wget -O /etc/apt/trusted.gpg.d/llvm.gpg http://apt.llvm.org/llvm-snapshot.gpg.key
  - |
    sudo sh -c '/bin/echo -e "Package: *\nPin: release n=wily\nPin-Priority: 1" > /etc/apt/preferences.d/wily'
    sudo sh -c '/bin/echo -e "Package: *\nPin: release n=xenial\nPin-Priority: 1" > /etc/apt/preferences.d/xenial'
@@ -12,9 +14,10 @@ before_install:
 install:
  - sudo apt-get -qq -y -t wily install gettext liblz4-dev python3-apt
  - sudo apt-get -qq -y -t xenial install cmake ninja-build
+ - sudo apt-get -qq -y clang-3.9 llvm-3.9
  - sudo ./prepare-release travis-ci
 before_script:
- - ( mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Coverage -G Ninja .. )
+ - ( mkdir build && cd build && CXX=clang++-3.9 CC=clang-3.9 cmake -DCMAKE_BUILD_TYPE=Coverage -G Ninja .. )
  - ninja -C build
 script:
  - CTEST_OUTPUT_ON_FAILURE=1 ninja -C build test
@@ -26,5 +29,5 @@ script:
  - sudo ./test/integration/run-tests -qq
 after_success:
  - cd build
- - gcov -r $(find -name '*.gcno')
+ - llvm-cov-3.9 gcov $(find -name '*.gcno')
  - bash <(curl -s https://codecov.io/bash)
