@@ -6,7 +6,7 @@ before_install:
  - sudo add-apt-repository 'deb http://archive.ubuntu.com/ubuntu/ wily main universe' -y
  - sudo add-apt-repository 'deb http://archive.ubuntu.com/ubuntu/ xenial main' -y
  - sudo add-apt-repository 'deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.9 main' -y
- - wget -O /etc/apt/trusted.gpg.d/llvm.gpg http://apt.llvm.org/llvm-snapshot.gpg.key
+ - sudo wget -O /etc/apt/trusted.gpg.d/llvm.gpg http://apt.llvm.org/llvm-snapshot.gpg.key
  - |
    sudo sh -c '/bin/echo -e "Package: *\nPin: release n=wily\nPin-Priority: 1" > /etc/apt/preferences.d/wily'
    sudo sh -c '/bin/echo -e "Package: *\nPin: release n=xenial\nPin-Priority: 1" > /etc/apt/preferences.d/xenial'
