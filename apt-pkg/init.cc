@@ -57,9 +57,9 @@ static std::vector<std::string> split(std::string const & s)
 /* This initializes */
 static bool pkgInitArchTupleMap()
 {
-   auto tuplepath = _config->FindFile("Dir::dpkg::tupletable", "/usr/share/dpkg/tupletable");
-   auto tripletpath = _config->FindFile("Dir::dpkg::triplettable", "/usr/share/dpkg/triplettable");
-   auto cpupath = _config->FindFile("Dir::dpkg::cputable", "/usr/share/dpkg/cputable");
+   auto tuplepath = _config->FindFile("Dir::dpkg::tupletable", DPKG_DATADIR "/tupletable");
+   auto tripletpath = _config->FindFile("Dir::dpkg::triplettable", DPKG_DATADIR "/triplettable");
+   auto cpupath = _config->FindFile("Dir::dpkg::cputable", DPKG_DATADIR "/cputable");
 
    // Load a list of CPUs
    std::vector<std::string> cpus;

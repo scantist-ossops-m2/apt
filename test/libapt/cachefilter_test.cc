@@ -37,7 +37,7 @@ TEST(CacheFilterTest, ArchitectureSpecification)
       EXPECT_FALSE(ams("kfreebsd-armhf"));
       EXPECT_TRUE(ams("musl-linux-armhf"));
    }
-   if (FileExists("/usr/share/dpkg/tupletable"))
+   if (FileExists(DPKG_DATADIR "/tupletable"))
    {
       SCOPED_TRACE("Pattern is gnu-any-any");
       APT::CacheFilter::PackageArchitectureMatchesSpecification ams("gnu-any-any"); //really?
@@ -48,7 +48,7 @@ TEST(CacheFilterTest, ArchitectureSpecification)
       EXPECT_TRUE(ams("kfreebsd-armhf"));
       EXPECT_FALSE(ams("musl-linux-armhf"));
    }
-   if (FileExists("/usr/share/dpkg/triplettable"))
+   if (FileExists(DPKG_DATADIR "/triplettable"))
    {
       SCOPED_TRACE("Pattern is gnueabi-any-any");
       APT::CacheFilter::PackageArchitectureMatchesSpecification ams("gnueabi-any-any"); //really?
@@ -58,7 +58,7 @@ TEST(CacheFilterTest, ArchitectureSpecification)
       EXPECT_FALSE(ams("linux-armhf"));
       EXPECT_FALSE(ams("musleabihf-linux-armhf"));
    }
-   if (FileExists("/usr/share/dpkg/triplettable"))
+   if (FileExists(DPKG_DATADIR "/triplettable"))
    {
       SCOPED_TRACE("Pattern is gnueabihf-any-any");
       APT::CacheFilter::PackageArchitectureMatchesSpecification ams("gnueabihf-any-any"); //really?
