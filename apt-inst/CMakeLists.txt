@@ -6,11 +6,23 @@ set(MAJOR 2.0)
 set(MINOR 0)
 set(APT_INST_MAJOR ${MAJOR} PARENT_SCOPE)
 
-# Definition of the C++ files used to build the library - note that this
-# is expanded at CMake time, so you have to rerun cmake if you add or remove
-# a file (you can just run cmake . in the build directory)
-file(GLOB_RECURSE library "*.cc")
-file(GLOB_RECURSE headers "*.h")
+# Definition of the C++ files used (alphabetical order)
+set(library
+    "contrib/arfile.cc"
+    "contrib/extracttar.cc"
+    "deb/debfile.cc"
+    "dirstream.cc"
+    "extract.cc"
+    "filelist.cc"
+)
+set(headers
+    "contrib/arfile.h"
+    "contrib/extracttar.h"
+    "deb/debfile.h"
+    "dirstream.h"
+    "extract.h"
+    "filelist.h"
+)
 
 # Create a library using the C++ files
 add_library(apt-inst SHARED ${library})
