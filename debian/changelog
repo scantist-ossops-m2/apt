@@ -1,3 +1,11 @@
+apt (1.4~beta4ubuntu1) zesty; urgency=medium
+
+  * basehttp: Only read Content-Range on 416 and 206 responses (LP: #1657567)
+  * Only merge acquire items with the same meta key (Closes: #838441)
+  * Workaround debian/copyright symlink
+
+ -- Julian Andres Klode <juliank@ubuntu.com>  Wed, 25 Jan 2017 12:07:50 +0100
+
 apt (1.4~beta4) unstable; urgency=medium
 
   * Read dpkg tables to handle architecture wildcards.
