@@ -519,6 +519,7 @@ pkgProblemResolver::Scores
   Extra "<INT>";
   Essentials "<INT>";
   NotObsolete "<INT>";
+  Manual "<INT>";
   Depends "<INT>";
   PreDepends "<INT>";
   Suggests "<INT>";

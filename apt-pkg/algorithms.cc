@@ -448,6 +448,7 @@ void pkgProblemResolver::MakeScores()
       _config->FindI("pkgProblemResolver::Scores::Extra",-2)
    };
    int PrioEssentials = _config->FindI("pkgProblemResolver::Scores::Essentials",100);
+   int PrioInstalledAndManual = _config->FindI("pkgProblemResolver::Scores::Manual",0);
    int PrioInstalledAndNotObsolete = _config->FindI("pkgProblemResolver::Scores::NotObsolete",1);
    int DepMap[] = {
       0,
@@ -472,6 +473,7 @@ void pkgProblemResolver::MakeScores()
          << "  Optional => " << PrioMap[pkgCache::State::Optional] << endl
          << "  Extra => " << PrioMap[pkgCache::State::Extra] << endl
          << "  Essentials => " << PrioEssentials << endl
+         << "  InstalledAndManual => " << PrioInstalledAndManual << endl
          << "  InstalledAndNotObsolete => " << PrioInstalledAndNotObsolete << endl
          << "  Pre-Depends => " << DepMap[pkgCache::Dep::PreDepends] << endl
          << "  Depends => " << DepMap[pkgCache::Dep::Depends] << endl
@@ -508,6 +510,9 @@ void pkgProblemResolver::MakeScores()
 	 Score += PrioMap[InstVer->Priority];
       else
 	 Score += PrioMap[pkgCache::State::Extra];
+
+      if (I->CurrentVer != 0 & (Cache[I].Flags & pkgCache::Flag::Auto) == 0)
+	 Score += PrioInstalledAndManual;
 
       /* This helps to fix oddball problems with conflicting packages
 	 on the same level. We enhance the score of installed packages
