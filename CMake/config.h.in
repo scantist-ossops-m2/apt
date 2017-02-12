@@ -31,6 +31,9 @@
 /* Define if we have machine/endian.h */
 #cmakedefine HAVE_MACHINE_ENDIAN_H
 
+/* Define if we have libkern/OSByteOrder.h */
+#cmakedefine HAVE_LIBKERN_OSBYTEORDER_H
+
 /* Define if we have memrchr() */
 #cmakedefine HAVE_MEMRCHR
 
