@@ -9,6 +9,8 @@
 
 #include <gtest/gtest.h>
 
+#ifdef HAVE_GETSERVBYPORT_R
+
 TEST(SrvRecTest, PopFromSrvRecs)
 {
    std::vector<SrvRec> Meep;
@@ -81,3 +83,4 @@ TEST(SrvRecTest,Randomness)
 
    EXPECT_TRUE(std::all_of(base2.begin(), base2.end(), [](SrvRec const &R) { return R.priority == 30; }));
 }
+#endif
