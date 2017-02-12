@@ -12,7 +12,6 @@
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/pkgrecords.h>
 #include <apt-pkg/pkgsystem.h>
-#include <apt-pkg/sptr.h>
 #include <apt-pkg/strutl.h>
 #include <apt-pkg/cacheiterators.h>
 #include <apt-pkg/configuration.h>

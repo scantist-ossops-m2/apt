@@ -22,6 +22,8 @@
 #define SMART_POINTER_H
 #include <apt-pkg/macros.h>
 
+#warning "This header is deprecated, use standard library smart pointers."
+
 template <class T>
 class APT_DEPRECATED_MSG("use std::unique_ptr instead") SPtr
 {
