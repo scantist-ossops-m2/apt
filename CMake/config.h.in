@@ -22,6 +22,10 @@
 #cmakedefine HAVE_VFS_H
 #cmakedefine HAVE_STRUCT_STATFS_F_TYPE
 
+/* Define if we have stat.st_mtim */
+#cmakedefine HAVE_STRUCT_STAT_ST_MTIM
+#cmakedefine HAVE_STRUCT_STAT_ST_MTIMESPEC
+
 /* Define if we have sys/mount.h */
 #cmakedefine HAVE_MOUNT_H
 

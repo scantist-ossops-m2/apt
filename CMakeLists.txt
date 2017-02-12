@@ -121,6 +121,10 @@ endif()
 
 CHECK_STRUCT_HAS_MEMBER("struct statfs" f_type sys/vfs.h HAVE_STRUCT_STATFS_F_TYPE)
 
+# Check if we have high-precision stat()
+CHECK_STRUCT_HAS_MEMBER("struct stat" st_mtim sys/stat.h HAVE_STRUCT_STAT_ST_MTIM)
+CHECK_STRUCT_HAS_MEMBER("struct stat" st_mtimespec sys/stat.h HAVE_STRUCT_STAT_ST_MTIMESPEC)
+
 # Symbols
 check_function_exists(memrchr HAVE_MEMRCHR)
 check_function_exists(strchrnul HAVE_STRCHRNUL)
