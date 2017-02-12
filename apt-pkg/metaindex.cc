@@ -7,6 +7,8 @@
 
 #include <string>
 #include <vector>
+
+using std::string;
                                                                        /*}}}*/
 
 std::string metaIndex::Describe() const
