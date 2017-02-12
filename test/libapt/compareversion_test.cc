@@ -37,13 +37,13 @@ static bool callDPKG(const char *val, const char *ref, const char &op) {
    if (Process == 0)
    {
       const char * args[6];
-      args[0] = "/usr/bin/dpkg";
+      args[0] = "dpkg";
       args[1] = "--compare-versions";
       args[2] = val;
       args[3] = (op == 1) ? ">>" : ( (op == 0) ? "=" : "<<");
       args[4] = ref;
       args[5] = 0;
-      execv(args[0], (char**) args);
+      execvp(args[0], (char**) args);
       exit(1);
    }
    int Ret;
