@@ -32,6 +32,7 @@ bool SrvRec::operator==(SrvRec const &other) const
            std::tie(other.target, other.priority, other.weight, other.port));
 }
 
+#ifdef HAVE_GETSERVBYPORT_R
 bool GetSrvRecords(std::string host, int port, std::vector<SrvRec> &Result)
 {
    std::string target;
@@ -194,3 +195,8 @@ SrvRec PopFromSrvRecs(std::vector<SrvRec> &Recs)
 
    return selected;
 }
+#else
+bool GetSrvRecords(std::string host, int port, std::vector<SrvRec> &Result) { (void) host; (void) port; (void) Result; return false; }
+bool GetSrvRecords(std::string name, std::vector<SrvRec> &Result) { (void) name; (void) Result; return false; }
+SrvRec PopFromSrvRecs(std::vector<SrvRec> &Recs) { return Recs.at(0); }
+#endif

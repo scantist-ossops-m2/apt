@@ -106,6 +106,7 @@ if (LZ4_FOUND)
 endif()
 
 # Mount()ing and stat()ing and friends
+check_symbol_exists(getservbyport_r netdb.h HAVE_GETSERVBYPORT_R)
 check_symbol_exists(statfs sys/vfs.h HAVE_VFS_H)
 check_include_files(sys/params.h HAVE_PARAMS_H)
 check_symbol_exists(statfs sys/mount.h HAVE_MOUNT_H)
