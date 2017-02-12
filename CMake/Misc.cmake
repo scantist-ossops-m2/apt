@@ -66,6 +66,11 @@ endfunction()
 
 # Generates a simple version script versioning everything with current SOVERSION
 function(add_version_script target)
+    file(WRITE "${PROJECT_BINARY_DIR}/versionscript" "FOO_1 { global: *; };")
+    set(CMAKE_REQUIRED_FLAGS_SAVE ${CMAKE_REQUIRED_FLAGS})
+    set(CMAKE_REQUIRED_FLAGS "-Wl,-version-script=${PROJECT_BINARY_DIR}/versionscript")
+    check_cxx_source_compiles("int main(void){return 0;}" HAVE_VERSIONSCRIPT)
+    set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS_SAVE})
     get_target_property(soversion ${target} SOVERSION)
     set(script "${CMAKE_CURRENT_BINARY_DIR}/${target}.versionscript")
     string(REPLACE "-" "" name "${target}_${soversion}")
@@ -74,7 +79,9 @@ function(add_version_script target)
                        COMMAND echo "${name} {global: *; };" > "${script}"
                        VERBATIM )
     add_custom_target(${target}-versionscript DEPENDS "${script}")
+if(HAVE_VERSIONSCRIPT)
     target_link_libraries(${target} PRIVATE -Wl,-version-script="${script}")
+endif()
     add_dependencies(${target} ${target}-versionscript)
 endfunction()
 
