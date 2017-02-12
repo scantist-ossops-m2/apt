@@ -15,6 +15,9 @@
 #include <apt-pkg/cacheiterators.h>
 
 #include <vector>
+
+#include <sys/types.h>
+
 class Configuration;
 class pkgIndexFile;
 class pkgPackageManager;
