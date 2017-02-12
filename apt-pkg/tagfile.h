@@ -35,6 +35,10 @@
 #include <apt-pkg/fileutl.h>
 #endif
 
+namespace APT {
+   class StringView;
+}
+
 class FileFd;
 class pkgTagSectionPrivate;
 class pkgTagFilePrivate;
@@ -55,10 +59,8 @@ class pkgTagSection
    pkgTagSectionPrivate * const d;
 
    APT_HIDDEN bool FindInternal(unsigned int Pos,const char *&Start, const char *&End) const;
-#if defined(APT_PKG_EXPOSE_STRING_VIEW)
    APT_HIDDEN APT::StringView FindInternal(unsigned int Pos) const;
    APT_HIDDEN APT::StringView FindRawInternal(unsigned int Pos) const;
-#endif
    APT_HIDDEN signed int FindIInternal(unsigned int Pos,signed long Default = 0) const;
    APT_HIDDEN bool FindBInternal(unsigned int Pos, bool Default = false) const;
    APT_HIDDEN unsigned long long FindULLInternal(unsigned int Pos, unsigned long long const &Default = 0) const;
@@ -99,7 +101,6 @@ class pkgTagSection
    APT_HIDDEN bool FindFlag(Key key,uint8_t &Flags, uint8_t const Flag) const;
    APT_HIDDEN bool FindFlag(Key key,unsigned long &Flags, unsigned long Flag) const;
    APT_HIDDEN bool Exists(Key key) const;
-#ifdef APT_PKG_EXPOSE_STRING_VIEW
    APT_HIDDEN APT::StringView Find(Key key) const;
    APT_HIDDEN APT::StringView FindRaw(Key key) const;
    APT_HIDDEN bool Find(APT::StringView Tag,const char *&Start, const char *&End) const;
@@ -115,7 +116,6 @@ class pkgTagSection
    APT_HIDDEN bool FindFlag(APT::StringView Tag,unsigned long &Flags,
 		 unsigned long Flag) const;
    APT_HIDDEN bool Exists(APT::StringView Tag) const;
-#endif
 
    bool static FindFlag(uint8_t &Flags, uint8_t const Flag,
 				const char* const Start, const char* const Stop);

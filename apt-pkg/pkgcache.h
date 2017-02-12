@@ -89,6 +89,10 @@
 using std::string;
 #endif
 
+namespace APT {
+   class StringView;
+};
+
 // size of (potentially big) files like debs or the install size of them
 typedef uint64_t map_filesize_t;
 // storing file sizes of indexes, which are way below 4 GB for now
@@ -197,9 +201,7 @@ class pkgCache								/*{{{*/
    // Memory mapped cache file
    std::string CacheFile;
    MMap &Map;
-#ifdef APT_PKG_EXPOSE_STRING_VIEW
    APT_HIDDEN map_id_t sHash(APT::StringView S) const APT_PURE;
-#endif
    map_id_t sHash(const std::string &S) const APT_PURE;
    map_id_t sHash(const char *S) const APT_PURE;
    
@@ -239,11 +241,9 @@ class pkgCache								/*{{{*/
    static const char *Priority(unsigned char Priority);
    
    // Accessors
-#ifdef APT_PKG_EXPOSE_STRING_VIEW
    APT_HIDDEN GrpIterator FindGrp(APT::StringView Name);
    APT_HIDDEN PkgIterator FindPkg(APT::StringView Name);
    APT_HIDDEN PkgIterator FindPkg(APT::StringView Name, APT::StringView Arch);
-#endif
 
 #ifdef APT_PKG_EXPOSE_STRING_VIEW
    APT::StringView ViewString(map_stringitem_t idx) const

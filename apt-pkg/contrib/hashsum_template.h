@@ -101,7 +101,6 @@ class HashSumValue
          memset(Sum,0,sizeof(Sum));
          Set(Str);
    }
-#ifdef APT_PKG_EXPOSE_STRING_VIEW
    APT_HIDDEN explicit HashSumValue(APT::StringView const &Str)
    {
          memset(Sum,0,sizeof(Sum));
@@ -112,7 +111,6 @@ class HashSumValue
          memset(Sum,0,sizeof(Sum));
          Set(Str);
    }
-#endif
    HashSumValue()
    {
       memset(Sum,0,sizeof(Sum));

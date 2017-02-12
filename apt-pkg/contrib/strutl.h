@@ -40,6 +40,7 @@ using std::ostream;
 #endif
 
 namespace APT {
+   class StringView;
    namespace String {
       std::string Strip(const std::string &s);
       bool Endswith(const std::string &s, const std::string &ending);
@@ -105,9 +106,7 @@ bool StrToNum(const char *Str,unsigned long long &Res,unsigned Len,unsigned Base
 bool Base256ToNum(const char *Str,unsigned long &Res,unsigned int Len);
 bool Base256ToNum(const char *Str,unsigned long long &Res,unsigned int Len);
 bool Hex2Num(const std::string &Str,unsigned char *Num,unsigned int Length);
-#ifdef APT_PKG_EXPOSE_STRING_VIEW
 APT_HIDDEN bool Hex2Num(const APT::StringView Str,unsigned char *Num,unsigned int Length);
-#endif
 // input changing string split
 bool TokSplitString(char Tok,char *Input,char **List,
 		    unsigned long ListMax);
