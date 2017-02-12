@@ -24,7 +24,7 @@
 class pkgDepCache;
 class pkgOrderList : protected pkgCache::Namespace
 {
-   void * const d;
+   void * const d APT_UNUSED;
    protected:
 
    pkgDepCache &Cache;   

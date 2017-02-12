@@ -103,7 +103,7 @@ class pkgProblemResolver						/*{{{*/
 {
  private:
    /** \brief dpointer placeholder (for later in case we need it) */
-   void * const d;
+   void * const d APT_UNUSED;
 
    pkgDepCache &Cache;
    typedef pkgCache::PkgIterator PkgIterator;

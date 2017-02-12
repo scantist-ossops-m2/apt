@@ -161,7 +161,7 @@ class APT_HIDDEN pkgCacheGenerator					/*{{{*/
    virtual ~pkgCacheGenerator();
 
    private:
-   void * const d;
+   void * const d APT_UNUSED;
    APT_HIDDEN bool MergeListGroup(ListParser &List, std::string const &GrpName);
    APT_HIDDEN bool MergeListPackage(ListParser &List, pkgCache::PkgIterator &Pkg);
 #ifdef APT_PKG_EXPOSE_STRING_VIEW
@@ -189,7 +189,7 @@ class APT_HIDDEN pkgCacheListParser
    pkgCache::VerIterator OldDepVer;
    map_pointer_t *OldDepLast;
 
-   void * const d;
+   void * const d APT_UNUSED;
 
    protected:
 

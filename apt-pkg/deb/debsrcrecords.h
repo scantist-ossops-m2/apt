@@ -24,7 +24,7 @@ class pkgIndexFile;
 class APT_HIDDEN debSrcRecordParser : public pkgSrcRecords::Parser
 {
    /** \brief dpointer placeholder (for later in case we need it) */
-   void * const d;
+   void * const d APT_UNUSED;
 
  protected:
    FileFd Fd;

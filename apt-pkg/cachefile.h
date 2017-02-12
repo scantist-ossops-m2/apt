@@ -38,7 +38,7 @@ class OpProgress;
 class pkgCacheFile
 {
    /** \brief dpointer placeholder (for later in case we need it) */
-   void * const d;
+   void * const d APT_UNUSED;
    bool ExternOwner;
 
    protected:

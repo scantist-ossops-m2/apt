@@ -143,7 +143,7 @@ class pkgPackageManager : protected pkgCache::Namespace
    virtual ~pkgPackageManager();
 
    private:
-   void * const d;
+   void * const d APT_UNUSED;
    enum APT_HIDDEN SmartAction { UNPACK_IMMEDIATE, UNPACK, CONFIGURE };
    APT_HIDDEN bool NonLoopingSmart(SmartAction const action, pkgCache::PkgIterator &Pkg,
       pkgCache::PkgIterator DepPkg, int const Depth, bool const PkgLoop,

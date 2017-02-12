@@ -56,7 +56,7 @@ class pkgAcqMethod
       FetchItem();
       virtual ~FetchItem();
       private:
-      void * const d;
+      void * const d APT_UNUSED;
    };
    
    struct FetchResult
@@ -73,7 +73,7 @@ class pkgAcqMethod
       FetchResult();
       virtual ~FetchResult();
       private:
-      void * const d;
+      void * const d APT_UNUSED;
    };
 
    // State

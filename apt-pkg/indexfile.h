@@ -105,7 +105,7 @@ class IndexTarget							/*{{{*/
 
 class pkgIndexFile
 {
-   void * const d;
+   void * const d APT_UNUSED;
    protected:
    bool Trusted;
 
@@ -185,7 +185,7 @@ public:
 
 class pkgDebianIndexTargetFile : public pkgDebianIndexFile
 {
-   void * const d;
+   void * const d APT_UNUSED;
 protected:
    IndexTarget const Target;
 
@@ -207,7 +207,7 @@ public:
 
 class pkgDebianIndexRealFile : public pkgDebianIndexFile
 {
-   void * const d;
+   void * const d APT_UNUSED;
 protected:
    std::string File;
 

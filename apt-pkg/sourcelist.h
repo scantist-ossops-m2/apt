@@ -50,7 +50,7 @@ class CommandLine;
 
 class pkgSourceList
 {
-   void * const d;
+   void * const d APT_UNUSED;
    std::vector<pkgIndexFile*> VolatileFiles;
    public:
 

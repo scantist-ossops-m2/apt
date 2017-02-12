@@ -34,7 +34,7 @@ class metaIndex;
 class IndexCopy								/*{{{*/
 {
    /** \brief dpointer placeholder (for later in case we need it) */
-   void * const d;
+   void * const d APT_UNUSED;
 
    protected:
    
@@ -61,7 +61,7 @@ class IndexCopy								/*{{{*/
 									/*}}}*/
 class PackageCopy : public IndexCopy					/*{{{*/
 {
-   void * const d;
+   void * const d APT_UNUSED;
    protected:
 
    virtual bool GetFile(std::string &Filename,unsigned long long &Size) APT_OVERRIDE;
@@ -76,7 +76,7 @@ class PackageCopy : public IndexCopy					/*{{{*/
 									/*}}}*/
 class SourceCopy : public IndexCopy					/*{{{*/
 {
-   void * const d;
+   void * const d APT_UNUSED;
    protected:
    
    virtual bool GetFile(std::string &Filename,unsigned long long &Size) APT_OVERRIDE;
@@ -91,7 +91,7 @@ class SourceCopy : public IndexCopy					/*{{{*/
 									/*}}}*/
 class TranslationsCopy							/*{{{*/
 {
-   void * const d;
+   void * const d APT_UNUSED;
    protected:
    pkgTagSection *Section;
 
@@ -106,7 +106,7 @@ class TranslationsCopy							/*{{{*/
 class SigVerify								/*{{{*/
 {
    /** \brief dpointer placeholder (for later in case we need it) */
-   void * const d;
+   void * const d APT_UNUSED;
 
    APT_HIDDEN bool Verify(std::string prefix,std::string file, metaIndex *records);
    APT_HIDDEN bool CopyMetaIndex(std::string CDROM, std::string CDName,

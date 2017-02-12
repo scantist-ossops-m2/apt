@@ -14,6 +14,8 @@
 #include <apt-pkg/pkgcache.h>
 #endif
 
+#include <apt-pkg/macros.h>
+
 #include <string>
 
 class pkgCache;
@@ -21,7 +23,7 @@ class pkgCache;
 class pkgArchiveCleaner
 {
    /** \brief dpointer placeholder (for later in case we need it) */
-   void * const d;
+   void * const d APT_UNUSED;
 
    protected:
 

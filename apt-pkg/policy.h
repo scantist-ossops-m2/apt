@@ -88,7 +88,7 @@ class pkgPolicy : public pkgDepCache::Policy
    explicit pkgPolicy(pkgCache *Owner);
    virtual ~pkgPolicy();
    private:
-   void * const d;
+   void * const d APT_UNUSED;
 };
 
 bool ReadPinFile(pkgPolicy &Plcy, std::string File = "");

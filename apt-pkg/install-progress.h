@@ -18,7 +18,7 @@ namespace Progress {
  {
  private:
     /** \brief dpointer placeholder */
-    void * const d;
+    void * const d APT_UNUSED;
 
  protected:
     std::string progress_str;
@@ -61,7 +61,7 @@ namespace Progress {
 
  class PackageManagerProgressFd : public PackageManager
  {
-    void * const d;
+    void * const d APT_UNUSED;
  protected:
     int OutStatusFd;
     int StepsDone;
@@ -92,7 +92,7 @@ namespace Progress {
 
  class PackageManagerProgressDeb822Fd : public PackageManager
  {
-    void * const d;
+    void * const d APT_UNUSED;
  protected:
     int OutStatusFd;
     int StepsDone;
@@ -122,7 +122,7 @@ namespace Progress {
 
  class PackageManagerFancy : public PackageManager
  {
-    void * const d;
+    void * const d APT_UNUSED;
  private:
     APT_HIDDEN static void staticSIGWINCH(int);
     static std::vector<PackageManagerFancy*> instances;
@@ -158,7 +158,7 @@ namespace Progress {
 
  class PackageManagerText : public PackageManager
  {
-    void * const d;
+    void * const d APT_UNUSED;
  public:
     virtual bool StatusChanged(std::string PackageName,
                                unsigned int StepsDone,

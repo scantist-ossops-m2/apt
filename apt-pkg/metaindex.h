@@ -43,7 +43,7 @@ public:
       TRI_YES, TRI_DONTCARE, TRI_NO, TRI_UNSET
    };
 private:
-   void * const d;
+   void * const d APT_UNUSED;
 protected:
    std::vector <pkgIndexFile *> *Indexes;
    // parsed from the sources.list

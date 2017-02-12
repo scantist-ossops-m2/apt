@@ -28,7 +28,7 @@ class pkgCacheGenerator;
 
 class debStatusIndex : public pkgDebianIndexRealFile
 {
-   void * const d;
+   void * const d APT_UNUSED;
 protected:
    virtual std::string GetArchitecture() const APT_OVERRIDE;
    virtual std::string GetComponent() const APT_OVERRIDE;
@@ -51,7 +51,7 @@ public:
 
 class debPackagesIndex : public pkgDebianIndexTargetFile
 {
-   void * const d;
+   void * const d APT_UNUSED;
 protected:
    virtual uint8_t GetIndexFlags() const APT_OVERRIDE;
 
@@ -70,7 +70,7 @@ public:
 
 class debTranslationsIndex : public pkgDebianIndexTargetFile
 {
-   void * const d;
+   void * const d APT_UNUSED;
 protected:
    virtual std::string GetArchitecture() const APT_OVERRIDE;
    virtual uint8_t GetIndexFlags() const APT_OVERRIDE;
@@ -90,7 +90,7 @@ public:
 
 class debSourcesIndex : public pkgDebianIndexTargetFile
 {
-   void * const d;
+   void * const d APT_UNUSED;
    virtual uint8_t GetIndexFlags() const APT_OVERRIDE;
    virtual bool OpenListFile(FileFd &Pkg, std::string const &FileName) APT_OVERRIDE;
    APT_HIDDEN virtual pkgCacheListParser * CreateListParser(FileFd &Pkg) APT_OVERRIDE;
@@ -115,7 +115,7 @@ class debSourcesIndex : public pkgDebianIndexTargetFile
 
 class debDebPkgFileIndex : public pkgDebianIndexRealFile
 {
-   void * const d;
+   void * const d APT_UNUSED;
    std::string DebFile;
 
 protected:
@@ -151,7 +151,7 @@ public:
 
 class debDscFileIndex : public pkgDebianIndexRealFile
 {
-   void * const d;
+   void * const d APT_UNUSED;
 
 protected:
    virtual std::string GetComponent() const APT_OVERRIDE;
@@ -178,7 +178,7 @@ public:
 
 class debStringPackageIndex : public pkgDebianIndexRealFile
 {
-   void * const d;
+   void * const d APT_UNUSED;
 protected:
    virtual std::string GetArchitecture() const APT_OVERRIDE;
    virtual std::string GetComponent() const APT_OVERRIDE;

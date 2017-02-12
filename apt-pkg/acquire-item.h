@@ -371,7 +371,7 @@ class pkgAcquire::Item : public WeakPointable				/*{{{*/
 class APT_HIDDEN pkgAcqTransactionItem: public pkgAcquire::Item		/*{{{*/
 /** \brief baseclass for the indexes files to manage them all together */
 {
-   void * const d;
+   void * const d APT_UNUSED;
    protected:
    HashStringList GetExpectedHashesFor(std::string const &MetaKey) const;
 
@@ -409,7 +409,7 @@ class APT_HIDDEN pkgAcqTransactionItem: public pkgAcquire::Item		/*{{{*/
 class APT_HIDDEN pkgAcqMetaBase : public pkgAcqTransactionItem		/*{{{*/
 /** \brief the manager of a transaction */
 {
-   void * const d;
+   void * const d APT_UNUSED;
  protected:
    std::vector<pkgAcqTransactionItem*> Transaction;
 
@@ -501,7 +501,7 @@ class APT_HIDDEN pkgAcqMetaBase : public pkgAcqTransactionItem		/*{{{*/
  */
 class APT_HIDDEN pkgAcqMetaIndex : public pkgAcqMetaBase
 {
-   void * const d;
+   void * const d APT_UNUSED;
    protected:
    IndexTarget const DetachedSigTarget;
 
@@ -534,7 +534,7 @@ class APT_HIDDEN pkgAcqMetaIndex : public pkgAcqMetaBase
  */
 class APT_HIDDEN pkgAcqMetaSig : public pkgAcqTransactionItem
 {
-   void * const d;
+   void * const d APT_UNUSED;
 
    pkgAcqMetaIndex * const MetaIndex;
 
@@ -564,7 +564,7 @@ class APT_HIDDEN pkgAcqMetaSig : public pkgAcqTransactionItem
 /** \brief An item repsonsible for downloading clearsigned metaindexes	{{{*/
 class APT_HIDDEN pkgAcqMetaClearSig : public pkgAcqMetaIndex
 {
-   void * const d;
+   void * const d APT_UNUSED;
    IndexTarget const DetachedDataTarget;
 
  public:
@@ -601,7 +601,7 @@ class APT_HIDDEN pkgAcqMetaClearSig : public pkgAcqMetaIndex
 /** \brief Common base class for all classes that deal with fetching indexes	{{{*/
 class APT_HIDDEN pkgAcqBaseIndex : public pkgAcqTransactionItem
 {
-   void * const d;
+   void * const d APT_UNUSED;
 
  public:
    /** \brief Get the full pathname of the final file for the current URI */
@@ -622,7 +622,7 @@ class APT_HIDDEN pkgAcqBaseIndex : public pkgAcqTransactionItem
  */
 class APT_HIDDEN pkgAcqIndex : public pkgAcqBaseIndex
 {
-   void * const d;
+   void * const d APT_UNUSED;
 
    protected:
 
@@ -697,7 +697,7 @@ class APT_HIDDEN pkgAcqIndex : public pkgAcqBaseIndex
  */
 class APT_HIDDEN pkgAcqDiffIndex : public pkgAcqIndex
 {
-   void * const d;
+   void * const d APT_UNUSED;
    std::vector<pkgAcqIndexMergeDiffs*> * diffs;
 
  protected:
@@ -960,7 +960,7 @@ class APT_HIDDEN pkgAcqIndexDiffs : public pkgAcqBaseIndex
  */
 class pkgAcqArchive : public pkgAcquire::Item
 {
-   void * const d;
+   void * const d APT_UNUSED;
 
    bool LocalSource;
    HashStringList ExpectedHashes;
@@ -1164,7 +1164,7 @@ private:
  */
 class pkgAcqFile : public pkgAcquire::Item
 {
-   void * const d;
+   void * const d APT_UNUSED;
 
    /** \brief How many times to retry the download, set from
     *  Acquire::Retries.

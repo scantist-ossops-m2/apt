@@ -205,7 +205,7 @@ protected:
 	bool PackageFromPackageName(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
 	bool PackageFromString(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string const &pattern);
 private:
-	void * const d;
+	void * const d APT_UNUSED;
 };									/*}}}*/
 // Iterator templates for our Containers				/*{{{*/
 template<typename Interface, typename Master, typename iterator_type, typename container_iterator, typename container_value> class Container_iterator_base :
@@ -382,7 +382,7 @@ APT_IGNORE_DEPRECATED_POP
 
 private:
 	CacheSetHelper::PkgSelector ConstructedBy;
-	void * const d;
+	void * const d APT_UNUSED;
 };
 									/*}}}*/
 template<class Container> class PackageContainer : public PackageContainerInterface {/*{{{*/
@@ -698,7 +698,7 @@ template<> template<class Compare> inline bool PackageContainer<std::deque<pkgCa
     private methods. */
 class APT_PUBLIC PackageUniverse : public PackageContainerInterface {
 	pkgCache * const _cont;
-	void * const d;
+	void * const d APT_UNUSED;
 public:
 	class const_iterator : public APT::Container_iterator_base<APT::PackageContainerInterface, PackageUniverse, PackageUniverse::const_iterator, pkgCache::PkgIterator, pkgCache::PkgIterator>
 	{
@@ -878,7 +878,7 @@ APT_IGNORE_DEPRECATED_POP
 	VersionContainerInterface& operator=(VersionContainerInterface const &other);
 	virtual ~VersionContainerInterface();
 private:
-	void * const d;
+	void * const d APT_UNUSED;
 
 protected:								/*{{{*/
 

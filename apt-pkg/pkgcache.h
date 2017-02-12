@@ -284,7 +284,7 @@ class pkgCache								/*{{{*/
    virtual ~pkgCache();
 
 private:
-   void * const d;
+   void * const d APT_UNUSED;
    bool MultiArchEnabled;
 };
 									/*}}}*/
