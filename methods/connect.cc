@@ -597,24 +597,56 @@ bool UnwrapTLS(std::string Host, std::unique_ptr<MethodFd> &Fd,
    gnutls_init(&tlsFd->session, GNUTLS_CLIENT | GNUTLS_NONBLOCK);
    gnutls_transport_set_int(tlsFd->session, dynamic_cast<FdFd*>(Fd.get())->fd);
    gnutls_certificate_allocate_credentials(&tlsFd->credentials);
-   gnutls_certificate_set_verify_flags(tlsFd->credentials, GNUTLS_VERIFY_ALLOW_X509_V1_CA_CRT);
+
+   // Credential setup
    if ((err = gnutls_certificate_set_x509_system_trust (tlsFd->credentials)) <= 0)
       return _error->Error("Could not load TLS certificates: %s", gnutls_strerror(err));
 
    std::string fileinfo = Owner->ConfigFind("CaInfo", "");
    if (!fileinfo.empty())
    {
+      gnutls_certificate_set_verify_flags(tlsFd->credentials, GNUTLS_VERIFY_ALLOW_X509_V1_CA_CRT);
       err = gnutls_certificate_set_x509_trust_file(tlsFd->credentials, fileinfo.c_str(), GNUTLS_X509_FMT_PEM);
       if (err < 0)
 	 return _error->Error("Could not load CaInfo certificate: %s", gnutls_strerror(err));
    }
+
+   // TODO: IssuerCert AKA CURLOPT_ISSUERCERT
+   // TODO: Emulate SslForceVersion AKA CURLOPT_SSLVERSION?
+
+   // For client authentication, certificate file ...
+   std::string const cert = Owner->ConfigFind("SslCert", "");
+   std::string const key = Owner->ConfigFind("SslKey", "");
+   if(cert.empty() == false )
+   {
+      if((err = gnutls_certificate_set_x509_key_file(
+           tlsFd->credentials,
+           cert.c_str(),
+           key.empty() ? cert.c_str() : key.c_str(),
+           GNUTLS_X509_FMT_PEM)) < 0) {
+        return _error->Error("Could not load client certificate or key: %s", gnutls_strerror(err));
+      }
+   }
+
+   // CRL file
+   std::string const crlfile = Owner->ConfigFind("CrlFile", "");
+   if(crlfile.empty() == false)
+   {
+      if ((err = gnutls_certificate_set_x509_crl_file(tlsFd->credentials,
+					   crlfile.c_str(),
+					   GNUTLS_X509_FMT_PEM)) < 0)
+      return _error->Error("Could not load CrlFile: %s", gnutls_strerror(err));
+   }
+
    if ((err = gnutls_credentials_set(tlsFd->session, GNUTLS_CRD_CERTIFICATE, tlsFd->credentials)) < 0)
       return _error->Error("Could not set CaInfo certificate: %s", gnutls_strerror(err));
-   // TODO: Respect ForceSSl options
+
    if ((err = gnutls_set_default_priority(tlsFd->session)) < 0)
       return _error->Error("Could not set algorithm preferences: %s", gnutls_strerror(err));
 
-   gnutls_session_set_verify_cert(tlsFd->session, tlsFd->hostname.c_str(), 0);
+   if (Owner->ConfigFindB("Verify-Peer", true) || Owner->ConfigFindB("Verify-Host", true)) {
+      gnutls_session_set_verify_cert(tlsFd->session, tlsFd->hostname.c_str(), 0);
+   }
    if ((err = gnutls_server_name_set(tlsFd->session, GNUTLS_NAME_DNS, tlsFd->hostname.c_str(), tlsFd->hostname.length())) < 0)
       return _error->Error("Could not set SNI name: %s", gnutls_strerror(err));
 
