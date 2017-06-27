@@ -343,6 +343,7 @@ bool HttpServerState::Open()
    if (Proxy.empty() == false)
       Owner->AddProxyAuth(Proxy, ServerName);
 
+   bool tls = ServerName.Access == "https";
    if (Proxy.Access == "socks5h")
    {
       if (Connect(Proxy.Host, Proxy.Port, "socks", 1080, ServerFd, TimeOut, Owner) == false)
@@ -357,7 +358,6 @@ bool HttpServerState::Open()
       // Determine what host and port to use based on the proxy settings
       int Port = 0;
       string Host;
-      bool tls = ServerName.Access == "https";
       if (Proxy.empty() == true || Proxy.Host.empty() == true)
       {
 	 if (ServerName.Port != 0)
@@ -371,14 +371,15 @@ bool HttpServerState::Open()
 	 if (Proxy.Port != 0)
 	    Port = Proxy.Port;
 	 Host = Proxy.Host;
-	 tls = false;
       }
-      bool Res = Connect(Host,Port,tls ? "https" : "http", tls ? 443 : 80,ServerFd,TimeOut,Owner);
-      if (Res == true && tls) {
-	 Res = UnwrapTLS(Host, ServerFd, TimeOut, Owner);
-      }
-      return Res;
+      if (!Connect(Host,Port,tls ? "https" : "http", tls ? 443 : 80,ServerFd,TimeOut,Owner))
+	 return false;
+
    }
+
+   if (tls && UnwrapTLS(ServerName.Host, ServerFd, TimeOut, Owner) == false)
+      return false;
+
    return true;
 }
 									/*}}}*/
