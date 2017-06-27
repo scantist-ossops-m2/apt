@@ -77,7 +77,7 @@ endif()
 
 
 # apt-transport-https dependencies
-find_package(CURL REQUIRED)
+find_package(CURL)
 if (CURL_FOUND)
   set(HAVE_CURL 1)
 endif()
