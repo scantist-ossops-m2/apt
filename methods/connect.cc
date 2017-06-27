@@ -663,6 +663,19 @@ bool UnwrapTLS(std::string Host, std::unique_ptr<MethodFd> &Fd,
 
    if (err < 0)
    {
+      // Print reason why validation failed.
+      if (err == GNUTLS_E_CERTIFICATE_VERIFICATION_ERROR)
+      {
+	 gnutls_datum_t txt;
+	 auto type = gnutls_certificate_type_get(tlsFd->session);
+	 auto status = gnutls_session_get_verify_cert_status(tlsFd->session);
+	 if (gnutls_certificate_verification_status_print(status,
+                              type, &txt, 0) == 0)
+	 {
+	    _error->Error("Certificate verification failed: %s", txt.data);
+	 }
+	 gnutls_free(txt.data);
+      }
       return _error->Error("Could not handshake: %s", gnutls_strerror(err));
    }
 
