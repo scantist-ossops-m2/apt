@@ -20,6 +20,9 @@
 #include <apt-pkg/configuration.h>
 #include <apt-pkg/srvrec.h>
 
+#include <gnutls/gnutls.h>
+#include <gnutls/x509.h>
+
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
@@ -546,3 +549,93 @@ bool UnwrapSocks(std::string Host,int Port, URI Proxy, std::unique_ptr<MethodFd>
    return true;
 }
 									/*}}}*/
+// UnwrapTLS - Handle TLS connections 					/*{{{*/
+// ---------------------------------------------------------------------
+/* Performs a TLS handshake on the socket */
+struct TlsFd : public MethodFd  {
+   std::unique_ptr<MethodFd> UnderlyingFd;
+   gnutls_session_t session;
+   gnutls_certificate_credentials_t credentials;
+   std::string hostname;
+
+   int Fd() { return UnderlyingFd->Fd(); }
+
+   ssize_t Read(void *buf, size_t count) APT_OVERRIDE {
+      return HandleError(gnutls_record_recv(session, buf, count));
+   }
+   ssize_t Write(void *buf, size_t count) APT_OVERRIDE {
+      return HandleError(gnutls_record_send(session, buf, count));
+   }
+
+   template<typename T> T HandleError(T err) {
+      if (err < 0 && gnutls_error_is_fatal(err))
+	 errno = EIO;
+      else if (err < 0)
+	 errno = EAGAIN;
+      else
+	 errno = 0;
+      return err;
+   }
+
+   int Close() APT_OVERRIDE {
+      if (HandleError(gnutls_bye(session, GNUTLS_SHUT_RDWR)) < 0)
+	 return -1;
+      return UnderlyingFd->Close();
+   }
+};
+
+bool UnwrapTLS(std::string Host, std::unique_ptr<MethodFd> &Fd,
+	       unsigned long Timeout,aptMethod *Owner)
+{
+   int err;
+   TlsFd *tlsFd = new TlsFd();
+
+
+   tlsFd->hostname = Host;
+   tlsFd->UnderlyingFd = MethodFd::FromFd(-1); // For now
+
+   gnutls_init(&tlsFd->session, GNUTLS_CLIENT | GNUTLS_NONBLOCK);
+   gnutls_transport_set_int(tlsFd->session, dynamic_cast<FdFd*>(Fd.get())->fd);
+   gnutls_certificate_allocate_credentials(&tlsFd->credentials);
+   gnutls_certificate_set_verify_flags(tlsFd->credentials, GNUTLS_VERIFY_ALLOW_X509_V1_CA_CRT);
+   if ((err = gnutls_certificate_set_x509_system_trust (tlsFd->credentials)) <= 0)
+      return _error->Error("Could not load TLS certificates: %s", gnutls_strerror(err));
+
+   std::string fileinfo = Owner->ConfigFind("CaInfo", "");
+   if (!fileinfo.empty())
+   {
+      err = gnutls_certificate_set_x509_trust_file(tlsFd->credentials, fileinfo.c_str(), GNUTLS_X509_FMT_PEM);
+      if (err < 0)
+	 return _error->Error("Could not load CaInfo certificate: %s", gnutls_strerror(err));
+   }
+   if ((err = gnutls_credentials_set(tlsFd->session, GNUTLS_CRD_CERTIFICATE, tlsFd->credentials)) < 0)
+      return _error->Error("Could not set CaInfo certificate: %s", gnutls_strerror(err));
+   // TODO: Respect ForceSSl options
+   if ((err = gnutls_set_default_priority(tlsFd->session)) < 0)
+      return _error->Error("Could not set algorithm preferences: %s", gnutls_strerror(err));
+
+   gnutls_session_set_verify_cert(tlsFd->session, tlsFd->hostname.c_str(), 0);
+   if ((err = gnutls_server_name_set(tlsFd->session, GNUTLS_NAME_DNS, tlsFd->hostname.c_str(), tlsFd->hostname.length())) < 0)
+      return _error->Error("Could not set SNI name: %s", gnutls_strerror(err));
+
+   // Do the handshake. Our socket is non-blocking, so we need to call WaitFd()
+   // accordingly.
+   do
+   {
+      err = gnutls_handshake(tlsFd->session);
+      if ((err == GNUTLS_E_INTERRUPTED || err == GNUTLS_E_AGAIN) &&
+	  WaitFd(Fd->Fd(), gnutls_record_get_direction(tlsFd->session) == 1, Timeout) == false)
+	 return _error->Errno("select", "Could not wait for server fd");
+   }
+   while (err < 0 && gnutls_error_is_fatal(err) == 0);
+
+   if (err < 0)
+   {
+      return _error->Error("Could not handshake: %s", gnutls_strerror(err));
+   }
+
+   tlsFd->UnderlyingFd = std::move(Fd);
+   Fd.reset(tlsFd);
+   return true;
+}
+/*}}}*/

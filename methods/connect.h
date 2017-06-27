@@ -41,6 +41,7 @@ bool Connect(std::string To,int Port,const char *Service,int DefPort,
 
 bool UnwrapSocks(std::string To,int Port, URI Proxy, std::unique_ptr<MethodFd> &Fd, unsigned long Timeout,aptMethod *Owner);
 
+bool UnwrapTLS(std::string To, std::unique_ptr<MethodFd> &Fd, unsigned long Timeout,aptMethod *Owner);
 
 void RotateDNS();
 

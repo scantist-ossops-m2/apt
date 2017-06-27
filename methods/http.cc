@@ -357,6 +357,7 @@ bool HttpServerState::Open()
       // Determine what host and port to use based on the proxy settings
       int Port = 0;
       string Host;
+      bool tls = ServerName.Access == "https";
       if (Proxy.empty() == true || Proxy.Host.empty() == true)
       {
 	 if (ServerName.Port != 0)
@@ -370,8 +371,13 @@ bool HttpServerState::Open()
 	 if (Proxy.Port != 0)
 	    Port = Proxy.Port;
 	 Host = Proxy.Host;
+	 tls = false;
       }
-      return Connect(Host,Port,"http",80,ServerFd,TimeOut,Owner);
+      bool Res = Connect(Host,Port,tls ? "https" : "http", tls ? 443 : 80,ServerFd,TimeOut,Owner);
+      if (Res == true && tls) {
+	 Res = UnwrapTLS(Host, ServerFd, TimeOut, Owner);
+      }
+      return Res;
    }
    return true;
 }
