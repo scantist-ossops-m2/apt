@@ -12,6 +12,7 @@
 
 #include <apt-pkg/strutl.h>
 #include "aptmethod.h"
+#include "connect.h"
 
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -22,7 +23,7 @@ class FTPConn
 {
    char Buffer[1024*10];
    unsigned long Len;
-   int ServerFd;
+   std::unique_ptr<MethodFd> ServerFd;
    int DataFd;
    int DataListenFd;
    URI ServerName;
