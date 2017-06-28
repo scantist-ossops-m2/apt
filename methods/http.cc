@@ -126,11 +126,11 @@ bool CircleBuf::Read(std::unique_ptr<MethodFd> const &Fd)
       // Write the buffer segment
       ssize_t Res;
       if(CircleBuf::BwReadLimit) {
-	 Res = Fd->Read(Buf + (InP%Size),
-		    BwReadMax > LeftRead() ? LeftRead() : BwReadMax);
+	 Res = Fd->Read(Buf + (InP % Size),
+			BwReadMax > LeftRead() ? LeftRead() : BwReadMax);
       } else
-	 Res = Fd->Read(Buf + (InP%Size),LeftRead());
-      
+	 Res = Fd->Read(Buf + (InP % Size), LeftRead());
+
       if(Res > 0 && BwReadLimit > 0) 
 	 CircleBuf::BwTickReadData += Res;
     
@@ -208,7 +208,7 @@ bool CircleBuf::Write(std::unique_ptr<MethodFd> const &Fd)
       
       // Write the buffer segment
       ssize_t Res;
-      Res = Fd->Write(Buf + (OutP%Size),LeftWrite());
+      Res = Fd->Write(Buf + (OutP % Size), LeftWrite());
 
       if (Res == 0)
 	 return false;
@@ -372,9 +372,8 @@ bool HttpServerState::Open()
 	    Port = Proxy.Port;
 	 Host = Proxy.Host;
       }
-      if (!Connect(Host,Port,tls ? "https" : "http", tls ? 443 : 80,ServerFd,TimeOut,Owner))
+      if (!Connect(Host, Port, tls ? "https" : "http", tls ? 443 : 80, ServerFd, TimeOut, Owner))
 	 return false;
-
    }
 
    if (tls && UnwrapTLS(ServerName.Host, ServerFd, TimeOut, Owner) == false)
@@ -620,7 +619,7 @@ bool HttpServerState::Go(bool ToFile, RequestState &Req)
 {
    // Server has closed the connection
    if (ServerFd->Fd() == -1 && (In.WriteSpace() == false ||
-			        ToFile == false))
+				ToFile == false))
       return false;
    
    fd_set rfds,wfds;
@@ -629,19 +628,18 @@ bool HttpServerState::Go(bool ToFile, RequestState &Req)
    
    /* Add the server. We only send more requests if the connection will 
       be persisting */
-   if (Out.WriteSpace() == true && ServerFd->Fd() != -1
-       && Persistent == true)
-      FD_SET(ServerFd->Fd(),&wfds);
+   if (Out.WriteSpace() == true && ServerFd->Fd() != -1 && Persistent == true)
+      FD_SET(ServerFd->Fd(), &wfds);
    if (In.ReadSpace() == true && ServerFd->Fd() != -1)
-      FD_SET(ServerFd->Fd(),&rfds);
-   
+      FD_SET(ServerFd->Fd(), &rfds);
+
    // Add the file
    auto FileFD = MethodFd::FromFd(-1);
    if (Req.File.IsOpen())
       FileFD = MethodFd::FromFd(Req.File.Fd());
-   
+
    if (In.WriteSpace() == true && ToFile == true && FileFD->Fd() != -1)
-      FD_SET(FileFD->Fd(),&wfds);
+      FD_SET(FileFD->Fd(), &wfds);
 
    // Add stdin
    if (Owner->ConfigFindB("DependOnSTDIN", true) == true)
@@ -671,14 +669,14 @@ bool HttpServerState::Go(bool ToFile, RequestState &Req)
    }
    
    // Handle server IO
-   if (ServerFd->Fd() != -1 && FD_ISSET(ServerFd->Fd(),&rfds))
+   if (ServerFd->Fd() != -1 && FD_ISSET(ServerFd->Fd(), &rfds))
    {
       errno = 0;
       if (In.Read(ServerFd) == false)
 	 return Die(Req);
    }
-	 
-   if (ServerFd->Fd() != -1 && FD_ISSET(ServerFd->Fd(),&wfds))
+
+   if (ServerFd->Fd() != -1 && FD_ISSET(ServerFd->Fd(), &wfds))
    {
       errno = 0;
       if (Out.Write(ServerFd) == false)
@@ -686,7 +684,7 @@ bool HttpServerState::Go(bool ToFile, RequestState &Req)
    }
 
    // Send data to the file
-   if (FileFD->Fd() != -1 && FD_ISSET(FileFD->Fd(),&wfds))
+   if (FileFD->Fd() != -1 && FD_ISSET(FileFD->Fd(), &wfds))
    {
       if (In.Write(FileFD) == false)
 	 return _error->Errno("write",_("Error writing to output file"));

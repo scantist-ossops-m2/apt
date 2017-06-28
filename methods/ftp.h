@@ -10,9 +10,9 @@
 #ifndef APT_FTP_H
 #define APT_FTP_H
 
-#include <apt-pkg/strutl.h>
 #include "aptmethod.h"
 #include "connect.h"
+#include <apt-pkg/strutl.h>
 
 #include <sys/socket.h>
 #include <sys/types.h>

@@ -74,7 +74,7 @@ time_t FtpMethod::FailTime = 0;
 // ---------------------------------------------------------------------
 /* */
 FTPConn::FTPConn(URI Srv) : Len(0), ServerFd(MethodFd::FromFd(-1)), DataFd(-1),
-                            DataListenFd(-1), ServerName(Srv),
+			    DataListenFd(-1), ServerName(Srv),
 			    ForceExtended(false), TryPassive(true),
 			    PeerAddrLen(0), ServerAddrLen(0)
 {
@@ -177,12 +177,12 @@ bool FTPConn::Open(aptMethod *Owner)
    
    // Get the remote server's address
    PeerAddrLen = sizeof(PeerAddr);
-   if (getpeername(ServerFd->Fd(),(sockaddr *)&PeerAddr,&PeerAddrLen) != 0)
+   if (getpeername(ServerFd->Fd(), (sockaddr *)&PeerAddr, &PeerAddrLen) != 0)
       return _error->Errno("getpeername",_("Unable to determine the peer name"));
    
    // Get the local machine's address
    ServerAddrLen = sizeof(ServerAddr);
-   if (getsockname(ServerFd->Fd(),(sockaddr *)&ServerAddr,&ServerAddrLen) != 0)
+   if (getsockname(ServerFd->Fd(), (sockaddr *)&ServerAddr, &ServerAddrLen) != 0)
       return _error->Errno("getsockname",_("Unable to determine the local name"));
    
    return Res;
@@ -338,14 +338,14 @@ bool FTPConn::ReadLine(string &Text)
       }
 
       // Wait for some data..
-      if (WaitFd(ServerFd->Fd(),false,TimeOut) == false)
+      if (WaitFd(ServerFd->Fd(), false, TimeOut) == false)
       {
 	 Close();
 	 return _error->Error(_("Connection timeout"));
       }
       
       // Suck it back
-      int Res = ServerFd->Read(Buffer + Len,sizeof(Buffer) - Len);
+      int Res = ServerFd->Read(Buffer + Len, sizeof(Buffer) - Len);
       if (Res == 0)
 	 _error->Error(_("Server closed the connection"));
       if (Res <= 0)
@@ -450,13 +450,13 @@ bool FTPConn::WriteMsg(unsigned int &Ret,string &Text,const char *Fmt,...)
    unsigned long Start = 0;
    while (Len != 0)
    {
-      if (WaitFd(ServerFd->Fd(),true,TimeOut) == false)
+      if (WaitFd(ServerFd->Fd(), true, TimeOut) == false)
       {
 	 Close();
 	 return _error->Error(_("Connection timeout"));
       }
-      
-      int Res = ServerFd->Write(S + Start,Len);
+
+      int Res = ServerFd->Write(S + Start, Len);
       if (Res <= 0)
       {
 	 _error->Errno("write",_("Write error"));
