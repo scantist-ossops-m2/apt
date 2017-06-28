@@ -99,7 +99,7 @@ struct HttpServerState: public ServerState
    CircleBuf Out;
    std::unique_ptr<MethodFd> ServerFd;
 
- protected:
+   protected:
    virtual bool ReadHeaderLines(std::string &Data) APT_OVERRIDE;
    virtual bool LoadNextResponse(bool const ToFile, RequestState &Req) APT_OVERRIDE;
    virtual bool WriteResponse(std::string const &Data) APT_OVERRIDE;
