@@ -7,10 +7,9 @@ env:
  - USER=travis CMAKE_FLAGS="-DWITH_DOC=OFF -DWITH_CURL=OFF"
  - USER=root CMAKE_FLAGS=-DWITH_DOC=OFF
 install:
+ - sed -i -e "s#UID#$(id -u)#g" -e "s#GID#$(id -g)#g" Dockerfile
  - docker build --tag=apt-ci .
 before_script:
- - id
- - exit 1
  - docker run --rm -w $PWD -v $PWD:$PWD --user=travis apt-ci sh -c "mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Coverage -G Ninja $CMAKE_FLAGS .."
  - docker run --rm -w $PWD -v $PWD:$PWD --user=travis apt-ci ninja -C build
 script:
