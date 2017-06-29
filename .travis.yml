@@ -1,5 +1,7 @@
 language: generic
 sudo: required
+services:
+  - docker
 env:
  - FROM=debian:testing TEST_SUITE=user CMAKE_FLAGS=
  - FROM=debian:testing TEST_SUITE=user CMAKE_FLAGS="-DWITH_DOC=OFF -DWITH_CURL=OFF"
