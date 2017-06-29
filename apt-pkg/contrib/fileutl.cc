@@ -49,6 +49,7 @@
 #include <glob.h>
 #include <pwd.h>
 #include <grp.h>
+#include <poll.h>
 
 #include <set>
 #include <algorithm>
@@ -760,38 +761,18 @@ void SetNonBlock(int Fd,bool Block)
    in seconds. */
 bool WaitFd(int Fd,bool write,unsigned long timeout)
 {
-   fd_set Set;
-   struct timeval tv;
-   FD_ZERO(&Set);
-   FD_SET(Fd,&Set);
-   tv.tv_sec = timeout;
-   tv.tv_usec = 0;
-   if (write == true) 
-   {      
-      int Res;
-      do
-      {
-	 Res = select(Fd+1,0,&Set,0,(timeout != 0?&tv:0));
-      }
-      while (Res < 0 && errno == EINTR);
-      
-      if (Res <= 0)
-	 return false;
-   } 
-   else 
+   struct pollfd fds[1] = {
+       {.fd = Fd,
+	.events = write ? (short)POLLOUT : (short)POLLIN,
+	.revents = 0}};
+
+   int Res;
+   do
    {
-      int Res;
-      do
-      {
-	 Res = select(Fd+1,&Set,0,0,(timeout != 0?&tv:0));
-      }
-      while (Res < 0 && errno == EINTR);
-      
-      if (Res <= 0)
-	 return false;
-   }
-   
-   return true;
+      Res = poll(fds, 1, timeout == 0 ? -1 : timeout * 1000);
+   } while (Res < 0 && (errno == EINTR || errno == EAGAIN));
+
+   return Res > 0 && (fds[0].revents & fds[0].events);
 }
 									/*}}}*/
 // MergeKeepFdsFromConfiguration - Merge APT::Keep-Fds configuration	/*{{{*/
