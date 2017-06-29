@@ -9,6 +9,8 @@ env:
 install:
  - docker build --tag=apt-ci .
 before_script:
+ - id
+ - exit 1
  - docker run --rm -w $PWD -v $PWD:$PWD --user=travis apt-ci sh -c "mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Coverage -G Ninja $CMAKE_FLAGS .."
  - docker run --rm -w $PWD -v $PWD:$PWD --user=travis apt-ci ninja -C build
 script:
