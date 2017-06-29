@@ -9,12 +9,12 @@ env:
 install:
  - docker build --tag=apt-ci .
 before_script:
- - docker run --rm -w $PWD -v $PWD:$PWD apt-ci sh -c "mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Coverage -G Ninja $CMAKE_FLAGS .."
- - docker run --rm -w $PWD -v $PWD:$PWD apt-ci ninja -C build
+ - docker run --rm -w $PWD -v $PWD:$PWD --user=travis apt-ci sh -c "mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Coverage -G Ninja $CMAKE_FLAGS .."
+ - docker run --rm -w $PWD -v $PWD:$PWD --user=travis apt-ci ninja -C build
 script:
- - docker run --rm -w $PWD -v $PWD:$PWD apt-ci env CTEST_OUTPUT_ON_FAILURE=1 ninja -C build test
- - docker run --rm -w $PWD -v $PWD:$PWD apt-ci env DESTDIR=$PWD/rootdir chronic ninja -C build install
- - docker run --rm -w $PWD -v $PWD:$PWD--user=$USER apt-ci ./test/integration/run-tests -qq
+ - docker run --rm -w $PWD -v $PWD:$PWD --user=travis apt-ci env CTEST_OUTPUT_ON_FAILURE=1 ninja -C build test
+ - docker run --rm -w $PWD -v $PWD:$PWD --user=travis apt-ci env DESTDIR=$PWD/rootdir chronic ninja -C build install
+ - docker run --rm -w $PWD -v $PWD:$PWD --user=$USER apt-ci ./test/integration/run-tests -qq
 after_script:
  - cd build
  - gcov -r $(find -name '*.gcno')
