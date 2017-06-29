@@ -8,8 +8,8 @@ env:
  - FROM=debian:testing TEST_SUITE=root CMAKE_FLAGS=-DWITH_DOC=OFF
 install:
  - echo "FROM $FROM" > Dockerfile
- - echo "RUN apt-get update" > Dockerfile
- - echo "RUN ./prepare-release travis-ci" > Dockerfile
+ - echo "RUN apt-get update" >> Dockerfile
+ - echo "RUN ./prepare-release travis-ci" >> Dockerfile
  - docker build --tag=apt-ci .
 before_script:
  - docker run --rm -w $PWD --mount type=bind,src=/home/travis/,dst=/home/travis/ apt-ci sh -c "mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Coverage -G Ninja $CMAKE_FLAGS .."
