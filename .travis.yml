@@ -18,6 +18,5 @@ script:
  - docker run --rm -w $PWD -v $PWD:$PWD --user=travis apt-ci env DESTDIR=$PWD/rootdir chronic ninja -C build install
  - docker run --rm -w $PWD -v $PWD:$PWD --user=$USER apt-ci ./test/integration/run-tests -qq
 after_script:
- - cd build
- - gcov -r $(find -name '*.gcno')
- - bash <(curl -s https://codecov.io/bash)
+ - docker run --rm -w $PWD/build -v $PWD:$PWD --user=$USER apt-ci gcov -r $(cd build && find -name '*.gcno')
+ - cd build && bash <(curl -s https://codecov.io/bash)
