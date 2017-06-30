@@ -684,6 +684,8 @@ bool HttpServerState::Go(bool ToFile, RequestState &Req)
       errno = 0;
       if (In.Read(ServerFd) == false)
 	 return Die(Req);
+      else if (errno == EINTR | errno == EAGAIN)
+	 return true;
    }
 
    if (ServerFd->Fd() != -1 && FD_ISSET(ServerFd->Fd(), &wfds))
@@ -691,6 +693,8 @@ bool HttpServerState::Go(bool ToFile, RequestState &Req)
       errno = 0;
       if (Out.Write(ServerFd) == false)
 	 return Die(Req);
+      else if (errno == EINTR | errno == EAGAIN)
+	 return true;
    }
 
    // Send data to the file
