@@ -1,0 +1,12 @@
+[Unit]
+Description=Make apt-daily wait for network using NetworkManager (1h timeout)
+Requisite=NetworkManager.service
+After=NetworkManager.service
+Before=apt-daily.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/nm-online -s -q --timeout=3600
+
+[Install]
+WantedBy=apt-daily.service

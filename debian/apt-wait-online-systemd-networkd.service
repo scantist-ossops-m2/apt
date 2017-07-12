@@ -1,0 +1,12 @@
+[Unit]
+Description=Make apt-daily wait for network using systemd-networkd (1h timeout)
+Requisite=systemd-networkd.service
+After=systemd-networkd.service
+Before=apt-daily.service
+
+[Service]
+Type=oneshot
+ExecStart=/lib/systemd/systemd-networkd-wait-online --timeout=3600
+
+[Install]
+WantedBy=apt-daily.service
