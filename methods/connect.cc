@@ -112,23 +112,60 @@ std::unique_ptr<MethodFd> MethodFd::FromFd(int iFd)
 // DoConnect - Attempt a connect operation				/*{{{*/
 // ---------------------------------------------------------------------
 /* This helper function attempts a connection to a single address. */
-static bool DoConnect(struct addrinfo *Addr, std::string const &Host,
+static bool AssignBlame(int Fd, std::string const &Host, const char *Name, const char *Service, aptMethod *Owner)
+{
+   // Check the socket for an error condition
+   unsigned int Err;
+   unsigned int Len = sizeof(Err);
+   if (getsockopt(Fd, SOL_SOCKET, SO_ERROR, &Err, &Len) != 0)
+      return _error->Errno("getsockopt", _("Failed"));
+
+   if (Err != 0)
+   {
+      errno = Err;
+      if (errno == ECONNREFUSED)
+	 Owner->SetFailReason("ConnectionRefused");
+      else if (errno == ETIMEDOUT)
+	 Owner->SetFailReason("ConnectionTimedOut");
+      bad_addr.insert(bad_addr.begin(), std::string(Name));
+      return _error->Errno("connect", _("Could not connect to %s:%s (%s)."), Host.c_str(),
+			   Service, Name);
+   }
+
+   return true;
+}
+static bool DoConnect(struct addrinfo *Addr6, struct addrinfo *Addr4, std::string const &Host,
 		      unsigned long TimeOut, std::unique_ptr<MethodFd> &Fd, aptMethod *Owner)
 {
    // Show a status indicator
-   char Name[NI_MAXHOST];
-   char Service[NI_MAXSERV];
-   Fd.reset(new FdFd());
+   char Name6[NI_MAXHOST];
+   char Service6[NI_MAXSERV];
+   char Name4[NI_MAXHOST];
+   char Service4[NI_MAXSERV];
+   std::unique_ptr<FdFd> fd6(new FdFd());
+   std::unique_ptr<FdFd> fd4(new FdFd());
 
-   Name[0] = 0;   
-   Service[0] = 0;
-   getnameinfo(Addr->ai_addr,Addr->ai_addrlen,
-	       Name,sizeof(Name),Service,sizeof(Service),
-	       NI_NUMERICHOST|NI_NUMERICSERV);
-   Owner->Status(_("Connecting to %s (%s)"),Host.c_str(),Name);
+   Name6[0] = 0;
+   Service6[0] = 0;
+   Name4[0] = 0;
+   Service4[0] = 0;
+   if (Addr6 != nullptr)
+      getnameinfo(Addr6->ai_addr, Addr6->ai_addrlen,
+		  Name6, sizeof(Name6), Service6, sizeof(Service6),
+		  NI_NUMERICHOST | NI_NUMERICSERV);
+   if (Addr4 != nullptr)
+      getnameinfo(Addr4->ai_addr, Addr4->ai_addrlen,
+		  Name4, sizeof(Name4), Service4, sizeof(Service4),
+		  NI_NUMERICHOST | NI_NUMERICSERV);
+   if (*Name6 && *Name4)
+      Owner->Status(_("Connecting to %s (%s, %s)"), Host.c_str(), Name6, Name4);
+   else if (*Name6)
+      Owner->Status(_("Connecting to %s (%s)"), Host.c_str(), Name6);
+   else if (*Name4)
+      Owner->Status(_("Connecting to %s (%s)"), Host.c_str(), Name4);
 
    // if that addr did timeout before, we do not try it again
-   if(bad_addr.find(std::string(Name)) != bad_addr.end())
+   if (bad_addr.find(std::string(Name6)) != bad_addr.end() && bad_addr.find(std::string(Name4)) != bad_addr.end())
       return false;
 
    /* If this is an IP rotation store the IP we are using.. If something goes
@@ -136,54 +173,122 @@ static bool DoConnect(struct addrinfo *Addr, std::string const &Host,
    if (LastHostAddr->ai_next != 0)
    {
       std::stringstream ss;
-      ioprintf(ss, _("[IP: %s %s]"),Name,Service);
+      ioprintf(ss, _("[IP: %s,%s %s,%s]"), Name6, Name4, Service6, Service4);
       Owner->SetIP(ss.str());
    }
       
    // Get a socket
-   if ((static_cast<FdFd *>(Fd.get())->fd = socket(Addr->ai_family, Addr->ai_socktype,
-						   Addr->ai_protocol)) < 0)
-      return _error->Errno("socket",_("Could not create a socket for %s (f=%u t=%u p=%u)"),
-			   Name,Addr->ai_family,Addr->ai_socktype,Addr->ai_protocol);
-
-   SetNonBlock(Fd->Fd(), true);
-   if (connect(Fd->Fd(), Addr->ai_addr, Addr->ai_addrlen) < 0 &&
-       errno != EINPROGRESS)
-      return _error->Errno("connect",_("Cannot initiate the connection "
-			   "to %s:%s (%s)."),Host.c_str(),Service,Name);
-   
-   /* This implements a timeout for connect by opening the connection
-      nonblocking */
-   if (WaitFd(Fd->Fd(), true, TimeOut) == false)
+   if (Addr6 != nullptr && (fd6->fd = socket(Addr6->ai_family, Addr6->ai_socktype, Addr6->ai_protocol)) < 0)
    {
-      bad_addr.insert(bad_addr.begin(), std::string(Name));
+      _error->Errno("socket", _("Could not create a socket for %s (f=%u t=%u p=%u)"),
+		    Name6, Addr6->ai_family, Addr6->ai_socktype, Addr6->ai_protocol);
+   }
+
+   if (Addr4 != nullptr && (fd4->fd = socket(Addr4->ai_family, Addr4->ai_socktype, Addr4->ai_protocol)) < 0)
+   {
+      _error->Errno("socket", _("Could not create a socket for %s (f=%u t=%u p=%u)"),
+		    Name4, Addr4->ai_family, Addr4->ai_socktype, Addr4->ai_protocol);
+   }
+
+   if (fd6->Fd() != -1)
+      SetNonBlock(fd6->Fd(), true);
+   if (fd4->Fd() != -1)
+      SetNonBlock(fd4->Fd(), true);
+
+   fd_set Set;
+   struct timeval fallbackTimeout = {
+       .tv_sec = 0,
+       .tv_usec = 300 * 1000,
+   };
+   struct timeval normalTimeout = {
+       .tv_sec = (time_t)TimeOut,
+       .tv_usec = 0,
+   };
+   FD_ZERO(&Set);
+
+   if (fd6->Fd() != -1)
+   {
+      if (connect(fd6->Fd(), Addr6->ai_addr, Addr6->ai_addrlen) < 0 &&
+	  errno != EINPROGRESS)
+      {
+	 fd6->Close();
+	 _error->Errno("connect", _("Cannot initiate the connection "
+				    "to %s:%s (%s)."),
+		       Host.c_str(), Service6, Name6);
+      }
+   }
+
+   if (fd6->Fd() != -1)
+   {
+
+      FD_SET(fd6->Fd(), &Set);
+      int Res;
+      do
+      {
+	 Res = select(fd6->Fd() + 1, 0, &Set, 0, &fallbackTimeout);
+      } while (Res < 0 && errno == EINTR);
+   }
+
+   if (fd4->Fd() != -1 && (fd6->Fd() == -1 || !FD_ISSET(fd6->Fd(), &Set)))
+   {
+      if (connect(fd4->Fd(), Addr4->ai_addr, Addr4->ai_addrlen) < 0 &&
+	  errno != EINPROGRESS)
+      {
+	 fd4->Close();
+	 _error->Errno("connect", _("Cannot initiate the connection "
+				    "to %s:%s (%s)."),
+		       Host.c_str(), Service4, Name4);
+      }
+   }
+   else
+   {
+      fd4->Close();
+   }
+
+   // Wait for both IPv6 and IPv4 connection
+   int Res = 0;
+   if (fd6->Fd() != -1 || fd4->Fd() != -1)
+   {
+      if (fd6->Fd() != -1)
+	 FD_SET(fd6->Fd(), &Set);
+      if (fd4->Fd() != -1)
+	 FD_SET(fd4->Fd(), &Set);
+      do
+      {
+	 Res = select(MAX(fd6->Fd(), fd4->Fd()) + 1, 0, &Set, 0, &normalTimeout);
+      } while (Res < 0 && errno == EINTR);
+   }
+
+   if (Res <= 0)
+   {
+      if (*Name6)
+	 bad_addr.insert(bad_addr.begin(), std::string(Name6));
+      if (*Name4)
+	 bad_addr.insert(bad_addr.begin(), std::string(Name4));
       Owner->SetFailReason("Timeout");
-      return _error->Error(_("Could not connect to %s:%s (%s), "
-			   "connection timed out"),Host.c_str(),Service,Name);
+      return _error->Error(_("Could not connect to %s:(%s,%s) (%s, %s), "
+			     "connection timed out"),
+			   Host.c_str(), Service6, Service4, Name6, Name4);
    }
 
-   // Check the socket for an error condition
-   unsigned int Err;
-   unsigned int Len = sizeof(Err);
-   if (getsockopt(Fd->Fd(), SOL_SOCKET, SO_ERROR, &Err, &Len) != 0)
-      return _error->Errno("getsockopt",_("Failed"));
-   
-   if (Err != 0)
+   if (fd6->Fd() != -1 && AssignBlame(fd6->Fd(), Host, Name6, Service6, Owner))
    {
-      errno = Err;
-      if(errno == ECONNREFUSED)
-         Owner->SetFailReason("ConnectionRefused");
-      else if (errno == ETIMEDOUT)
-	 Owner->SetFailReason("ConnectionTimedOut");
-      bad_addr.insert(bad_addr.begin(), std::string(Name));
-      return _error->Errno("connect",_("Could not connect to %s:%s (%s)."),Host.c_str(),
-			   Service,Name);
+      Owner->SetFailReason("");
+      _error->Discard();
+      Fd = std::move(fd6);
+      return true;
+   }
+   if (fd4->Fd() != -1 && AssignBlame(fd4->Fd(), Host, Name4, Service4, Owner))
+   {
+      Owner->SetFailReason("");
+      _error->Discard();
+      Fd = std::move(fd4);
+      return true;
    }
 
-   Owner->SetFailReason("");
-
-   return true;
+   return false;
 }
+
 									/*}}}*/
 // Connect to a given Hostname						/*{{{*/
 static bool ConnectToHostname(std::string const &Host, int const Port,
@@ -284,15 +389,20 @@ static bool ConnectToHostname(std::string const &Host, int const Port,
    struct addrinfo *CurHost = LastHostAddr;
    if (LastUsed != 0)
        CurHost = LastUsed;
-   
+
+   std::vector<struct addrinfo *> ipv6Addrs;
+   std::vector<struct addrinfo *> ipv4Addrs;
+
    while (CurHost != 0)
    {
-      if (DoConnect(CurHost,Host,TimeOut,Fd,Owner) == true)
+      if (CurHost->ai_family == AF_INET6)
       {
-	 LastUsed = CurHost;
-	 return true;
+	 ipv6Addrs.push_back(CurHost);
       }
-      Fd->Close();
+      else
+      {
+	 ipv4Addrs.push_back(CurHost);
+      }
 
       // Ignore UNIX domain sockets
       do
@@ -312,7 +422,22 @@ static bool ConnectToHostname(std::string const &Host, int const Port,
       
       if (CurHost != 0)
 	 _error->Discard();
-   }   
+   }
+
+   std::vector<struct addrinfo *>::const_iterator ipv6iter = ipv6Addrs.cbegin(), ipv4iter = ipv4Addrs.cbegin();
+
+   while (ipv6iter != ipv6Addrs.end() || ipv4iter != ipv4Addrs.end())
+   {
+      if (DoConnect(ipv6iter != ipv6Addrs.end() ? *ipv6iter : nullptr, ipv4iter != ipv4Addrs.end() ? *ipv4iter : nullptr, Host, TimeOut, Fd, Owner) == true)
+      {
+	 LastUsed = CurHost;
+	 return true;
+      }
+      Fd->Close();
+
+      ipv6iter++;
+      ipv4iter++;
+   }
 
    if (_error->PendingError() == true)
       return false;   
