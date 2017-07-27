@@ -276,10 +276,27 @@ static bool DoConnect(struct addrinfo *Addr6, struct addrinfo *Addr4, std::strin
       Owner->SetFailReason("");
       _error->Discard();
       Fd = std::move(fd6);
+      /* If this is an IP rotation store the IP we are using.. If something goes
+      wrong this will get tacked onto the end of the error message */
+      if (LastHostAddr->ai_next != 0)
+      {
+	 std::stringstream ss;
+	 ioprintf(ss, _("[IP: %s %s]"), Name4, Service4);
+	 Owner->SetIP(ss.str());
+      }
+
       return true;
    }
    if (fd4->Fd() != -1 && AssignBlame(fd4->Fd(), Host, Name4, Service4, Owner))
    {
+      /* If this is an IP rotation store the IP we are using.. If something goes
+      wrong this will get tacked onto the end of the error message */
+      if (LastHostAddr->ai_next != 0)
+      {
+	 std::stringstream ss;
+	 ioprintf(ss, _("[IP: %s %s]"), Name4, Service4);
+	 Owner->SetIP(ss.str());
+      }
       Owner->SetFailReason("");
       _error->Discard();
       Fd = std::move(fd4);
