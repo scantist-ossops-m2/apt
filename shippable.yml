@@ -3,7 +3,7 @@ language: none
 build:
   pre_ci_boot:
     image_name: debian
-    image_tag: stretch
+    image_tag: buster
     pull: true
   ci:
     - apt-get install -qq build-essential expect

@@ -10,6 +10,3 @@ add_executable(aptdropprivs aptdropprivs.cc)
 target_link_libraries(aptdropprivs apt-pkg)
 add_executable(test_fileutl test_fileutl.cc)
 target_link_libraries(test_fileutl apt-pkg)
-
-add_library(noprofile SHARED libnoprofile.c)
-target_link_libraries(noprofile ${CMAKE_DL_LIBS})
