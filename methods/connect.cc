@@ -304,16 +304,18 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
    struct addrinfo *CurHost = LastHostAddr;
    if (LastUsed != 0)
        CurHost = LastUsed;
-   
+
+   // First family returned is our preferred family
+   int preferredFamily = CurHost != 0 ? CurHost->ai_family : AF_INET6;
+   std::vector<struct addrinfo *> preferredAddrs;
+   std::vector<struct addrinfo *> otherAddrs;
+
    while (CurHost != 0)
    {
-      auto const result = DoConnect(CurHost, Host, TimeOut, Fd, Owner);
-      if (result == ResultState::SUCCESSFUL)
-      {
-	 LastUsed = CurHost;
-	 return result;
-      }
-      Fd->Close();
+      if (CurHost->ai_family == preferredFamily)
+	 preferredAddrs.push_back(CurHost);
+      else
+	 otherAddrs.push_back(CurHost);
 
       // Ignore UNIX domain sockets
       do
@@ -330,10 +332,30 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
       // Reached the end of the search cycle
       if (CurHost == LastUsed)
 	 break;
-      
-      if (CurHost != 0)
-	 _error->Discard();
-   }   
+   }
+
+   for (auto CurHost : preferredAddrs)
+   {
+      _error->Discard();
+      auto const result = DoConnect(CurHost, Host, TimeOut, Fd, Owner);
+      if (result == ResultState::SUCCESSFUL)
+      {
+	 LastUsed = CurHost;
+	 return result;
+      }
+      Fd->Close();
+   }
+   for (auto CurHost : otherAddrs)
+   {
+      _error->Discard();
+      auto const result = DoConnect(CurHost, Host, TimeOut, Fd, Owner);
+      if (result == ResultState::SUCCESSFUL)
+      {
+	 LastUsed = CurHost;
+	 return result;
+      }
+      Fd->Close();
+   }
 
    if (_error->PendingError() == true)
       return ResultState::FATAL_ERROR;
