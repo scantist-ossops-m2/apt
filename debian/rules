@@ -11,7 +11,7 @@ export DPKG_GENSYMBOLS_CHECK_LEVEL=0
 export CTEST_OUTPUT_ON_FAILURE=1
 
 %:
-	dh $@
+	dh $@ --buildsystem=ninja --builddir
 
 override_dh_clean:
 	cp COPYING debian/copyright
@@ -43,7 +43,4 @@ override_dh_systemd_start:
 override_dh_auto_configure-arch: flags=-DWITH_DOC=OFF
 override_dh_auto_configure-indep: flags=-DWITH_DOC=ON
 override_dh_auto_configure-arch override_dh_auto_configure-indep:
-	dh_auto_configure -- $(flags)
-
-override_dh_auto_build:
-	dh_auto_build -- -O
+	dh_auto_configure --buildsystem=cmake -- $(flags) -G Ninja
