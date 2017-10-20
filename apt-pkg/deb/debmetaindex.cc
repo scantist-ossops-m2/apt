@@ -149,7 +149,7 @@ static void GetIndexTargetsFor(char const * const Type, std::string const &URI, 
    }
 
    std::vector<std::string> const NativeArchs = { _config->Find("APT::Architecture"), "implicit:all" };
-   bool const GzipIndex = _config->FindB("Acquire::GzipIndexes", false);
+   bool const GzipIndex = _config->FindB("Acquire::GzipIndexes", true);
    for (std::vector<debReleaseIndexPrivate::debSectionEntry>::const_iterator E = entries.begin(); E != entries.end(); ++E)
    {
       for (std::vector<std::string>::const_iterator T = E->Targets.begin(); T != E->Targets.end(); ++T)
