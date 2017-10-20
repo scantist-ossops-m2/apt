@@ -139,7 +139,7 @@ msgtest 'Test that no description does not destroy' 'showpkg'
 aptcache showpkg apt-none | sed 's#/tmp/.*_aptarchive_#/tmp/aptarchive_#' >showpkg.explosion && msgpass || msgfail
 testfileequal showpkg.explosion 'Package: apt-none
 Versions: 
-0.9.7.8 (/tmp/aptarchive_Packages)
+0.9.7.8 (/tmp/aptarchive_Packages.lz4)
 
 
 Reverse Depends: 

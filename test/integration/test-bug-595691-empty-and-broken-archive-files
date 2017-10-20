@@ -37,7 +37,7 @@ createemptyfile() {
 
 testoverfile() {
 	local APTARCHIVE="$(readlink -f ./aptarchive)"
-	forcecompressor "$1"
+	forcecompressor "$1" "999"
 
 	msgmsg 'archive over file' "Packages.$COMPRESS"
 	createemptyarchive 'Packages'
@@ -47,7 +47,7 @@ testoverfile() {
 }
 
 testoverhttp() {
-	forcecompressor "$1"
+	forcecompressor "$1" "999"
 
 	msgmsg 'archive over http' "Packages.$COMPRESS"
 	createemptyarchive 'Packages'

@@ -131,6 +131,8 @@ testovermethod() {
 
 		rm rootdir/etc/apt/apt.conf.d/02compressindex
 	done
+
+	rm rootdir/etc/apt/apt.conf.d/00force-compressor
 }
 
 testsuccess aptget update

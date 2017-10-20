@@ -37,6 +37,7 @@ testempty find rootdir/var/lib/apt/lists -name '*Contents*'
 
 msgmsg "Normal Contents file"
 cat > rootdir/etc/apt/apt.conf.d/content-target.conf <<EOF
+Acquire::gzipIndexes "false";
 Acquire::IndexTargets::deb::Contents {
 	MetaKey "\$(COMPONENT)/Contents-\$(ARCHITECTURE)";
 	ShortDescription "Contents";
@@ -121,6 +122,7 @@ msgmsg "Compressed Contents file"
 # and no automatic uncompress based on the name please,
 # only if we downloaded a compressed file, but target was uncompressed
 cat > rootdir/etc/apt/apt.conf.d/content-target.conf <<EOF
+Acquire::gzipIndexes "false";
 Acquire::IndexTargets::deb::Contents {
 	MetaKey "\$(COMPONENT)/Contents-\$(ARCHITECTURE).gz";
 	ShortDescription "Contents.gz";
@@ -163,6 +165,7 @@ rm ./rootdir/var/lib/apt/lists/localhost:${APTHTTPPORT}_dists_unstable_main_Cont
 rm ./rootdir/var/lib/apt/lists/localhost:${APTHTTPPORT}_dists_unstable_main_Contents-all.gz
 testempty aptget indextargets --format '$(FILENAME)' 'Identifier: Contents'
 cat > rootdir/etc/apt/apt.conf.d/content-target.conf <<EOF
+Acquire::gzipIndexes "false";
 Acquire::IndexTargets::deb::Contents3 {
 	MetaKey "main/Contents-all";
 	ShortDescription "Contents3";

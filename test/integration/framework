@@ -642,6 +642,7 @@ confighashes() {
 forcecompressor() {
 	COMPRESSOR="$1"
 	COMPRESS="$1"
+	PRIORITY="$2"
 	COMPRESSOR_CMD="apthelper cat-file -C $1"
 	case $COMPRESSOR in
 	gzip) COMPRESS='gz';;
@@ -654,6 +655,9 @@ Dir::Bin::uncompressed \"/does/not/exist\";" > "$CONFFILE"
 		if [ -z "$COMP" -o "$COMP" = '.' -o "$COMP" = "$COMPRESSOR" ]; then continue; fi
 		echo "Dir::Bin::${COMP} \"/does/not/exist\";" >> "$CONFFILE"
 		echo "APT::Compressor::${COMP}::Name \"${COMP}-disabled\";" >> "$CONFFILE"
+		if [ "$PRIORITY" ]; then
+				echo "APT::Compressor::${COMP}::Cost $PRIORITY;" >> "$CONFFILE"
+		fi
 	done
 }
 
