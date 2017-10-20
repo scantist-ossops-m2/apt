@@ -625,7 +625,7 @@ static void CheckDropPrivsMustBeDisabled(pkgAcquire const &Fetcher)
       // if its the source file (e.g. local sources) we might be lucky
       // by dropping the dropping only for some methods.
       URI const source = (*I)->DescURI();
-      if (source.Access == "file" || source.Access == "copy")
+      if (source.Access == "file" || source.Access == "copy" || source.Access == "store")
       {
 	 std::string const conf = "Binary::" + source.Access + "::APT::Sandbox::User";
 	 if (_config->Exists(conf) == true)
@@ -637,6 +637,7 @@ static void CheckDropPrivsMustBeDisabled(pkgAcquire const &Fetcher)
 		  source.Path.c_str(), SandboxUser.c_str());
 	    _config->CndSet("Binary::file::APT::Sandbox::User", "root");
 	    _config->CndSet("Binary::copy::APT::Sandbox::User", "root");
+	    _config->CndSet("Binary::store::APT::Sandbox::User", "root");
 	 }
       }
    }
