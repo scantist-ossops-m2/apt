@@ -1067,9 +1067,6 @@ bool HttpMethod::Configuration(string Message)
    ALLOW(prlimit64);
    ALLOW(pselect6);
    ALLOW(read);
-   ALLOW(readdir);
-   ALLOW(readlink);
-   ALLOW(readlinkat);
    ALLOW(recv);
    ALLOW(recvfrom);
    ALLOW(recvmsg);
