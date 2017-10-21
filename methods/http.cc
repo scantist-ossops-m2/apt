@@ -39,6 +39,10 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#ifdef HAVE_SECCOMP
+#include <seccomp.h>
+#endif
+
 #include "config.h"
 #include "connect.h"
 #include "http.h"
@@ -947,6 +951,194 @@ void HttpMethod::SendReq(FetchItem *Itm)
    Server->WriteResponse(Req.str());
 }
 									/*}}}*/
+
+// HttpMethod::Configuration - Handle a configuration message		/*{{{*/
+// ---------------------------------------------------------------------
+/* We stash the desired pipeline depth */
+bool HttpMethod::Configuration(string Message)
+{
+   if (BaseHttpMethod::Configuration(Message) == false)
+      return false;
+
+#ifdef HAVE_SECCOMP
+   int rc;
+   scmp_filter_ctx ctx = NULL;
+
+   ctx = seccomp_init(SCMP_ACT_TRAP);
+   if (ctx == NULL)
+      return _error->FatalE("HttpMethod::Configuration", "Cannot init seccomp");
+
+#define ALLOW(what)                                                     \
+   if ((rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(what), 0))) \
+      return _error->FatalE("HttpMethod::Configuration", "Cannot allow %s: %s", #what, strerror(-rc));
+
+   ALLOW(access);
+   ALLOW(arch_prctl);
+   ALLOW(arm_sync_file_range);
+   ALLOW(bind);
+   ALLOW(brk);
+   ALLOW(chmod);
+   ALLOW(chown);
+   ALLOW(chown32);
+   ALLOW(clock_getres);
+   ALLOW(clock_gettime);
+   ALLOW(close);
+   ALLOW(connect);
+   ALLOW(creat);
+   ALLOW(dup);
+   ALLOW(dup2);
+   ALLOW(dup3);
+   ALLOW(exit);
+   ALLOW(exit_group);
+   ALLOW(faccessat);
+   ALLOW(fchmod);
+   ALLOW(fchmodat);
+   ALLOW(fchown);
+   ALLOW(fchown32);
+   ALLOW(fchownat);
+   ALLOW(fcntl);
+   ALLOW(fcntl64);
+   ALLOW(fdatasync);
+   ALLOW(flock);
+   ALLOW(fstat);
+   ALLOW(fstat64);
+   ALLOW(fstatat64);
+   ALLOW(fstatfs);
+   ALLOW(fstatfs64);
+   ALLOW(fsync);
+   ALLOW(ftime);
+   ALLOW(ftruncate);
+   ALLOW(ftruncate64);
+   ALLOW(futex);
+   ALLOW(futimesat);
+   ALLOW(getegid);
+   ALLOW(getegid32);
+   ALLOW(geteuid);
+   ALLOW(geteuid32);
+   ALLOW(getgid);
+   ALLOW(getgid32);
+   ALLOW(getgroups);
+   ALLOW(getgroups32);
+   ALLOW(getpeername);
+   ALLOW(getpgid);
+   ALLOW(getpgrp);
+   ALLOW(getpid);
+   ALLOW(getppid);
+   ALLOW(getrandom);
+   ALLOW(getresgid);
+   ALLOW(getresgid32);
+   ALLOW(getresuid);
+   ALLOW(getresuid32);
+   ALLOW(getrlimit);
+   ALLOW(get_robust_list);
+   ALLOW(getrusage);
+   ALLOW(getsockname);
+   ALLOW(getsockopt);
+   ALLOW(gettid);
+   ALLOW(gettimeofday);
+   ALLOW(getuid);
+   ALLOW(getuid32);
+   ALLOW(ioctl);
+   ALLOW(lchown);
+   ALLOW(lchown32);
+   ALLOW(_llseek);
+   ALLOW(lseek);
+   ALLOW(lstat);
+   ALLOW(lstat64);
+   ALLOW(madvise);
+   ALLOW(mmap);
+   ALLOW(mmap2);
+   ALLOW(mprotect);
+   ALLOW(mremap);
+   ALLOW(msync);
+   ALLOW(munmap);
+   ALLOW(newfstatat);
+   ALLOW(oldfstat);
+   ALLOW(oldlstat);
+   ALLOW(oldolduname);
+   ALLOW(oldstat);
+   ALLOW(olduname);
+   ALLOW(open);
+   ALLOW(openat);
+   ALLOW(pipe);
+   ALLOW(pipe2);
+   ALLOW(poll);
+   ALLOW(ppoll);
+   ALLOW(prctl);
+   ALLOW(prlimit64);
+   ALLOW(pselect6);
+   ALLOW(read);
+   ALLOW(readdir);
+   ALLOW(readlink);
+   ALLOW(readlinkat);
+   ALLOW(recv);
+   ALLOW(recvfrom);
+   ALLOW(recvmsg);
+   ALLOW(rename);
+   ALLOW(renameat);
+   ALLOW(rt_sigaction);
+   ALLOW(rt_sigpending);
+   ALLOW(rt_sigprocmask);
+   ALLOW(rt_sigqueueinfo);
+   ALLOW(rt_sigreturn);
+   ALLOW(rt_sigsuspend);
+   ALLOW(rt_sigtimedwait);
+   ALLOW(sched_yield);
+   ALLOW(select);
+   ALLOW(send);
+   ALLOW(sendmsg);
+   ALLOW(sendto);
+   ALLOW(setgid);
+   ALLOW(setgid32);
+   ALLOW(setgroups);
+   ALLOW(setgroups32);
+   ALLOW(setpgid);
+   ALLOW(setregid);
+   ALLOW(setregid32);
+   ALLOW(setresgid);
+   ALLOW(setresgid32);
+   ALLOW(setresuid);
+   ALLOW(setresuid32);
+   ALLOW(setreuid);
+   ALLOW(setreuid32);
+   ALLOW(set_robust_list);
+   ALLOW(setsockopt);
+   ALLOW(setuid);
+   ALLOW(setuid32);
+   ALLOW(sigaction);
+   ALLOW(sigpending);
+   ALLOW(sigprocmask);
+   ALLOW(sigreturn);
+   ALLOW(sigsuspend);
+   ALLOW(socket);
+   ALLOW(stat);
+   ALLOW(statfs);
+   ALLOW(sync);
+   ALLOW(sync_file_range);
+   ALLOW(sync_file_range2);
+   ALLOW(syscall);
+   ALLOW(time);
+   ALLOW(truncate);
+   ALLOW(truncate64);
+   ALLOW(ugetrlimit);
+   ALLOW(umask);
+   ALLOW(uname);
+   ALLOW(unlink);
+   ALLOW(unlinkat);
+   ALLOW(utime);
+   ALLOW(utimensat);
+   ALLOW(utimes);
+   ALLOW(write);
+#undef ALLOW
+
+   rc = seccomp_load(ctx);
+   if (rc != 0)
+      return _error->FatalE("HttpMethod::Configuration", "could not load seccomp policy: %s", strerror(-rc));
+#endif
+   return true;
+}
+									/*}}}*/
+
 std::unique_ptr<ServerState> HttpMethod::CreateServerState(URI const &uri)/*{{{*/
 {
    return std::unique_ptr<ServerState>(new HttpServerState(uri, this));
