@@ -974,7 +974,6 @@ bool HttpMethod::Configuration(string Message)
 
    ALLOW(access);
    ALLOW(arch_prctl);
-   ALLOW(arm_sync_file_range);
    ALLOW(bind);
    ALLOW(brk);
    ALLOW(chmod);
@@ -1099,8 +1098,6 @@ bool HttpMethod::Configuration(string Message)
    ALLOW(stat);
    ALLOW(statfs);
    ALLOW(sync);
-   ALLOW(sync_file_range);
-   ALLOW(sync_file_range2);
    ALLOW(syscall);
    ALLOW(time);
    ALLOW(truncate);
