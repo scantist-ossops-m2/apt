@@ -618,6 +618,7 @@ static void CheckDropPrivsMustBeDisabled(pkgAcquire const &Fetcher)
       {
 	 _error->WarningE("pkgAcquire::Run", _("Download is performed unsandboxed as root as file '%s' couldn't be accessed by user '%s'."),
 	       (*I)->DestFile.c_str(), SandboxUser.c_str());
+	 _config->CndSet("APT::Sandbox::OriginalUser", SandboxUser);
 	 _config->Set("APT::Sandbox::User", "");
 	 break;
       }
@@ -635,6 +636,8 @@ static void CheckDropPrivsMustBeDisabled(pkgAcquire const &Fetcher)
 	 {
 	    _error->NoticeE("pkgAcquire::Run", _("Download is performed unsandboxed as root as file '%s' couldn't be accessed by user '%s'."),
 		  source.Path.c_str(), SandboxUser.c_str());
+
+	    _config->CndSet("APT::Sandbox::OriginalUser", SandboxUser);
 	    _config->CndSet("Binary::file::APT::Sandbox::User", "root");
 	    _config->CndSet("Binary::copy::APT::Sandbox::User", "root");
 	    _config->CndSet("Binary::store::APT::Sandbox::User", "root");

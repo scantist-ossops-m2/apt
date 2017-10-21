@@ -23,9 +23,11 @@
 
 #include <string>
 #include <vector>
+#include <pwd.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/types.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -60,6 +62,64 @@ static bool OpenFileWithCompressorByName(FileFd &fileFd, std::string const &File
 
 
 									/*}}}*/
+
+static bool WrapFileFdInSubprocess(FileFd &Fd, bool write)
+{
+   /* Check if we really should try sandboxing again. This will be set
+    * if we errored out for file permission reasons
+    */
+   if (_config->Exists("APT::Sandbox::OriginalUser") == false)
+   {
+      return true;
+   }
+
+   /* Do sandboxing */
+   int pipefd[2];
+   if (pipe(pipefd) != 0)
+      return _error->Errno("pipe", _("Failed to create subprocess IPC"));
+
+   pid_t child = fork();
+   if (child == -1)
+      return _error->Errno("fork", "Failed to fork");
+
+   if (child == 0)
+   {
+      _config->Set("APT::Sandbox::User", _config->Find("APT::Sandbox::OriginalUser"));
+      if (!DropPrivileges())
+      {
+	 _error->DumpErrors();
+	 _exit(1);
+      }
+
+      if (write)
+      {
+	 close(pipefd[1]);
+	 FileFd From(pipefd[0], true);
+	 if (!CopyFile(From, Fd))
+	 {
+	    _error->DumpErrors();
+	    _exit(1);
+	 }
+      }
+      else
+      {
+	 close(pipefd[0]);
+	 FileFd To(pipefd[1], true);
+	 if (!CopyFile(Fd, To))
+	 {
+	    _error->DumpErrors();
+	    _exit(1);
+	 }
+      }
+
+      _exit(0);
+   }
+
+   close(pipefd[write ? 0 : 1]);
+
+   return Fd.OpenDescriptor(write ? pipefd[1] : pipefd[0], write ? FileFd::WriteOnly : FileFd::ReadOnly, FileFd::None, true);
+}
+
 bool StoreMethod::Fetch(FetchItem *Itm)					/*{{{*/
 {
    URI Get = Itm->Uri;
@@ -94,6 +154,15 @@ bool StoreMethod::Fetch(FetchItem *Itm)					/*{{{*/
       if (To.IsOpen() == false || To.Failed() == true)
 	 return false;
       To.EraseOnFailure();
+   }
+
+   // We were supposed to sandbox, but did not. Try again!
+   if (getuid() == 0)
+   {
+      if (!WrapFileFdInSubprocess(From, false))
+	 return false;
+      if (To.IsOpen() == true && !WrapFileFdInSubprocess(To, true))
+	 return false;
    }
 
    // Read data from source, generate checksums and write
