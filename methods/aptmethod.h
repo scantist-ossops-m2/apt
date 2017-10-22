@@ -67,7 +67,7 @@ protected:
       if (SeccompFlags == 0)
 	 return true;
 
-      if (ConfigFindB("Seccomp", false) == false)
+      if (_config->FindB("APT::Sandbox::Seccomp", true) == false)
 	 return true;
 
       ctx = seccomp_init(SCMP_ACT_TRAP);
@@ -77,6 +77,12 @@ protected:
 #define ALLOW(what)                                                     \
    if ((rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(what), 0))) \
       return _error->FatalE("HttpMethod::Configuration", "Cannot allow %s: %s", #what, strerror(-rc));
+
+      for (auto &custom : _config->FindVector("APT::Sandbox::Seccomp::Trap"))
+      {
+	 if ((rc = seccomp_rule_add(ctx, SCMP_ACT_TRAP, seccomp_syscall_resolve_name(custom.c_str()), 0)))
+	    return _error->FatalE("HttpMethod::Configuration", "Cannot trap %s: %s", custom.c_str(), strerror(-rc));
+      }
 
       ALLOW(access);
       ALLOW(arch_prctl);
@@ -224,6 +230,12 @@ protected:
 	 ALLOW(readdir);
 	 ALLOW(getdents);
 	 ALLOW(getdents64);
+      }
+
+      for (auto &custom : _config->FindVector("APT::Sandbox::Seccomp::Allow"))
+      {
+	 if ((rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, seccomp_syscall_resolve_name(custom.c_str()), 0)))
+	    return _error->FatalE("HttpMethod::Configuration", "Cannot allow %s: %s", custom.c_str(), strerror(-rc));
       }
 
 #undef ALLOW
