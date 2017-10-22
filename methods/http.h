@@ -133,7 +133,6 @@ class HttpMethod : public BaseHttpMethod
 
    virtual std::unique_ptr<ServerState> CreateServerState(URI const &uri) APT_OVERRIDE;
    virtual void RotateDNS() APT_OVERRIDE;
-   virtual bool Configuration(std::string Message) APT_OVERRIDE;
    virtual DealWithHeadersResult DealWithHeaders(FetchResult &Res, RequestState &Req) APT_OVERRIDE;
 
    protected:
