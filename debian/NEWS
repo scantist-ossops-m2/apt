@@ -1,4 +1,4 @@
-apt (1.6) UNRELEASED; urgency=medium
+apt (1.6~alpha1) UNRELEASED; urgency=medium
 
   All methods provided by apt except for gpgv, rsh, and cdrom now
   use seccomp-BPF sandboxing to restrict the list of allowed system
