@@ -39,10 +39,6 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#ifdef HAVE_SECCOMP
-#include <seccomp.h>
-#endif
-
 #include "config.h"
 #include "connect.h"
 #include "http.h"
