@@ -34,7 +34,9 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <apti18n.h>
@@ -129,7 +131,7 @@ bool pkgAcquire::Worker::Start()
 
    // Create the pipes
    int Pipes[4] = {-1,-1,-1,-1};
-   if (pipe(Pipes) != 0 || pipe(Pipes+2) != 0)
+   if (socketpair(AF_UNIX, SOCK_STREAM, 0, Pipes) != 0 || socketpair(AF_UNIX, SOCK_STREAM, 0, Pipes + 2) != 0)
    {
       _error->Errno("pipe","Failed to create IPC pipe to subprocess");
       for (int I = 0; I != 4; I++)
