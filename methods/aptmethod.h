@@ -25,6 +25,7 @@
 
 #ifdef HAVE_SECCOMP
 #include <signal.h>
+#include <sys/mman.h>
 
 #include <seccomp.h>
 #endif
@@ -192,9 +193,11 @@ protected:
       ALLOW(lstat);
       ALLOW(lstat64);
       ALLOW(madvise);
-      ALLOW(mmap);
-      ALLOW(mmap2);
-      ALLOW(mprotect);
+      // The following ones are handled further below with the additional
+      // restriction of not allowing PROT_EXEC.
+      //ALLOW(mmap);
+      //ALLOW(mmap2);
+      //ALLOW(mprotect);
       ALLOW(mremap);
       ALLOW(msync);
       ALLOW(munmap);
@@ -258,6 +261,14 @@ protected:
       ALLOW(utimes);
       ALLOW(write);
       ALLOW(writev);
+
+      // mmap and friends might not map executable memory
+      if ((rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(mmap), 1, SCMP_A2(SCMP_CMP_NE, PROT_EXEC))))
+	 return _error->FatalE("HttpMethod::Configuration", "Cannot allow mmap: %s", strerror(-rc));
+      if ((rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(mmap2), 1, SCMP_A2(SCMP_CMP_NE, PROT_EXEC))))
+	 return _error->FatalE("HttpMethod::Configuration", "Cannot allow mmap2: %s", strerror(-rc));
+      if ((rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(mprotect), 1, SCMP_A2(SCMP_CMP_NE, PROT_EXEC))))
+	 return _error->FatalE("HttpMethod::Configuration", "Cannot allow mprotect: %s", strerror(-rc));
 
       if ((SeccompFlags & Seccomp::NETWORK) != 0)
       {
