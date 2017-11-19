@@ -117,7 +117,7 @@ function(po4a_one stamp_out out full_document language deps)
                      --destdir ${CMAKE_CURRENT_BINARY_DIR}
                       ${CMAKE_CURRENT_SOURCE_DIR}/po4a.conf
         COMMAND ${CMAKE_COMMAND} -E touch ${stamp}
-        COMMENT "Generating ${dest}.${ext} (or dropping it)"
+        COMMENT "Generating ${full_dest} (or dropping it)"
         DEPENDS ${full_document} ${deps} po/${language}.po
     )
     # Return result
