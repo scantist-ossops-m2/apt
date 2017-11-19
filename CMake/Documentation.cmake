@@ -89,12 +89,22 @@ endfunction()
 # Process one document
 function(po4a_one stamp_out out full_document language deps)
     path_join(full_path "${CMAKE_CURRENT_SOURCE_DIR}" "${full_document}")
-    po4a_components(document _ section ext "${full_document}")
+    if (full_document MATCHES "\.ent$")
+        if (full_document MATCHES "../")
+            return()
+        endif()
+        set(dest "${language}/${full_document}")
+        set(full_dest "${dest}")
+        message("po4a_one full_document=${full_document} language=${language} deps=${deps} dest=${dest}")
+    else()
+        po4a_components(document _ section ext "${full_document}")
 
-    # Calculate target file name
-    set(dest "${language}/${document}.${language}")
-    if(section)
-        set(dest "${dest}.${section}")
+        # Calculate target file name
+        set(dest "${language}/${document}.${language}")
+        if(section)
+            set(dest "${dest}.${section}")
+        endif()
+        set(full_dest "${dest}.${ext}")
     endif()
 
     # po4a might drop files not translated enough, so build a stamp file
@@ -106,7 +116,7 @@ function(po4a_one stamp_out out full_document language deps)
                      --package-name='${PROJECT_NAME}-doc'
                      --package-version='${PACKAGE_VERSION}'
                      --msgid-bugs-address='${PACKAGE_MAIL}'
-                     --translate-only ${dest}.${ext}
+                     --translate-only ${full_dest}
                      --srcdir ${CMAKE_CURRENT_SOURCE_DIR}
                      --destdir ${CMAKE_CURRENT_BINARY_DIR}
                       ${CMAKE_CURRENT_SOURCE_DIR}/po4a.conf
@@ -116,7 +126,7 @@ function(po4a_one stamp_out out full_document language deps)
     )
     # Return result
     set(${stamp_out} ${stamp} PARENT_SCOPE)
-    set(${out} ${CMAKE_CURRENT_BINARY_DIR}/${dest}.${ext} PARENT_SCOPE)
+    set(${out} ${CMAKE_CURRENT_BINARY_DIR}/${full_dest} PARENT_SCOPE)
 endfunction()
 
 function(xsltproc_one)
@@ -264,9 +274,16 @@ function(add_docbook target)
         list(APPEND formats MANPAGE)
     endif()
 
+    foreach(document ${DOC_DEPENDS})
+        foreach(lang ${DOC_LINGUAS})
+            po4a_one(po4a_stamp po4a_out ${document} "${lang}" "")
+            list(APPEND doc_depends ${po4a_stamp})
+        endforeach()
+    endforeach()
+
     foreach(document ${DOC_DOCUMENTS})
         foreach(lang ${DOC_LINGUAS})
-            po4a_one(po4a_stamp po4a_out ${document} "${lang}" "${DOC_DEPENDS}")
+            po4a_one(po4a_stamp po4a_out ${document} "${lang}" "${doc_depends}")
             xsltproc_one(STAMP_OUT xslt_stamp
                          STAMP ${po4a_stamp}
                          FULL_DOCUMENT ${po4a_out}
