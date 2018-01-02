@@ -279,6 +279,51 @@ static ResultState WaitAndCheckErrors(std::vector<Connection> &Conns, std::uniqu
 }
 
 // Connect to a given Hostname						/*{{{*/
+
+static std::vector<struct addrinfo *> OrderAddresses(struct addrinfo *CurHost)
+{
+   int preferredFamily = CurHost != 0 ? CurHost->ai_family : AF_INET6;
+   std::vector<struct addrinfo *> preferredAddrs;
+   std::vector<struct addrinfo *> otherAddrs;
+   std::vector<struct addrinfo *> allAddrs;
+
+   while (CurHost != 0)
+   {
+      if (CurHost->ai_family == preferredFamily)
+	 preferredAddrs.push_back(CurHost);
+      else
+	 otherAddrs.push_back(CurHost);
+
+      // Ignore UNIX domain sockets
+      do
+      {
+	 CurHost = CurHost->ai_next;
+      } while (CurHost != 0 && CurHost->ai_family == AF_UNIX);
+
+      /* If we reached the end of the search list then wrap around to the
+	 start */
+      if (CurHost == 0 && LastUsed != 0)
+	 CurHost = LastHostAddr;
+
+      // Reached the end of the search cycle
+      if (CurHost == LastUsed)
+	 break;
+   }
+
+   for (auto prefIter = preferredAddrs.cbegin(), otherIter = otherAddrs.cbegin();
+	prefIter != preferredAddrs.end() || otherIter != otherAddrs.end();
+	otherIter != otherAddrs.end() ? otherIter++ : otherIter, prefIter != preferredAddrs.end() ? prefIter++ : prefIter)
+   {
+
+      if (prefIter != preferredAddrs.end())
+	 allAddrs.push_back(*prefIter);
+      if (otherIter != otherAddrs.end())
+	 allAddrs.push_back(*otherIter);
+   }
+
+   return std::move(allAddrs);
+}
+
 static ResultState ConnectToHostname(std::string const &Host, int const Port,
 				     const char *const Service, int DefPort, std::unique_ptr<MethodFd> &Fd,
 				     unsigned long const TimeOut, aptMethod *const Owner)
@@ -386,47 +431,7 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
        CurHost = LastUsed;
 
    // First family returned is our preferred family
-   std::vector<struct addrinfo *> allAddrs;
-   {
-      int preferredFamily = CurHost != 0 ? CurHost->ai_family : AF_INET6;
-      std::vector<struct addrinfo *> preferredAddrs;
-      std::vector<struct addrinfo *> otherAddrs;
-
-      while (CurHost != 0)
-      {
-	 if (CurHost->ai_family == preferredFamily)
-	    preferredAddrs.push_back(CurHost);
-	 else
-	    otherAddrs.push_back(CurHost);
-
-	 // Ignore UNIX domain sockets
-	 do
-	 {
-	    CurHost = CurHost->ai_next;
-	 } while (CurHost != 0 && CurHost->ai_family == AF_UNIX);
-
-	 /* If we reached the end of the search list then wrap around to the
-	    start */
-	 if (CurHost == 0 && LastUsed != 0)
-	    CurHost = LastHostAddr;
-
-	 // Reached the end of the search cycle
-	 if (CurHost == LastUsed)
-	    break;
-      }
-
-      for (auto prefIter = preferredAddrs.cbegin(), otherIter = otherAddrs.cbegin();
-	   prefIter != preferredAddrs.end() || otherIter != otherAddrs.end();
-	   otherIter != otherAddrs.end() ? otherIter++ : otherIter, prefIter != preferredAddrs.end() ? prefIter++ : prefIter)
-      {
-
-	 if (prefIter != preferredAddrs.end())
-	    allAddrs.push_back(*prefIter);
-	 if (otherIter != otherAddrs.end())
-	    allAddrs.push_back(*otherIter);
-      }
-   }
-
+   std::vector<struct addrinfo *> allAddrs = OrderAddresses(CurHost);
    std::vector<Connection> Conns;
 
    for (auto Addr : allAddrs)
