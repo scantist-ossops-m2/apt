@@ -130,8 +130,8 @@ struct Connection
 
    Connection(Connection &&Conn) : Host(Conn.Host), Owner(Conn.Owner), Fd(std::move(Conn.Fd))
    {
-      strcpy(Name, Conn.Name);
-      strcpy(Service, Conn.Service);
+      memcpy(Name, Conn.Name, sizeof(Name));
+      memcpy(Service, Conn.Service, sizeof(Service));
    }
 
    ~Connection()
