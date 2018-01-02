@@ -115,13 +115,14 @@ std::unique_ptr<MethodFd> MethodFd::FromFd(int iFd)
 /* This helper function attempts a connection to a single address. */
 struct Connection
 {
+   struct addrinfo *Addr;
    std::string Host;
    aptMethod *Owner;
    std::unique_ptr<FdFd> Fd;
    char Name[NI_MAXHOST];
    char Service[NI_MAXSERV];
 
-   Connection(std::string const &Host, aptMethod *Owner) : Host(Host), Owner(Owner), Fd(new FdFd()), Name{0}, Service{0}
+   Connection(struct addrinfo *Addr, std::string const &Host, aptMethod *Owner) : Addr(Addr), Host(Host), Owner(Owner), Fd(new FdFd()), Name{0}, Service{0}
    {
    }
 
@@ -132,6 +133,7 @@ struct Connection
 
    void operator=(Connection &&Conn)
    {
+      Addr = Conn.Addr;
       Host = Conn.Host;
       Owner = Conn.Owner;
       Fd = std::move(Conn.Fd);
@@ -157,12 +159,12 @@ struct Connection
       return std::move(Fd);
    }
 
-   ResultState DoConnect(struct addrinfo *Addr);
+   ResultState DoConnect();
 
    ResultState CheckError();
 };
 
-ResultState Connection::DoConnect(struct addrinfo *Addr)
+ResultState Connection::DoConnect()
 {
    getnameinfo(Addr->ai_addr,Addr->ai_addrlen,
 	       Name,sizeof(Name),Service,sizeof(Service),
@@ -438,8 +440,8 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
 
    for (auto Addr : allAddrs)
    {
-      Connection Conn(Host, Owner);
-      if (Conn.DoConnect(Addr) == ResultState::SUCCESSFUL)
+      Connection Conn(Addr, Host, Owner);
+      if (Conn.DoConnect() == ResultState::SUCCESSFUL)
 	 Conns.push_back(std::move(Conn));
 
       if (WaitAndCheckErrors(Conns, Fd, Owner->ConfigFindI("HappyEyeballsTimeoutMsec", 300)) == ResultState::SUCCESSFUL)
