@@ -115,11 +115,12 @@ std::unique_ptr<MethodFd> MethodFd::FromFd(int iFd)
 /* This helper function attempts a connection to a single address. */
 struct Connection
 {
+   aptMethod *Owner;
    std::unique_ptr<MethodFd> Fd;
    char Name[NI_MAXHOST];
    char Service[NI_MAXSERV];
 
-   Connection()
+   Connection(aptMethod *Owner) : Owner(Owner)
    {
       Name[0] = 0;
       Service[0] = 0;
@@ -134,14 +135,19 @@ struct Connection
 
    std::unique_ptr<MethodFd> Take()
    {
+      /* If this is an IP rotation store the IP we are using.. If something goes
+	 wrong this will get tacked onto the end of the error message */
+      std::stringstream ss;
+      ioprintf(ss, _("[IP: %s %s]"), Name, Service);
+      Owner->SetIP(ss.str());
       return std::move(Fd);
    }
 
-   ResultState DoConnect(struct addrinfo *Addr, std::string const &Host, unsigned long TimeOut, aptMethod *Owner);
+   ResultState DoConnect(struct addrinfo *Addr, std::string const &Host, unsigned long TimeOut);
 };
 
 ResultState Connection::DoConnect(struct addrinfo *Addr, std::string const &Host,
-				  unsigned long TimeOut, aptMethod *Owner)
+				  unsigned long TimeOut)
 {
    getnameinfo(Addr->ai_addr,Addr->ai_addrlen,
 	       Name,sizeof(Name),Service,sizeof(Service),
@@ -152,15 +158,6 @@ ResultState Connection::DoConnect(struct addrinfo *Addr, std::string const &Host
    if(bad_addr.find(std::string(Name)) != bad_addr.end())
       return ResultState::TRANSIENT_ERROR;
 
-   /* If this is an IP rotation store the IP we are using.. If something goes
-      wrong this will get tacked onto the end of the error message */
-   if (LastHostAddr->ai_next != 0)
-   {
-      std::stringstream ss;
-      ioprintf(ss, _("[IP: %s %s]"),Name,Service);
-      Owner->SetIP(ss.str());
-   }
-      
    // Get a socket
    if ((static_cast<FdFd *>(Fd.get())->fd = socket(Addr->ai_family, Addr->ai_socktype,
 						   Addr->ai_protocol)) < 0)
@@ -358,8 +355,8 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
    for (auto CurHost : preferredAddrs)
    {
       _error->Discard();
-      Connection Conn;
-      auto const result = Conn.DoConnect(CurHost, Host, TimeOut, Owner);
+      Connection Conn(Owner);
+      auto const result = Conn.DoConnect(CurHost, Host, TimeOut);
       if (result == ResultState::SUCCESSFUL)
       {
 	 Fd = Conn.Take();
@@ -370,8 +367,8 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
    for (auto CurHost : otherAddrs)
    {
       _error->Discard();
-      Connection Conn;
-      auto const result = Conn.DoConnect(CurHost, Host, TimeOut, Owner);
+      Connection Conn(Owner);
+      auto const result = Conn.DoConnect(CurHost, Host, TimeOut);
       if (result == ResultState::SUCCESSFUL)
       {
 	 Fd = Conn.Take();
