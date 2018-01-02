@@ -159,34 +159,7 @@ struct Connection
 
    ResultState DoConnect(struct addrinfo *Addr);
 
-   ResultState CheckError()
-   {
-      // Check the socket for an error condition
-      unsigned int Err;
-      unsigned int Len = sizeof(Err);
-      if (getsockopt(Fd->Fd(), SOL_SOCKET, SO_ERROR, &Err, &Len) != 0)
-      {
-	 _error->Errno("getsockopt", _("Failed"));
-	 return ResultState::FATAL_ERROR;
-      }
-
-      if (Err != 0)
-      {
-	 errno = Err;
-	 if (errno == ECONNREFUSED)
-	    Owner->SetFailReason("ConnectionRefused");
-	 else if (errno == ETIMEDOUT)
-	    Owner->SetFailReason("ConnectionTimedOut");
-	 bad_addr.insert(bad_addr.begin(), std::string(Name));
-	 _error->Errno("connect", _("Could not connect to %s:%s (%s)."), Host.c_str(),
-		       Service, Name);
-	 return ResultState::TRANSIENT_ERROR;
-      }
-
-      Owner->SetFailReason("");
-
-      return ResultState::SUCCESSFUL;
-   }
+   ResultState CheckError();
 };
 
 ResultState Connection::DoConnect(struct addrinfo *Addr)
@@ -218,6 +191,35 @@ ResultState Connection::DoConnect(struct addrinfo *Addr)
 		    Host.c_str(), Service, Name);
       return ResultState::TRANSIENT_ERROR;
    }
+
+   return ResultState::SUCCESSFUL;
+}
+
+ResultState Connection::CheckError()
+{
+   // Check the socket for an error condition
+   unsigned int Err;
+   unsigned int Len = sizeof(Err);
+   if (getsockopt(Fd->Fd(), SOL_SOCKET, SO_ERROR, &Err, &Len) != 0)
+   {
+      _error->Errno("getsockopt", _("Failed"));
+      return ResultState::FATAL_ERROR;
+   }
+
+   if (Err != 0)
+   {
+      errno = Err;
+      if (errno == ECONNREFUSED)
+	 Owner->SetFailReason("ConnectionRefused");
+      else if (errno == ETIMEDOUT)
+	 Owner->SetFailReason("ConnectionTimedOut");
+      bad_addr.insert(bad_addr.begin(), std::string(Name));
+      _error->Errno("connect", _("Could not connect to %s:%s (%s)."), Host.c_str(),
+		    Service, Name);
+      return ResultState::TRANSIENT_ERROR;
+   }
+
+   Owner->SetFailReason("");
 
    return ResultState::SUCCESSFUL;
 }
