@@ -128,6 +128,20 @@ struct Connection
       Fd.reset(new FdFd());
    }
 
+   Connection(Connection &&Conn) : Host(Conn.Host), Owner(Conn.Owner), Fd(std::move(Conn.Fd))
+   {
+      strcpy(Name, Conn.Name);
+      strcpy(Service, Conn.Service);
+   }
+
+   ~Connection()
+   {
+      if (Fd != nullptr)
+      {
+	 Fd->Close();
+      }
+   }
+
    std::unique_ptr<MethodFd> Take()
    {
       /* If this is an IP rotation store the IP we are using.. If something goes
