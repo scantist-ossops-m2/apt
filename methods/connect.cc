@@ -115,12 +115,13 @@ std::unique_ptr<MethodFd> MethodFd::FromFd(int iFd)
 /* This helper function attempts a connection to a single address. */
 struct Connection
 {
+   std::string const Host;
    aptMethod *Owner;
    std::unique_ptr<MethodFd> Fd;
    char Name[NI_MAXHOST];
    char Service[NI_MAXSERV];
 
-   Connection(aptMethod *Owner) : Owner(Owner)
+   Connection(std::string const &Host, aptMethod *Owner) : Host(Host), Owner(Owner)
    {
       Name[0] = 0;
       Service[0] = 0;
@@ -143,11 +144,39 @@ struct Connection
       return std::move(Fd);
    }
 
-   ResultState DoConnect(struct addrinfo *Addr, std::string const &Host, unsigned long TimeOut);
+   ResultState DoConnect(struct addrinfo *Addr, unsigned long TimeOut);
+
+   ResultState CheckError()
+   {
+      // Check the socket for an error condition
+      unsigned int Err;
+      unsigned int Len = sizeof(Err);
+      if (getsockopt(Fd->Fd(), SOL_SOCKET, SO_ERROR, &Err, &Len) != 0)
+      {
+	 _error->Errno("getsockopt", _("Failed"));
+	 return ResultState::FATAL_ERROR;
+      }
+
+      if (Err != 0)
+      {
+	 errno = Err;
+	 if (errno == ECONNREFUSED)
+	    Owner->SetFailReason("ConnectionRefused");
+	 else if (errno == ETIMEDOUT)
+	    Owner->SetFailReason("ConnectionTimedOut");
+	 bad_addr.insert(bad_addr.begin(), std::string(Name));
+	 _error->Errno("connect", _("Could not connect to %s:%s (%s)."), Host.c_str(),
+		       Service, Name);
+	 return ResultState::TRANSIENT_ERROR;
+      }
+
+      Owner->SetFailReason("");
+
+      return ResultState::SUCCESSFUL;
+   }
 };
 
-ResultState Connection::DoConnect(struct addrinfo *Addr, std::string const &Host,
-				  unsigned long TimeOut)
+ResultState Connection::DoConnect(struct addrinfo *Addr, unsigned long TimeOut)
 {
    getnameinfo(Addr->ai_addr,Addr->ai_addrlen,
 	       Name,sizeof(Name),Service,sizeof(Service),
@@ -189,31 +218,7 @@ ResultState Connection::DoConnect(struct addrinfo *Addr, std::string const &Host
       return ResultState::TRANSIENT_ERROR;
    }
 
-   // Check the socket for an error condition
-   unsigned int Err;
-   unsigned int Len = sizeof(Err);
-   if (getsockopt(Fd->Fd(), SOL_SOCKET, SO_ERROR, &Err, &Len) != 0)
-   {
-      _error->Errno("getsockopt", _("Failed"));
-      return ResultState::FATAL_ERROR;
-   }
-
-   if (Err != 0)
-   {
-      errno = Err;
-      if(errno == ECONNREFUSED)
-         Owner->SetFailReason("ConnectionRefused");
-      else if (errno == ETIMEDOUT)
-	 Owner->SetFailReason("ConnectionTimedOut");
-      bad_addr.insert(bad_addr.begin(), std::string(Name));
-      _error->Errno("connect", _("Could not connect to %s:%s (%s)."), Host.c_str(),
-		    Service, Name);
-      return ResultState::TRANSIENT_ERROR;
-   }
-
-   Owner->SetFailReason("");
-
-   return ResultState::SUCCESSFUL;
+   return CheckError();
 }
 									/*}}}*/
 // Connect to a given Hostname						/*{{{*/
@@ -355,8 +360,8 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
    for (auto CurHost : preferredAddrs)
    {
       _error->Discard();
-      Connection Conn(Owner);
-      auto const result = Conn.DoConnect(CurHost, Host, TimeOut);
+      Connection Conn(Host, Owner);
+      auto const result = Conn.DoConnect(CurHost, TimeOut);
       if (result == ResultState::SUCCESSFUL)
       {
 	 Fd = Conn.Take();
@@ -367,8 +372,8 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
    for (auto CurHost : otherAddrs)
    {
       _error->Discard();
-      Connection Conn(Owner);
-      auto const result = Conn.DoConnect(CurHost, Host, TimeOut);
+      Connection Conn(Host, Owner);
+      auto const result = Conn.DoConnect(CurHost, TimeOut);
       if (result == ResultState::SUCCESSFUL)
       {
 	 Fd = Conn.Take();
