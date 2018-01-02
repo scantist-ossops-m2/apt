@@ -264,19 +264,23 @@ static ResultState WaitAndCheckErrors(std::vector<Connection> &Conns, std::uniqu
       } while (Res < 0 && errno == EINTR);
    }
 
-   for (auto &Conn : Conns)
+   // ugh, we need to remove failed connections, so need iterator
+   for (auto ConnI = Conns.begin(); ConnI != Conns.end();)
    {
-      if (!FD_ISSET(Conn.Fd->Fd(), &Set))
-	 continue;
-      Result = Conn.CheckError();
-      if (Result == ResultState::SUCCESSFUL)
+      if (FD_ISSET(ConnI->Fd->Fd(), &Set))
       {
-	 Fd = Conn.Take();
-	 break;
+	 Result = ConnI->CheckError();
+	 if (Result == ResultState::SUCCESSFUL)
+	 {
+	    Fd = ConnI->Take();
+	    return Result;
+	 }
+
+	 ConnI = Conns.erase(ConnI);
       }
       else
       {
-	 Conns.erase(std::remove(Conns.begin(), Conns.end(), Conn));
+	 ConnI++;
       }
    }
 
