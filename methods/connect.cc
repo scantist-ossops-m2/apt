@@ -121,13 +121,6 @@ struct Connection
    char Name[NI_MAXHOST];
    char Service[NI_MAXSERV];
 
-   Connection() : Host(""), Owner(nullptr)
-   {
-      Name[0] = 0;
-      Service[0] = 0;
-      Fd.reset(new FdFd());
-   }
-
    Connection(std::string const &Host, aptMethod *Owner) : Host(Host), Owner(Owner)
    {
       Name[0] = 0;
@@ -214,7 +207,7 @@ ResultState Connection::DoConnect(struct addrinfo *Addr, unsigned long TimeOut)
 									/*}}}*/
 static ResultState WaitAndCheckErrors(std::vector<Connection> &Conns, std::unique_ptr<MethodFd> &Fd, long TimeoutMsec)
 {
-   ResultState Result;
+   ResultState Result = ResultState::TRANSIENT_ERROR;
 
    fd_set Set;
    struct timeval tv;
@@ -403,7 +396,7 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
       {
 	 Conns.emplace_back(Host, Owner);
 	 if (Conns[Conns.size() - 1].DoConnect(*prefIter, 300) != ResultState::SUCCESSFUL)
-	    Conns.resize(Conns.size() - 1);
+	    Conns.pop_back();
       }
 
       if (WaitAndCheckErrors(Conns, Fd, 300) == ResultState::SUCCESSFUL)
@@ -417,7 +410,7 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
       {
 	 Conns.emplace_back(Host, Owner);
 	 if (Conns[Conns.size() - 1].DoConnect(*otherIter, TimeOut * 1000) != ResultState::SUCCESSFUL)
-	    Conns.resize(Conns.size() - 1);
+	    Conns.pop_back();
       }
 
       if (WaitAndCheckErrors(Conns, Fd, TimeOut * 1000) == ResultState::SUCCESSFUL)
