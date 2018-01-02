@@ -121,22 +121,13 @@ struct Connection
    char Name[NI_MAXHOST];
    char Service[NI_MAXSERV];
 
-   Connection(std::string const &Host, aptMethod *Owner) : Host(Host), Owner(Owner)
+   Connection(std::string const &Host, aptMethod *Owner) : Host(Host), Owner(Owner), Fd(new FdFd()), Name{0}, Service{0}
    {
-      Name[0] = 0;
-      Service[0] = 0;
-      Fd.reset(new FdFd());
    }
 
-   Connection(Connection &&Conn) : Host(Conn.Host), Owner(Conn.Owner), Fd(std::move(Conn.Fd))
+   Connection(Connection &&Conn)
    {
-      memcpy(Name, Conn.Name, sizeof(Name));
-      memcpy(Service, Conn.Service, sizeof(Service));
-   }
-
-   bool operator==(Connection const &conn) const
-   {
-      return Fd.get() == conn.Fd.get();
+      *this = std::move(Conn);
    }
 
    void operator=(Connection &&Conn)
