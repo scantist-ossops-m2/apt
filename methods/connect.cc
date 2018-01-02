@@ -252,11 +252,13 @@ static ResultState WaitAndCheckErrors(std::vector<Connection> &Conns, std::uniqu
 
    for (auto &Conn : Conns)
    {
+      if (!FD_ISSET(Conn.Fd->Fd(), &Set))
+	 continue;
       Result = Conn.CheckError();
       if (Result == ResultState::SUCCESSFUL)
       {
 	 Fd = Conn.Take();
-	 return Result;
+	 break;
       }
    }
 
@@ -415,6 +417,7 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
 
       if (WaitAndCheckErrors(Conns, Fd, 300) == ResultState::SUCCESSFUL)
       {
+	 Owner->SetFailReason("");
 	 _error->Discard();
 	 LastUsed = CurHost;
 	 return ResultState::SUCCESSFUL;
@@ -430,6 +433,7 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
       if (WaitAndCheckErrors(Conns, Fd, TimeOut * 1000) == ResultState::SUCCESSFUL)
       {
 	 _error->Discard();
+	 Owner->SetFailReason("");
 	 LastUsed = CurHost;
 	 return ResultState::SUCCESSFUL;
       }
