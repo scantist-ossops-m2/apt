@@ -401,7 +401,7 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
 
    for (auto prefIter = preferredAddrs.cbegin(), otherIter = otherAddrs.cbegin();
 	prefIter != preferredAddrs.end() || otherIter != otherAddrs.end();
-	otherIter++, prefIter++)
+	otherIter != otherAddrs.end() ? otherIter++ : otherIter, prefIter != preferredAddrs.end() ? prefIter++ : prefIter)
    {
       std::vector<Connection> Conns;
 
