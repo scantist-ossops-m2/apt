@@ -115,9 +115,9 @@ std::unique_ptr<MethodFd> MethodFd::FromFd(int iFd)
 /* This helper function attempts a connection to a single address. */
 struct Connection
 {
-   std::string const Host;
+   std::string Host;
    aptMethod *Owner;
-   std::unique_ptr<MethodFd> Fd;
+   std::unique_ptr<FdFd> Fd;
    char Name[NI_MAXHOST];
    char Service[NI_MAXSERV];
 
@@ -130,6 +130,20 @@ struct Connection
 
    Connection(Connection &&Conn) : Host(Conn.Host), Owner(Conn.Owner), Fd(std::move(Conn.Fd))
    {
+      memcpy(Name, Conn.Name, sizeof(Name));
+      memcpy(Service, Conn.Service, sizeof(Service));
+   }
+
+   bool operator==(Connection const &conn) const
+   {
+      return Fd.get() == conn.Fd.get();
+   }
+
+   void operator=(Connection &&Conn)
+   {
+      Host = Conn.Host;
+      Owner = Conn.Owner;
+      Fd = std::move(Conn.Fd);
       memcpy(Name, Conn.Name, sizeof(Name));
       memcpy(Service, Conn.Service, sizeof(Service));
    }
@@ -196,8 +210,8 @@ ResultState Connection::DoConnect(struct addrinfo *Addr, unsigned long TimeOut)
       return ResultState::TRANSIENT_ERROR;
 
    // Get a socket
-   if ((static_cast<FdFd *>(Fd.get())->fd = socket(Addr->ai_family, Addr->ai_socktype,
-						   Addr->ai_protocol)) < 0)
+   if ((Fd->fd = socket(Addr->ai_family, Addr->ai_socktype,
+			Addr->ai_protocol)) < 0)
    {
       _error->Errno("socket", _("Could not create a socket for %s (f=%u t=%u p=%u)"),
 		    Name, Addr->ai_family, Addr->ai_socktype, Addr->ai_protocol);
@@ -259,6 +273,10 @@ static ResultState WaitAndCheckErrors(std::vector<Connection> &Conns, std::uniqu
       {
 	 Fd = Conn.Take();
 	 break;
+      }
+      else
+      {
+	 Conns.erase(std::remove(Conns.begin(), Conns.end(), Conn));
       }
    }
 
