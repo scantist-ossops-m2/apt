@@ -121,17 +121,18 @@ struct Connection
    char Name[NI_MAXHOST];
    char Service[NI_MAXSERV];
 
-   Connection(std::string const &Host, aptMethod *Owner) : Host(Host), Owner(Owner)
+   Connection() : Host(""), Owner(nullptr)
    {
       Name[0] = 0;
       Service[0] = 0;
       Fd.reset(new FdFd());
    }
 
-   ~Connection()
+   Connection(std::string const &Host, aptMethod *Owner) : Host(Host), Owner(Owner)
    {
-      if (Fd != nullptr)
-	 Fd->Close();
+      Name[0] = 0;
+      Service[0] = 0;
+      Fd.reset(new FdFd());
    }
 
    std::unique_ptr<MethodFd> Take()
@@ -206,21 +207,55 @@ ResultState Connection::DoConnect(struct addrinfo *Addr, unsigned long TimeOut)
       return ResultState::TRANSIENT_ERROR;
    }
 
-   /* This implements a timeout for connect by opening the connection
-      nonblocking */
-   if (WaitFd(Fd->Fd(), true, TimeOut) == false)
-   {
-      bad_addr.insert(bad_addr.begin(), std::string(Name));
-      Owner->SetFailReason("Timeout");
-      _error->Error(_("Could not connect to %s:%s (%s), "
-		      "connection timed out"),
-		    Host.c_str(), Service, Name);
-      return ResultState::TRANSIENT_ERROR;
-   }
-
-   return CheckError();
+   return ResultState::SUCCESSFUL;
 }
 									/*}}}*/
+// Check for errors and report them					/*{{{*/
+									/*}}}*/
+static ResultState WaitAndCheckErrors(std::vector<Connection> &Conns, std::unique_ptr<MethodFd> &Fd, long TimeoutMsec)
+{
+   ResultState Result;
+
+   fd_set Set;
+   struct timeval tv;
+   int nfds = -1;
+   FD_ZERO(&Set);
+
+   if (Conns.size() == 0)
+      return ResultState::TRANSIENT_ERROR;
+
+   for (auto &Conn : Conns)
+   {
+      int fd = Conn.Fd->Fd();
+      FD_SET(fd, &Set);
+      nfds = std::max(nfds, fd);
+   }
+
+   // Split our millisecond timeout into seconds and microseconds
+   tv.tv_sec = TimeoutMsec / 1000;
+   tv.tv_usec = (TimeoutMsec % 1000) * 1000;
+
+   {
+      int Res;
+      do
+      {
+	 Res = select(nfds + 1, 0, &Set, 0, (TimeoutMsec != 0 ? &tv : 0));
+      } while (Res < 0 && errno == EINTR);
+   }
+
+   for (auto &Conn : Conns)
+   {
+      Result = Conn.CheckError();
+      if (Result == ResultState::SUCCESSFUL)
+      {
+	 Fd = Conn.Take();
+	 return Result;
+      }
+   }
+
+   return Result;
+}
+
 // Connect to a given Hostname						/*{{{*/
 static ResultState ConnectToHostname(std::string const &Host, int const Port,
 				     const char *const Service, int DefPort, std::unique_ptr<MethodFd> &Fd,
@@ -357,28 +392,39 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
 	 break;
    }
 
-   for (auto CurHost : preferredAddrs)
+   for (auto prefIter = preferredAddrs.cbegin(), otherIter = otherAddrs.cbegin();
+	prefIter != preferredAddrs.end() || otherIter != otherAddrs.end();
+	otherIter++, prefIter++)
    {
-      _error->Discard();
-      Connection Conn(Host, Owner);
-      auto const result = Conn.DoConnect(CurHost, TimeOut);
-      if (result == ResultState::SUCCESSFUL)
+      std::vector<Connection> Conns;
+
+      // Add a new preferred address, if any
+      if (prefIter != preferredAddrs.end())
       {
-	 Fd = Conn.Take();
-	 LastUsed = CurHost;
-	 return result;
+	 Conns.emplace_back(Host, Owner);
+	 if (Conns[Conns.size() - 1].DoConnect(*prefIter, 300) != ResultState::SUCCESSFUL)
+	    Conns.resize(Conns.size() - 1);
       }
-   }
-   for (auto CurHost : otherAddrs)
-   {
-      _error->Discard();
-      Connection Conn(Host, Owner);
-      auto const result = Conn.DoConnect(CurHost, TimeOut);
-      if (result == ResultState::SUCCESSFUL)
+
+      if (WaitAndCheckErrors(Conns, Fd, 300) == ResultState::SUCCESSFUL)
       {
-	 Fd = Conn.Take();
+	 _error->Discard();
 	 LastUsed = CurHost;
-	 return result;
+	 return ResultState::SUCCESSFUL;
+      }
+
+      if (otherIter != otherAddrs.end())
+      {
+	 Conns.emplace_back(Host, Owner);
+	 if (Conns[Conns.size() - 1].DoConnect(*otherIter, TimeOut * 1000) != ResultState::SUCCESSFUL)
+	    Conns.resize(Conns.size() - 1);
+      }
+
+      if (WaitAndCheckErrors(Conns, Fd, TimeOut * 1000) == ResultState::SUCCESSFUL)
+      {
+	 _error->Discard();
+	 LastUsed = CurHost;
+	 return ResultState::SUCCESSFUL;
       }
    }
 
