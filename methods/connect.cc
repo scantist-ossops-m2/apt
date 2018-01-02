@@ -410,9 +410,9 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
       // Add a new preferred address, if any
       if (prefIter != preferredAddrs.end())
       {
-	 Conns.emplace_back(Host, Owner);
-	 if (Conns[Conns.size() - 1].DoConnect(*prefIter, 300) != ResultState::SUCCESSFUL)
-	    Conns.pop_back();
+	 Connection Conn(Host, Owner);
+	 if (Conn.DoConnect(*prefIter, 300) == ResultState::SUCCESSFUL)
+	    Conns.push_back(std::move(Conn));
       }
 
       if (WaitAndCheckErrors(Conns, Fd, 300) == ResultState::SUCCESSFUL)
@@ -424,9 +424,9 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
 
       if (otherIter != otherAddrs.end())
       {
-	 Conns.emplace_back(Host, Owner);
-	 if (Conns[Conns.size() - 1].DoConnect(*otherIter, TimeOut * 1000) != ResultState::SUCCESSFUL)
-	    Conns.pop_back();
+	 Connection Conn(Host, Owner);
+	 if (Conn.DoConnect(*otherIter, TimeOut * 1000) == ResultState::SUCCESSFUL)
+	    Conns.push_back(std::move(Conn));
       }
 
       if (WaitAndCheckErrors(Conns, Fd, TimeOut * 1000) == ResultState::SUCCESSFUL)
