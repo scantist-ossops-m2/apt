@@ -417,7 +417,6 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
 
       if (WaitAndCheckErrors(Conns, Fd, 300) == ResultState::SUCCESSFUL)
       {
-	 Owner->SetFailReason("");
 	 _error->Discard();
 	 LastUsed = CurHost;
 	 return ResultState::SUCCESSFUL;
@@ -433,7 +432,6 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
       if (WaitAndCheckErrors(Conns, Fd, TimeOut * 1000) == ResultState::SUCCESSFUL)
       {
 	 _error->Discard();
-	 Owner->SetFailReason("");
 	 LastUsed = CurHost;
 	 return ResultState::SUCCESSFUL;
       }
