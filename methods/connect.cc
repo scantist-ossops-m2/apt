@@ -157,7 +157,7 @@ struct Connection
       return std::move(Fd);
    }
 
-   ResultState DoConnect(struct addrinfo *Addr, unsigned long TimeOut);
+   ResultState DoConnect(struct addrinfo *Addr);
 
    ResultState CheckError()
    {
@@ -189,7 +189,7 @@ struct Connection
    }
 };
 
-ResultState Connection::DoConnect(struct addrinfo *Addr, unsigned long TimeOut)
+ResultState Connection::DoConnect(struct addrinfo *Addr)
 {
    getnameinfo(Addr->ai_addr,Addr->ai_addrlen,
 	       Name,sizeof(Name),Service,sizeof(Service),
@@ -424,7 +424,7 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
       if (prefIter != preferredAddrs.end())
       {
 	 Connection Conn(Host, Owner);
-	 if (Conn.DoConnect(*prefIter, 300) == ResultState::SUCCESSFUL)
+	 if (Conn.DoConnect(*prefIter) == ResultState::SUCCESSFUL)
 	    Conns.push_back(std::move(Conn));
       }
 
@@ -438,7 +438,7 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
       if (otherIter != otherAddrs.end())
       {
 	 Connection Conn(Host, Owner);
-	 if (Conn.DoConnect(*otherIter, TimeOut * 1000) == ResultState::SUCCESSFUL)
+	 if (Conn.DoConnect(*otherIter) == ResultState::SUCCESSFUL)
 	    Conns.push_back(std::move(Conn));
       }
 
