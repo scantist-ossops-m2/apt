@@ -109,19 +109,40 @@ std::unique_ptr<MethodFd> MethodFd::FromFd(int iFd)
    return std::unique_ptr<MethodFd>(fd);
 }
 									/*}}}*/
+
 // DoConnect - Attempt a connect operation				/*{{{*/
 // ---------------------------------------------------------------------
 /* This helper function attempts a connection to a single address. */
-static ResultState DoConnect(struct addrinfo *Addr, std::string const &Host,
-			     unsigned long TimeOut, std::unique_ptr<MethodFd> &Fd, aptMethod *Owner)
+struct Connection
 {
-   // Show a status indicator
+   std::unique_ptr<MethodFd> Fd;
    char Name[NI_MAXHOST];
    char Service[NI_MAXSERV];
-   Fd.reset(new FdFd());
 
-   Name[0] = 0;   
-   Service[0] = 0;
+   Connection()
+   {
+      Name[0] = 0;
+      Service[0] = 0;
+      Fd.reset(new FdFd());
+   }
+
+   ~Connection()
+   {
+      if (Fd != nullptr)
+	 Fd->Close();
+   }
+
+   std::unique_ptr<MethodFd> Take()
+   {
+      return std::move(Fd);
+   }
+
+   ResultState DoConnect(struct addrinfo *Addr, std::string const &Host, unsigned long TimeOut, aptMethod *Owner);
+};
+
+ResultState Connection::DoConnect(struct addrinfo *Addr, std::string const &Host,
+				  unsigned long TimeOut, aptMethod *Owner)
+{
    getnameinfo(Addr->ai_addr,Addr->ai_addrlen,
 	       Name,sizeof(Name),Service,sizeof(Service),
 	       NI_NUMERICHOST|NI_NUMERICSERV);
@@ -337,24 +358,26 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
    for (auto CurHost : preferredAddrs)
    {
       _error->Discard();
-      auto const result = DoConnect(CurHost, Host, TimeOut, Fd, Owner);
+      Connection Conn;
+      auto const result = Conn.DoConnect(CurHost, Host, TimeOut, Owner);
       if (result == ResultState::SUCCESSFUL)
       {
+	 Fd = Conn.Take();
 	 LastUsed = CurHost;
 	 return result;
       }
-      Fd->Close();
    }
    for (auto CurHost : otherAddrs)
    {
       _error->Discard();
-      auto const result = DoConnect(CurHost, Host, TimeOut, Fd, Owner);
+      Connection Conn;
+      auto const result = Conn.DoConnect(CurHost, Host, TimeOut, Owner);
       if (result == ResultState::SUCCESSFUL)
       {
+	 Fd = Conn.Take();
 	 LastUsed = CurHost;
 	 return result;
       }
-      Fd->Close();
    }
 
    if (_error->PendingError() == true)
