@@ -428,7 +428,7 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
 	    Conns.push_back(std::move(Conn));
       }
 
-      if (WaitAndCheckErrors(Conns, Fd, 300) == ResultState::SUCCESSFUL)
+      if (WaitAndCheckErrors(Conns, Fd, Owner->ConfigFindI("HappyEyeballsTimeout", 300)) == ResultState::SUCCESSFUL)
       {
 	 _error->Discard();
 	 LastUsed = CurHost;
