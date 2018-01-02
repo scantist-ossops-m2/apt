@@ -386,47 +386,54 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
        CurHost = LastUsed;
 
    // First family returned is our preferred family
-   int preferredFamily = CurHost != 0 ? CurHost->ai_family : AF_INET6;
-   std::vector<struct addrinfo *> preferredAddrs;
-   std::vector<struct addrinfo *> otherAddrs;
-
-   while (CurHost != 0)
+   std::vector<struct addrinfo *> allAddrs;
    {
-      if (CurHost->ai_family == preferredFamily)
-	 preferredAddrs.push_back(CurHost);
-      else
-	 otherAddrs.push_back(CurHost);
+      int preferredFamily = CurHost != 0 ? CurHost->ai_family : AF_INET6;
+      std::vector<struct addrinfo *> preferredAddrs;
+      std::vector<struct addrinfo *> otherAddrs;
 
-      // Ignore UNIX domain sockets
-      do
+      while (CurHost != 0)
       {
-	 CurHost = CurHost->ai_next;
-      }
-      while (CurHost != 0 && CurHost->ai_family == AF_UNIX);
+	 if (CurHost->ai_family == preferredFamily)
+	    preferredAddrs.push_back(CurHost);
+	 else
+	    otherAddrs.push_back(CurHost);
 
-      /* If we reached the end of the search list then wrap around to the
-         start */
-      if (CurHost == 0 && LastUsed != 0)
-	 CurHost = LastHostAddr;
-      
-      // Reached the end of the search cycle
-      if (CurHost == LastUsed)
-	 break;
+	 // Ignore UNIX domain sockets
+	 do
+	 {
+	    CurHost = CurHost->ai_next;
+	 } while (CurHost != 0 && CurHost->ai_family == AF_UNIX);
+
+	 /* If we reached the end of the search list then wrap around to the
+	    start */
+	 if (CurHost == 0 && LastUsed != 0)
+	    CurHost = LastHostAddr;
+
+	 // Reached the end of the search cycle
+	 if (CurHost == LastUsed)
+	    break;
+      }
+
+      for (auto prefIter = preferredAddrs.cbegin(), otherIter = otherAddrs.cbegin();
+	   prefIter != preferredAddrs.end() || otherIter != otherAddrs.end();
+	   otherIter != otherAddrs.end() ? otherIter++ : otherIter, prefIter != preferredAddrs.end() ? prefIter++ : prefIter)
+      {
+
+	 if (prefIter != preferredAddrs.end())
+	    allAddrs.push_back(*prefIter);
+	 if (otherIter != otherAddrs.end())
+	    allAddrs.push_back(*otherIter);
+      }
    }
 
-   for (auto prefIter = preferredAddrs.cbegin(), otherIter = otherAddrs.cbegin();
-	prefIter != preferredAddrs.end() || otherIter != otherAddrs.end();
-	otherIter != otherAddrs.end() ? otherIter++ : otherIter, prefIter != preferredAddrs.end() ? prefIter++ : prefIter)
-   {
-      std::vector<Connection> Conns;
+   std::vector<Connection> Conns;
 
-      // Add a new preferred address, if any
-      if (prefIter != preferredAddrs.end())
-      {
-	 Connection Conn(Host, Owner);
-	 if (Conn.DoConnect(*prefIter) == ResultState::SUCCESSFUL)
-	    Conns.push_back(std::move(Conn));
-      }
+   for (auto Addr : allAddrs)
+   {
+      Connection Conn(Host, Owner);
+      if (Conn.DoConnect(Addr) == ResultState::SUCCESSFUL)
+	 Conns.push_back(std::move(Conn));
 
       if (WaitAndCheckErrors(Conns, Fd, Owner->ConfigFindI("HappyEyeballsTimeoutMsec", 300)) == ResultState::SUCCESSFUL)
       {
@@ -434,20 +441,13 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
 	 LastUsed = CurHost;
 	 return ResultState::SUCCESSFUL;
       }
+   }
 
-      if (otherIter != otherAddrs.end())
-      {
-	 Connection Conn(Host, Owner);
-	 if (Conn.DoConnect(*otherIter) == ResultState::SUCCESSFUL)
-	    Conns.push_back(std::move(Conn));
-      }
-
-      if (WaitAndCheckErrors(Conns, Fd, TimeOut * 1000) == ResultState::SUCCESSFUL)
-      {
-	 _error->Discard();
-	 LastUsed = CurHost;
-	 return ResultState::SUCCESSFUL;
-      }
+   if (WaitAndCheckErrors(Conns, Fd, TimeOut * 1000) == ResultState::SUCCESSFUL)
+   {
+      _error->Discard();
+      LastUsed = CurHost;
+      return ResultState::SUCCESSFUL;
    }
 
    if (_error->PendingError() == true)
