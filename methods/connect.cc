@@ -156,6 +156,7 @@ struct Connection
       std::stringstream ss;
       ioprintf(ss, _("[IP: %s %s]"), Name, Service);
       Owner->SetIP(ss.str());
+      LastUsed = Addr;
       return std::move(Fd);
    }
 
@@ -430,15 +431,10 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
    }
 
    // When we have an IP rotation stay with the last IP.
-   struct addrinfo *CurHost = LastHostAddr;
-   if (LastUsed != 0)
-       CurHost = LastUsed;
-
-   // First family returned is our preferred family
-   std::vector<struct addrinfo *> allAddrs = OrderAddresses(CurHost);
+   auto Addresses = OrderAddresses(LastUsed != nullptr ? LastUsed : LastHostAddr);
    std::vector<Connection> Conns;
 
-   for (auto Addr : allAddrs)
+   for (auto Addr : Addresses)
    {
       Connection Conn(Addr, Host, Owner);
       if (Conn.DoConnect() == ResultState::SUCCESSFUL)
@@ -447,7 +443,6 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
       if (WaitAndCheckErrors(Conns, Fd, Owner->ConfigFindI("HappyEyeballsTimeoutMsec", 300)) == ResultState::SUCCESSFUL)
       {
 	 _error->Discard();
-	 LastUsed = CurHost;
 	 return ResultState::SUCCESSFUL;
       }
    }
@@ -455,7 +450,6 @@ static ResultState ConnectToHostname(std::string const &Host, int const Port,
    if (WaitAndCheckErrors(Conns, Fd, TimeOut * 1000) == ResultState::SUCCESSFUL)
    {
       _error->Discard();
-      LastUsed = CurHost;
       return ResultState::SUCCESSFUL;
    }
 
