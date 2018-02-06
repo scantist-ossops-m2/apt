@@ -15,6 +15,7 @@
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/md5.h>
 #include <apt-pkg/pkgcache.h>
+#include <apt-pkg/string_view.h>
 
 #include <string>
 
@@ -24,9 +25,6 @@
 #include <apt-pkg/tagfile.h>
 #endif
 
-namespace APT {
-   class StringView;
-}
 class APT_HIDDEN edspLikeListParser : public debListParser
 {
    public:
