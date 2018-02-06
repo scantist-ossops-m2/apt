@@ -15,6 +15,7 @@
 #include <vector>
 
 #include <stdlib.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -282,8 +283,29 @@ protected:
 	 ALLOW(sendto);
 	 ALLOW(setsockopt);
 	 ALLOW(shutdown);
-	 ALLOW(socket);
-	 ALLOW(socketcall);
+
+	 /* Allow a specific set of address families */
+	 static constexpr const std::initializer_list<int> allowedProtocols = {AF_INET6, AF_INET, AF_UNIX, AF_LOCAL};
+
+	 // Allow the protocols in the list, and filter out ones in between
+	 for (auto proto = std::min(allowedProtocols); proto <= std::max(allowedProtocols); proto++)
+	 {
+	    if (std::find(allowedProtocols.begin(), allowedProtocols.end(), proto) == allowedProtocols.end())
+	    {
+	       seccomp_rule_add_exact(ctx, SCMP_ACT_ERRNO(EAFNOSUPPORT), SCMP_SYS(socket), 1, SCMP_A0(SCMP_CMP_EQ, proto));
+	       continue;
+	    }
+
+	    if ((rc = seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(socket), 1, SCMP_A0(SCMP_CMP_EQ, proto))) != 0)
+	       return _error->FatalE("HttpMethod::Configuration", "Cannot set allow %s(%d): %s", "socket", proto, strerror(-rc));
+	 }
+
+	 // Filter out protocols outside the min, max range
+	 seccomp_rule_add_exact(ctx, SCMP_ACT_ERRNO(EAFNOSUPPORT), SCMP_SYS(socket), 1, SCMP_A0(SCMP_CMP_GT, static_cast<scmp_datum_t>(std::max(allowedProtocols))));
+	 seccomp_rule_add_exact(ctx, SCMP_ACT_ERRNO(EAFNOSUPPORT), SCMP_SYS(socket), 1, SCMP_A0(SCMP_CMP_LT, static_cast<scmp_datum_t>(std::min(allowedProtocols))));
+
+	 // Allow socketcall() on systems that have it
+	 seccomp_rule_add_exact(ctx, SCMP_ACT_ALLOW, SCMP_SYS(socketcall), 0);
       }
 
       if ((SeccompFlags & Seccomp::DIRECTORY) != 0)
