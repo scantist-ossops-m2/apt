@@ -26,6 +26,7 @@
 #include <apt-pkg/pkgsystem.h>
 #include <apt-pkg/progress.h>
 #include <apt-pkg/sourcelist.h>
+#include <apt-pkg/strutl.h>
 #include <apt-pkg/version.h>
 
 #include <algorithm>
@@ -49,6 +50,7 @@ static bool IsDuplicateDescription(pkgCache &Cache, pkgCache::DescIterator Desc,
 
 using std::string;
 using APT::StringView;
+using APT::StringViewCompareFast;
 
 // CacheGenerator::pkgCacheGenerator - Constructor			/*{{{*/
 // ---------------------------------------------------------------------

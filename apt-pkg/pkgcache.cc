@@ -46,6 +46,7 @@
 
 using std::string;
 using APT::StringView;
+using APT::StringViewCompareFast;
 
 
 // Cache::Header::Header - Constructor					/*{{{*/

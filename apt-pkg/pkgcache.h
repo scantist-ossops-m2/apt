@@ -76,6 +76,7 @@
 #define __PKGLIB_IN_PKGCACHE_H
 #include <apt-pkg/macros.h>
 #include <apt-pkg/mmap.h>
+#include <apt-pkg/strutl.h>
 
 #include <string>
 #include <stdint.h>
