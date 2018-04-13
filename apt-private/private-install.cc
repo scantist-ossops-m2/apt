@@ -35,6 +35,7 @@
 #include <apt-private/private-cachefile.h>
 #include <apt-private/private-cacheset.h>
 #include <apt-private/private-download.h>
+#include <apt-private/private-json-hooks.h>
 #include <apt-private/private-output.h>
 
 #include <apti18n.h>
@@ -565,6 +566,7 @@ bool DoCacheManipulationFromCommandLine(CommandLine &CmdL, CacheFile &Cache,
    verset = APT::VersionSet::GroupedFromCommandLine(Cache,
 		CmdL.FileList + 1, mods, fallback, helper);
 
+
    if (_error->PendingError() == true)
    {
       helper.showVirtualPackageErrors(Cache);
@@ -676,7 +678,10 @@ bool DoInstall(CommandLine &CmdL)
    std::map<unsigned short, APT::VersionSet> verset;
 
    if(!DoCacheManipulationFromCommandLine(CmdL, Cache, verset))
+   {
+      RunJsonHook("AptCli::Hooks::Install", "org.debian.apt.hooks.install.fail", CmdL.FileList, Cache, {});
       return false;
+   }
 
    /* Print out a list of packages that are going to be installed extra
       to what the user asked */
@@ -793,11 +798,21 @@ bool DoInstall(CommandLine &CmdL)
 
    }
 
+   RunJsonHook("AptCli::Hooks::Install", "org.debian.apt.hooks.install.pre-prompt", CmdL.FileList, Cache);
+
+   bool result;
    // See if we need to prompt
    // FIXME: check if really the packages in the set are going to be installed
    if (Cache->InstCount() == verset[MOD_INSTALL].size() && Cache->DelCount() == 0)
-      return InstallPackages(Cache,false,false);
+      result = InstallPackages(Cache, false, false);
+   else
+      result = InstallPackages(Cache, false);
 
-   return InstallPackages(Cache,false);   
+   if (result)
+      result = RunJsonHook("AptCli::Hooks::Install", "org.debian.apt.hooks.install.post", CmdL.FileList, Cache);
+   else
+      /* not a result */ RunJsonHook("AptCli::Hooks::Install", "org.debian.apt.hooks.install.fail", CmdL.FileList, Cache);
+
+   return result;
 }
 									/*}}}*/

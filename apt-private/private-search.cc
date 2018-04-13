@@ -13,7 +13,9 @@
 #include <apt-pkg/macros.h>
 #include <apt-pkg/pkgcache.h>
 
+#include <apt-private/private-cachefile.h>
 #include <apt-private/private-cacheset.h>
+#include <apt-private/private-json-hooks.h>
 #include <apt-private/private-output.h>
 #include <apt-private/private-search.h>
 
@@ -29,12 +31,16 @@
 
 bool FullTextSearch(CommandLine &CmdL)					/*{{{*/
 {
-   pkgCacheFile CacheFile;
+
+   CacheFile CacheFile;
+   CacheFile.GetDepCache();
    pkgCache *Cache = CacheFile.GetPkgCache();
    pkgDepCache::Policy *Plcy = CacheFile.GetPolicy();
    pkgRecords records(CacheFile);
    if (unlikely(Cache == NULL || Plcy == NULL))
       return false;
+
+   RunJsonHook("AptCli::Hooks::Search", "org.debian.apt.hooks.search.pre", CmdL.FileList, CacheFile);
 
    const char **patterns;
    patterns = CmdL.FileList + 1;
@@ -90,6 +96,10 @@ bool FullTextSearch(CommandLine &CmdL)					/*{{{*/
    for (K = output_map.begin(); K != output_map.end(); ++K)
       std::cout << (*K).second << std::endl;
 
+   if (output_map.empty())
+      RunJsonHook("AptCli::Hooks::Search", "org.debian.apt.hooks.search.fail", CmdL.FileList, CacheFile);
+   else
+      RunJsonHook("AptCli::Hooks::Search", "org.debian.apt.hooks.search.post", CmdL.FileList, CacheFile);
    return true;
 }
 									/*}}}*/
