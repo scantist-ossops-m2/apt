@@ -250,7 +250,7 @@ bool RequestState::HeaderLine(string const &Line)			/*{{{*/
 									/*}}}*/
 // ServerState::ServerState - Constructor				/*{{{*/
 ServerState::ServerState(URI Srv, BaseHttpMethod *Owner) :
-   ServerName(Srv), TimeOut(120), Owner(Owner)
+   ServerName(Srv), TimeOut(20), Owner(Owner)
 {
    Reset();
 }
