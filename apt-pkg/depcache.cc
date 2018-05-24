@@ -1072,6 +1072,18 @@ bool pkgDepCache::MarkInstall(PkgIterator const &Pkg,bool AutoInst,
 			      unsigned long Depth, bool FromUser,
 			      bool ForceImportantDeps)
 {
+   if (AutoInst == false)
+      return MarkInstall2(Pkg, AutoInst, Depth, FromUser, ForceImportantDeps, 0);
+
+   return MarkInstall2(Pkg, AutoInst, Depth, FromUser, ForceImportantDeps, 1) &&
+	  MarkInstall2(Pkg, AutoInst, Depth, FromUser, ForceImportantDeps, 0);
+}
+
+bool pkgDepCache::MarkInstall2(PkgIterator const &Pkg, bool AutoInst,
+			       unsigned long Depth, bool FromUser,
+			       bool ForceImportantDeps,
+			       unsigned long Width)
+{
    if (IsModeChangeOk(ModeInstall, Pkg, Depth, FromUser) == false)
       return false;
 
@@ -1252,6 +1264,12 @@ bool pkgDepCache::MarkInstall(PkgIterator const &Pkg,bool AutoInst,
 	 APT::VersionList verlist = APT::VersionList::FromDependency(CacheFile, Start, APT::CacheSetHelper::CANDIDATE);
 	 CompareProviders comp(Start);
 
+	 // This or group has too many elements, ignore it for now.
+	 if (Width != 0 && verlist.size() > Width)
+	 {
+	    continue;
+	 }
+
 	 do {
 	    APT::VersionList::iterator InstVer = std::max_element(verlist.begin(), verlist.end(), comp);
 
@@ -1263,7 +1281,7 @@ bool pkgDepCache::MarkInstall(PkgIterator const &Pkg,bool AutoInst,
 	       std::clog << OutputInDepth(Depth) << "Installing " << InstPkg.Name()
 			 << " as " << Start.DepType() << " of " << Pkg.Name()
 			 << std::endl;
-	    if (MarkInstall(InstPkg, true, Depth + 1, false, ForceImportantDeps) == false)
+	    if (MarkInstall2(InstPkg, true, Depth + 1, false, ForceImportantDeps, Width) == false)
 	    {
 	       verlist.erase(InstVer);
 	       continue;
@@ -1308,7 +1326,7 @@ bool pkgDepCache::MarkInstall(PkgIterator const &Pkg,bool AutoInst,
 	    if ((Start->Version != 0 || TrgPkg != Pkg) &&
 		PkgState[Pkg->ID].CandidateVer != PkgState[Pkg->ID].InstallVer &&
 		PkgState[Pkg->ID].CandidateVer != *I &&
-		MarkInstall(Pkg,true,Depth + 1, false, ForceImportantDeps) == true)
+		MarkInstall2(Pkg, true, Depth + 1, false, ForceImportantDeps, Width) == true)
 	       continue;
 	    else if (Start->Type == pkgCache::Dep::Conflicts || 
                      Start->Type == pkgCache::Dep::DpkgBreaks) 

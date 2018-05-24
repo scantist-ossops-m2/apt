@@ -1,0 +1,28 @@
+#!/bin/sh
+set -e
+
+TESTDIR="$(readlink -f "$(dirname "$0")")"
+. "$TESTDIR/framework"
+setupenvironment
+configarchitecture 'amd64' 'i386'
+
+
+insertpackage 'unstable' 'case1' 'amd64' '1' 'Depends: a, b'
+insertpackage 'unstable' 'a' 'amd64' '1'
+insertpackage 'unstable' 'b' 'amd64' '1' 'Provides: a'
+
+
+setupaptarchive
+
+
+testsuccessequal "Reading package lists...
+Building dependency tree...
+The following additional packages will be installed:
+  b
+The following NEW packages will be installed:
+  b case1
+0 upgraded, 2 newly installed, 0 to remove and 0 not upgraded.
+Inst b (1 unstable [amd64])
+Inst case1 (1 unstable [amd64])
+Conf b (1 unstable [amd64])
+Conf case1 (1 unstable [amd64])" aptget install case1 -s
