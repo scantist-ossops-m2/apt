@@ -286,7 +286,7 @@ bool pkgOrderList::OrderConfigure()
 {
    FileList = 0;
    Primary = &pkgOrderList::DepConfigure;
-   Secondary = 0;
+   Secondary = &pkgOrderList::DepConfigureSecondary;
    RevDepends = 0;
    Remove = 0;
    LoopCount = -1;
@@ -882,6 +882,19 @@ bool pkgOrderList::DepConfigure(DepIterator D)
    
    for (; D.end() == false; ++D)
       if (D->Type == pkgCache::Dep::Depends)
+	 if (VisitProvides(D,false) == false)
+	    return false;
+   return true;
+}
+
+bool pkgOrderList::DepConfigureSecondary(DepIterator D)
+{
+   // Never consider reverse configuration dependencies.
+   if (D.Reverse() == true)
+      return true;
+
+   for (; D.end() == false; ++D)
+      if (D->Type == pkgCache::Dep::Recommends || D->Type == pkgCache::Dep::Suggests)
 	 if (VisitProvides(D,false) == false)
 	    return false;
    return true;

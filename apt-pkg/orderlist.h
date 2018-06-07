@@ -60,6 +60,7 @@ class pkgOrderList : protected pkgCache::Namespace
    bool DepUnPackPre(DepIterator D);
    bool DepUnPackDep(DepIterator D);
    bool DepConfigure(DepIterator D);
+   bool DepConfigureSecondary(DepIterator D) APT_HIDDEN;
    bool DepRemove(DepIterator D);
    
    // Analysis helpers
