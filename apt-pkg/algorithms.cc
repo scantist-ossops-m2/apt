@@ -24,11 +24,14 @@
 #include <apt-pkg/packagemanager.h>
 #include <apt-pkg/pkgcache.h>
 #include <apt-pkg/prettyprinters.h>
+#include <apt-pkg/pbo-solver.h>
 
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <unordered_map>
 #include <utility>
+#include <vector>
 #include <string.h>
 
 #include <apti18n.h>
@@ -696,11 +699,25 @@ bool pkgProblemResolver::DoUpgrade(pkgCache::PkgIterator Pkg)
 bool pkgProblemResolver::Resolve(bool BrokenFix, OpProgress * const Progress)
 {
    std::string const solver = _config->Find("APT::Solver", "internal");
-   auto const ret = EDSP::ResolveExternal(solver.c_str(), Cache, 0, Progress);
-   if (solver != "internal")
-      return ret;
-   return ResolveInternal(BrokenFix);
+
+   if (solver == "clasp")
+      return ResolveClasp(BrokenFix);
+   else if (solver == "internal")
+      return ResolveInternal(BrokenFix);
+   else
+      return EDSP::ResolveExternal(solver.c_str(), Cache, 0, Progress);
 }
+
+bool pkgProblemResolver::ResolveClasp(bool BrokenFix)
+{
+   pkgDepCache::ActionGroup group(Cache);
+   PboSolver solver;
+
+   solver.Setup(Cache);
+
+   return true;
+}
+
 									/*}}}*/
 // ProblemResolver::ResolveInternal - Run the resolution pass		/*{{{*/
 // ---------------------------------------------------------------------

@@ -142,6 +142,7 @@ class pkgProblemResolver						/*{{{*/
    // Try to intelligently resolve problems by installing and removing packages
    bool Resolve(bool BrokenFix = false, OpProgress * const Progress = NULL);
    APT_HIDDEN bool ResolveInternal(bool const BrokenFix = false);
+   APT_HIDDEN bool ResolveClasp(bool const BrokenFix = false);
 
    // Try to resolve problems only by using keep
    bool ResolveByKeep(OpProgress * const Progress = NULL);
