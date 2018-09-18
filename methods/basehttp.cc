@@ -603,7 +603,7 @@ int BaseHttpMethod::Loop()
       // Reset the pipeline
       if (Server->IsOpen() == false) {
 	 QueueBack = Queue;
-	 PipelineAnswersReceived = 0;
+	 Server->PipelineAnswersReceived = 0;
       }
 
       // Connect to the host
