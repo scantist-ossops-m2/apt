@@ -597,8 +597,10 @@ int BaseHttpMethod::Loop()
 	 Server->Close();
 
       // Reset the pipeline
-      if (Server->IsOpen() == false)
+      if (Server->IsOpen() == false) {
 	 QueueBack = Queue;
+	 PipelineAnswersReceived = 0;
+      }
 
       // Connect to the host
       switch (Server->Open())
