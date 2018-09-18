@@ -39,6 +39,10 @@ string BaseHttpMethod::FailFile;
 int BaseHttpMethod::FailFd = -1;
 time_t BaseHttpMethod::FailTime = 0;
 
+// Number of successful requests in a pipeline needed to continue
+// pipelining after a connection reset.
+constexpr int PIPELINE_MIN_SUCCESSFUL_ANSWERS_TO_CONTINUE = 3;
+
 // ServerState::RunHeaders - Get the headers before the data		/*{{{*/
 // ---------------------------------------------------------------------
 /* Returns 0 if things are OK, 1 if an IO error occurred and 2 if a header
@@ -215,7 +219,7 @@ bool RequestState::HeaderLine(string const &Line)			/*{{{*/
 	 /* Some servers send error pages (as they are dynamically generated)
 	    for simplicity via a connection close instead of e.g. chunked,
 	    so assuming an always closing server only if we get a file + close */
-	 if (Result >= 200 && Result < 300 && Server->PipelineAnswersReceived < Owner->PipelineDepth)
+	 if (Result >= 200 && Result < 300 && Server->PipelineAnswersReceived < PIPELINE_MIN_SUCCESSFUL_ANSWERS_TO_CONTINUE)
 	 {
 	    Server->PipelineAllowed = false;
 	    Server->PipelineAnswersReceived = 0;
