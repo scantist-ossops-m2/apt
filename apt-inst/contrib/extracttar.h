@@ -26,7 +26,7 @@ using std::min;
 
 class pkgDirStream;
 
-class ExtractTar
+class APT_PUBLIC ExtractTar
 {
    protected:
    
@@ -46,9 +46,9 @@ class ExtractTar
    std::string DecompressProg;
    
    // Fork and reap gzip
-   bool StartGzip();
-   bool Done();
-   APT_DEPRECATED_MSG("Parameter Force is ignored, use Done() instead.") bool Done(bool Force);
+   APT_HIDDEN bool StartGzip();
+   APT_HIDDEN bool Done();
+   APT_HIDDEN APT_DEPRECATED_MSG("Parameter Force is ignored, use Done() instead.") bool Done(bool Force);
 
    public:
 

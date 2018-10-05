@@ -20,6 +20,7 @@ target_link_libraries(apt-inst PUBLIC apt-pkg ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(apt-inst PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 set_target_properties(apt-inst PROPERTIES VERSION ${MAJOR}.${MINOR})
 set_target_properties(apt-inst PROPERTIES SOVERSION ${MAJOR})
+set_target_properties(apt-inst PROPERTIES CXX_VISIBILITY_PRESET hidden)
 add_version_script(apt-inst)
 
 # Install the library and the headers
