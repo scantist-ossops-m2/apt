@@ -29,6 +29,7 @@ class APT_HIDDEN debReleaseIndex : public metaIndex
    APT_HIDDEN bool parseSumData(const char *&Start, const char *End, std::string &Name,
 		     std::string &Hash, unsigned long long &Size);
    public:
+   std::string InReleasePath;
 
    APT_HIDDEN std::string MetaIndexInfo(const char *Type) const;
    APT_HIDDEN std::string MetaIndexFile(const char *Types) const;
@@ -56,6 +57,7 @@ class APT_HIDDEN debReleaseIndex : public metaIndex
    bool SetValidUntilMin(time_t const Valid);
    bool SetValidUntilMax(time_t const Valid);
    bool SetSignedBy(std::string const &SignedBy);
+   bool SetInReleasePath(std::string const &InReleasePath);
 
    virtual bool IsTrusted() const APT_OVERRIDE;
    bool IsArchitectureSupported(std::string const &arch) const;

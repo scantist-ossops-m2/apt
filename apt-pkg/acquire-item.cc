@@ -19,6 +19,7 @@
 #include <apt-pkg/configuration.h>
 #include <apt-pkg/aptconfiguration.h>
 #include <apt-pkg/sourcelist.h>
+#include <apt-pkg/debmetaindex.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/strutl.h>
 #include <apt-pkg/fileutl.h>
@@ -1386,7 +1387,7 @@ pkgAcqMetaClearSig::pkgAcqMetaClearSig(pkgAcquire * const Owner,	/*{{{*/
       IndexTarget const &DetachedDataTarget, IndexTarget const &DetachedSigTarget,
       std::vector<IndexTarget> const &IndexTargets,
       metaIndex * const MetaIndexParser) :
-   pkgAcqMetaIndex(Owner, this, ClearsignedTarget, DetachedSigTarget, IndexTargets),
+   pkgAcqMetaIndex(Owner, this, ClearsignedTarget, DetachedSigTarget, IndexTargets, MetaIndexParser),
    d(NULL), ClearsignedTarget(ClearsignedTarget),
    DetachedDataTarget(DetachedDataTarget),
    MetaIndexParser(MetaIndexParser), LastMetaIndexParser(NULL)
@@ -1481,13 +1482,22 @@ void pkgAcqMetaClearSig::Failed(string const &Message,pkgAcquire::MethodConfig c
 	 return;
       }
 
+      auto debRelIdx = dynamic_cast<debReleaseIndex*>(MetaIndexParser);
+      if (debRelIdx != nullptr && debRelIdx->InReleasePath != "")
+      {
+	 // We specified an inrelease-path for this repository, thus we
+	 // do not allow fallback to Release files.
+	 TransactionManager->AbortTransaction();
+	 return;
+      }
+
       // Queue the 'old' InRelease file for removal if we try Release.gpg
       // as otherwise the file will stay around and gives a false-auth
       // impression (CVE-2012-0214)
       TransactionManager->TransactionStageRemoval(this, GetFinalFilename());
       Status = StatDone;
 
-      new pkgAcqMetaIndex(Owner, TransactionManager, DetachedDataTarget, DetachedSigTarget, IndexTargets);
+      new pkgAcqMetaIndex(Owner, TransactionManager, DetachedDataTarget, DetachedSigTarget, IndexTargets, MetaIndexParser);
    }
    else
    {
@@ -1526,7 +1536,8 @@ pkgAcqMetaIndex::pkgAcqMetaIndex(pkgAcquire * const Owner,		/*{{{*/
                                  pkgAcqMetaClearSig * const TransactionManager,
 				 IndexTarget const &DataTarget,
 				 IndexTarget const &DetachedSigTarget,
-				 vector<IndexTarget> const &IndexTargets) :
+				 vector<IndexTarget> const &IndexTargets,
+				 metaIndex * const MetaIndexParser) :
    pkgAcqMetaBase(Owner, TransactionManager, IndexTargets, DataTarget), d(NULL),
    DetachedSigTarget(DetachedSigTarget)
 {
@@ -1541,6 +1552,16 @@ pkgAcqMetaIndex::pkgAcqMetaIndex(pkgAcquire * const Owner,		/*{{{*/
    Desc.Owner = this;
    Desc.ShortDesc = DataTarget.ShortDesc;
    Desc.URI = DataTarget.URI;
+
+   // Rewrite the description URI if inrelease-path was specified so
+   // we download the specified file instead.
+   auto debRelIdx = dynamic_cast<debReleaseIndex*>(MetaIndexParser);
+   std::string const InReleasePath = debRelIdx != nullptr ? debRelIdx->InReleasePath : "";
+   if (InReleasePath.empty() == false && APT::String::Endswith(DataTarget.URI, "/InRelease"))
+   {
+      Desc.URI = DataTarget.URI.substr(0, DataTarget.URI.size() - strlen("InRelease")) + InReleasePath;
+   }
+
 
    // we expect more item
    ExpectedAdditionalItems = IndexTargets.size();

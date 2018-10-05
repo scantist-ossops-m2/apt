@@ -98,10 +98,10 @@ std::string debReleaseIndex::MetaIndexURI(const char *Type) const
 									/*}}}*/
 // ReleaseIndex Con- and Destructors					/*{{{*/
 debReleaseIndex::debReleaseIndex(std::string const &URI, std::string const &Dist) :
-					metaIndex(URI, Dist, "deb"), d(new debReleaseIndexPrivate())
+					metaIndex(URI, Dist, "deb"), d(new debReleaseIndexPrivate()), InReleasePath()
 {}
 debReleaseIndex::debReleaseIndex(std::string const &URI, std::string const &Dist, bool const pTrusted) :
-					metaIndex(URI, Dist, "deb"), d(new debReleaseIndexPrivate())
+					metaIndex(URI, Dist, "deb"), d(new debReleaseIndexPrivate()), InReleasePath()
 {
    Trusted = pTrusted ? TRI_YES : TRI_NO;
 }
@@ -645,6 +645,17 @@ bool debReleaseIndex::SetSignedBy(std::string const &pSignedBy)
       return _error->Error(_("Conflicting values set for option %s regarding source %s %s"), "Signed-By", URI.c_str(), Dist.c_str());
    return true;
 }
+
+bool debReleaseIndex::SetInReleasePath(std::string const &pInReleasePath)
+{
+   if (InReleasePath.empty() == true && pInReleasePath.empty() == false)
+   {
+      InReleasePath = pInReleasePath;
+   }
+   else if (InReleasePath != pInReleasePath)
+      return _error->Error(_("Conflicting values set for option %s regarding source %s %s"), "InRelease-Path", URI.c_str(), Dist.c_str());
+   return true;
+}
 									/*}}}*/
 // ReleaseIndex::IsTrusted						/*{{{*/
 bool debReleaseIndex::IsTrusted() const
@@ -948,6 +959,18 @@ class APT_HIDDEN debSLTypeDebian : public pkgSourceList::Type		/*{{{*/
 	 Deb->SetValidUntilMax(GetTimeOption(Options, "valid-until-max")) == false ||
 	 Deb->SetValidUntilMin(GetTimeOption(Options, "valid-until-min")) == false)
 	 return false;
+
+      std::map<std::string, std::string>::const_iterator const inreleasepath = Options.find("inrelease-path");
+      if (inreleasepath == Options.end())
+      {
+	 if (Deb->SetInReleasePath("") == false)
+	    return false;
+      }
+      else
+      {
+	 if (Deb->SetInReleasePath(inreleasepath->second) == false)
+	    return false;
+      }
 
       std::map<std::string, std::string>::const_iterator const signedby = Options.find("signed-by");
       if (signedby == Options.end())

@@ -528,7 +528,8 @@ class APT_HIDDEN pkgAcqMetaIndex : public pkgAcqMetaBase
    /** \brief Create a new pkgAcqMetaIndex. */
    pkgAcqMetaIndex(pkgAcquire * const Owner, pkgAcqMetaClearSig * const TransactionManager,
 		   IndexTarget const &DataTarget, IndexTarget const &DetachedSigTarget,
-		   std::vector<IndexTarget> const &IndexTargets);
+		   std::vector<IndexTarget> const &IndexTargets,
+		   metaIndex * const MetaIndexParser);
    virtual ~pkgAcqMetaIndex();
 
    friend class pkgAcqMetaSig;
