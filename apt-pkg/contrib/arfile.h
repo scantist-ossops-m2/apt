@@ -19,7 +19,7 @@
 
 class FileFd;
 
-class ARArchive
+class APT_PUBLIC ARArchive
 {
    struct MemberHeader;
    public:
@@ -30,7 +30,7 @@ class ARArchive
    // Linked list of members
    Member *List;
    
-   bool LoadHeaders();
+   APT_HIDDEN bool LoadHeaders();
 
    public:
    

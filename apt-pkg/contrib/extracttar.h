@@ -21,7 +21,7 @@
 
 class pkgDirStream;
 
-class ExtractTar
+class APT_PUBLIC ExtractTar
 {
    protected:
    
@@ -41,8 +41,8 @@ class ExtractTar
    std::string DecompressProg;
    
    // Fork and reap gzip
-   bool StartGzip();
-   bool Done();
+   APT_HIDDEN bool StartGzip();
+   APT_HIDDEN bool Done();
 
    public:
 
