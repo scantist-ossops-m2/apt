@@ -18,7 +18,8 @@
    500         = Default package files
    100         = The status file and ButAutomaticUpgrades sources
    0 -> 100    = NotAutomatic sources like experimental
-   -inf -> 0   = Never selected   
+   -inf -> 0   = Never selected
+   –32768      = Never selected, overrides everything else
    
    ##################################################################### */
 									/*}}}*/
@@ -115,7 +116,7 @@ bool pkgPolicy::InitDefaults()
       pkgVersionMatch Match(I->Data,I->Type);
       for (pkgCache::PkgFileIterator F = Cache->FileBegin(); F != Cache->FileEnd(); ++F)
       {
-	 if (Match.FileMatch(F) == true && Fixed[F->ID] == false)
+	 if (Match.FileMatch(F) == true && (Fixed[F->ID] == false || I->Priority == -32768))
 	 {
 	    if (I->Priority != 0 && I->Priority > 0)
 	       Cur = I->Priority;
@@ -194,7 +195,12 @@ pkgCache::VerIterator pkgPolicy::GetCandidateVer(pkgCache::PkgIterator const &Pk
 	     instVer == false)
 	    continue;
 
+
 	 signed Prio = PFPriority[VF.File()->ID];
+
+	 // A package file pinned to -32768 can never be a candidate.
+	 if (Prio == -32768 && instVer == false)
+	    continue;
 	 if (Prio > Max)
 	 {
 	    Pref = Ver;
@@ -447,6 +453,10 @@ bool ReadPinFile(pkgPolicy &Plcy,string File)
       for (; Word != End && isspace(*Word) != 0; Word++);
 
       short int priority = Tags.FindI("Pin-Priority", 0);
+      if (priority == 0 && Tags.FindS("Pin-Priority") == "never") {
+	 priority = -32768;
+      }
+
       if (priority == 0)
       {
          _error->Warning(_("No priority (or zero) specified for pin"));
