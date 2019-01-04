@@ -22,6 +22,8 @@
 #include <algorithm>
 #include <iostream>
 #include <string>
+#include <sstream>
+#include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -207,8 +209,22 @@ unsigned long long HashStringList::FileSize() const			/*{{{*/
 									/*}}}*/
 bool HashStringList::FileSize(unsigned long long const Size)		/*{{{*/
 {
-   std::string size;
-   strprintf(size, "%llu", Size);
+   char Result[sizeof(Size) * 4] = {0};
+   unsigned long long Size_ = Size;
+   int bytes = 0;
+
+   //std::string Check = std::to_string(Size);
+
+   while (Size_ > 0) {
+      Result[sizeof(Result) - bytes] = (Size_ % 10) + '0';
+      Size_ /= 10;
+      bytes++;
+   }
+
+   std::string size(Result + sizeof(Result) - bytes, bytes);
+   //assert(Check == size);
+
+
    return push_back(HashString("Checksum-FileSize", size));
 }
 									/*}}}*/
