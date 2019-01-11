@@ -760,8 +760,11 @@ class APT_HIDDEN CleanupItem : public pkgAcqTransactionItem		/*{{{*/
 	 case TransactionCommit:
 	    if (_config->FindB("Debug::Acquire::Transaction", false) == true)
 	       std::clog << "rm " << DestFile << " # " << DescURI() << std::endl;
-	    if (RemoveFile("TransItem::TransactionCommit", DestFile) == false)
-	       return false;
+
+	    if (symlink("/dev/null", DestFile.c_str()) != 0)
+	    {
+	       return _error->Errno("TransItem::TransactionCommit/symlink", "Could not disable index %s", DestFile.c_str());
+	    }
 	    break;
       }
       return true;
