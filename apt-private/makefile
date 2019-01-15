@@ -18,7 +18,7 @@ MINOR=0
 SLIBS=$(PTHREADLIB) -lapt-pkg
 CXXFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden
 
-PRIVATES=list install download output cachefile cacheset update upgrade cmndline moo search show main utils sources
+PRIVATES=list install download output cachefile cacheset update upgrade cmndline moo search show main utils sources json-hooks
 SOURCE += $(foreach private, $(PRIVATES), private-$(private).cc)
 HEADERS += $(foreach private, $(PRIVATES), private-$(private).h)
 
