@@ -165,7 +165,7 @@ std::string IndexTarget::Option(OptionKeys const EnumKey) const		/*{{{*/
 	    if (t->empty())
 	       continue;
 	    std::string const file = (*t == "uncompressed") ? filename : (filename + "." + *t);
-	    if (FileExists(file))
+	    if (RealFileExists(file))
 	       return file;
 	 }
 	 return "";
@@ -216,14 +216,14 @@ std::string pkgDebianIndexTargetFile::Describe(bool const Short) const	/*{{{*/
 std::string pkgDebianIndexTargetFile::IndexFileName() const			/*{{{*/
 {
    std::string const s = Target.Option(IndexTarget::FILENAME);
-   if (FileExists(s))
+   if (FileExists(s))	// might be /dev/null if it does not exist
       return s;
 
    std::vector<std::string> const types = VectorizeString(Target.Option(IndexTarget::COMPRESSIONTYPES), ' ');
    for (std::vector<std::string>::const_iterator t = types.begin(); t != types.end(); ++t)
    {
       std::string p = s + '.' + *t;
-      if (FileExists(p))
+      if (RealFileExists(p))
          return p;
    }
    return s;
@@ -249,7 +249,7 @@ unsigned long pkgDebianIndexTargetFile::Size() const				/*{{{*/
 									/*}}}*/
 bool pkgDebianIndexTargetFile::Exists() const					/*{{{*/
 {
-   return FileExists(IndexFileName());
+   return RealFileExists(IndexFileName());
 }
 									/*}}}*/
 std::string pkgDebianIndexTargetFile::GetArchitecture() const			/*{{{*/
@@ -300,7 +300,7 @@ unsigned long pkgDebianIndexRealFile::Size() const
 									/*}}}*/
 bool pkgDebianIndexRealFile::Exists() const					/*{{{*/
 {
-   return FileExists(File);
+   return RealFileExists(File);
 }
 									/*}}}*/
 std::string pkgDebianIndexRealFile::Describe(bool const /*Short*/) const/*{{{*/

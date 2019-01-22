@@ -761,6 +761,11 @@ class APT_HIDDEN CleanupItem : public pkgAcqTransactionItem		/*{{{*/
 	       std::clog << "rm " << DestFile << " # " << DescURI() << std::endl;
 	    if (RemoveFile("TransItem::TransactionCommit", DestFile) == false)
 	       return false;
+
+	    // Store a hint that this file does not exist, so we don't
+	    // look for alternate versions of it when opening the cache.
+	    if (DestFile.find("Packages") != std::string::npos || DestFile.find("Translation") != std::string::npos)
+	       symlink("/dev/null", DestFile.c_str());
 	    break;
       }
       return true;

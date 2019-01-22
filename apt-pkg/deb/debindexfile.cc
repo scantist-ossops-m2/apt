@@ -55,7 +55,7 @@ std::string debSourcesIndex::SourceInfo(pkgSrcRecords::Parser const &Record,
 pkgSrcRecords::Parser *debSourcesIndex::CreateSrcParser() const
 {
    std::string const SourcesURI = IndexFileName();
-   if (FileExists(SourcesURI))
+   if (RealFileExists(SourcesURI))
       return new debSrcRecordParser(SourcesURI, this);
    return NULL;
 }
@@ -110,7 +110,7 @@ bool debTranslationsIndex::HasPackages() const
 }
 bool debTranslationsIndex::OpenListFile(FileFd &Pkg, std::string const &FileName)
 {
-   if (FileExists(FileName))
+   if (RealFileExists(FileName))
       return pkgDebianIndexTargetFile::OpenListFile(Pkg, FileName);
    return true;
 }
