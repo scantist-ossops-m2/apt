@@ -667,6 +667,7 @@ static void CheckDropPrivsMustBeDisabled(pkgAcquire const &Fetcher)
 		  source.Path.c_str(), SandboxUser.c_str());
 	    _config->CndSet("Binary::file::APT::Sandbox::User", "root");
 	    _config->CndSet("Binary::copy::APT::Sandbox::User", "root");
+	    _config->CndSet("Binary::store::APT::Sandbox::User", "root");
 	 }
       }
    }

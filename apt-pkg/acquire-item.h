@@ -958,7 +958,8 @@ class APT_HIDDEN pkgAcqIndexDiffs : public pkgAcqBaseIndex
  */
 class pkgAcqArchive : public pkgAcquire::Item
 {
-   void * const d;
+   struct Private;
+   Private *const d;
 
    bool LocalSource;
    HashStringList ExpectedHashes;

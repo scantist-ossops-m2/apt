@@ -3333,10 +3333,17 @@ pkgAcqIndex::~pkgAcqIndex() {}
 // ---------------------------------------------------------------------
 /* This just sets up the initial fetch environment and queues the first
    possibilitiy */
+
+struct pkgAcqArchive::Private {
+   enum {
+      STAGE_DOWNLOAD,
+      STAGE_VERIFY
+   } Stage = STAGE_DOWNLOAD;
+};
 APT_IGNORE_DEPRECATED_PUSH
 pkgAcqArchive::pkgAcqArchive(pkgAcquire *const Owner, pkgSourceList *const Sources,
 			     pkgRecords *const Recs, pkgCache::VerIterator const &Version,
-			     string &StoreFilename) : Item(Owner), d(NULL), LocalSource(false), Version(Version), Sources(Sources), Recs(Recs),
+			     string &StoreFilename) : Item(Owner), d(new Private), LocalSource(false), Version(Version), Sources(Sources), Recs(Recs),
 						      StoreFilename(StoreFilename), Vf(),
 						      Trusted(false)
 {
@@ -3536,6 +3543,21 @@ bool pkgAcqArchive::QueueNext() /*{{{*/
 void pkgAcqArchive::Done(string const &Message, HashStringList const &Hashes,
 			 pkgAcquire::MethodConfig const * const Cfg)
 {
+   // We finished downloading, switch to verify
+   if (d->Stage == Private::STAGE_DOWNLOAD) {
+      d->Stage = Private::STAGE_VERIFY;
+      Complete = true;
+      std::string const FileName = LookupTag(Message,"Filename");
+      Desc.URI = "store:" + FileName;
+      // queue uri for the next stage
+      QueueURI(Desc);
+      SetActiveSubprocess(::URI(Desc.URI).Access);
+      return;
+   }
+
+   if (d->Stage != Private::STAGE_VERIFY)
+      abort();
+
    Item::Done(Message, Hashes, Cfg);
 
    // Grab the output filename
@@ -3586,7 +3608,7 @@ std::string pkgAcqArchive::ShortDesc() const				/*{{{*/
    return Desc.ShortDesc;
 }
 									/*}}}*/
-pkgAcqArchive::~pkgAcqArchive() {}
+pkgAcqArchive::~pkgAcqArchive() { delete d; }
 
 // AcqChangelog::pkgAcqChangelog - Constructors				/*{{{*/
 class pkgAcqChangelog::Private
