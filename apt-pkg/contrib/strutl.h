@@ -44,9 +44,13 @@ namespace APT {
       bool Startswith(const std::string &s, const std::string &starting);
       std::string Join(std::vector<std::string> list, const std::string &sep);
 
+      struct Escaped {
+         std::string message;
+      };
    }
 }
 
+std::ostream &operator<<(std::ostream &out, const APT::String::Escaped &message);
 
 bool UTF8ToCodeset(const char *codeset, const std::string &orig, std::string *dest);
 char *_strstrip(char *String);

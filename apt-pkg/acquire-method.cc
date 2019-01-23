@@ -88,47 +88,21 @@ pkgAcqMethod::pkgAcqMethod(const char *Ver,unsigned long Flags)
 									/*}}}*/
 void pkgAcqMethod::SendMessage(std::string const &header, std::unordered_map<std::string, std::string> &&fields) /*{{{*/
 {
-   auto CheckKey = [](std::string const &str) {
-      // Space, hyphen-minus, and alphanum are allowed for keys/headers.
-      return str.find_first_not_of(" -0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz") == std::string::npos;
-   };
-
-   auto CheckValue = [](std::string const &str) {
-      return std::all_of(str.begin(), str.end(), [](int c) -> bool {
-	 return c > 127			   // unicode
-		|| (c > 31 && c < 127)     // printable chars
-		|| c == '\n' || c == '\t'; // special whitespace
-      });
-   };
-
-   auto Error = [this]() {
-      _error->Error("SECURITY: Message contains control characters, rejecting.");
-      _error->DumpErrors();
-      return SendMessage("400 URI Failure", {{"URI", "<UNKNOWN>"}, {"Message", "SECURITY: Message contains control characters, rejecting."}});
-   };
-
-   if (!CheckKey(header))
-      return Error();
-
-   for (auto const &f : fields)
-   {
-      if (!CheckKey(f.first))
-	 return Error();
-      if (!CheckValue(f.second))
-	 return Error();
-   }
-
-   std::cout << header << '\n';
+   std::cout << APT::String::Escaped{header} << '\n';
    for (auto const &f : fields)
    {
       if (f.second.empty())
 	 continue;
-      std::cout << f.first << ": ";
+
+      std::cout << APT::String::Escaped{f.first} << ": ";
       auto const lines = VectorizeString(f.second, '\n');
       if (likely(lines.empty() == false))
       {
-	 std::copy(lines.begin(), std::prev(lines.end()), std::ostream_iterator<std::string>(std::cout, "\n "));
-	 std::cout << *lines.rbegin();
+	 for (auto it = lines.begin(); it != std::prev(lines.end()); it++)
+	 {
+	    std::cout << APT::String::Escaped{*it} << "\n ";
+	 }
+	 std::cout << APT::String::Escaped{*lines.rbegin()};
       }
       std::cout << '\n';
    }

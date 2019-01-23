@@ -40,6 +40,8 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <wchar.h>
+#include <wctype.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -1836,5 +1838,61 @@ string URI::NoUserPassword(const string &URI)
    U.User.clear();
    U.Password.clear();
    return U;
+}
+									/*}}}*/
+
+// APT::SafeIOPrint - Print to output stream, escaping non-printable chars /*{{{*}
+/*
+ * This code is GPL-2.0+ and comes from:
+ *
+ * dmesg.c -- Print out the contents of the kernel ring buffer
+ *
+ * Copyright (C) 1993 Theodore Ts'o <tytso@athena.mit.edu>
+ * Copyright (C) 2011 Karel Zak <kzak@redhat.com>
+ *
+ * This program comes with ABSOLUTELY NO WARRANTY.
+ */
+std::ostream &operator<<(std::ostream &out, const APT::String::Escaped &escaped)
+{
+   auto &message = escaped.message;
+   auto WriteHex = [&out](const char *buf, size_t size) {
+      for (size_t i = 0; i < size; i++)
+	 ioprintf(out, "\\x%02hhx", buf[i]);
+   };
+   auto WriteNormal = [&out](const char *buf, size_t size) {
+      for (size_t i = 0; i < size; i++)
+	 out << buf[i];
+   };
+
+   mbstate_t s = mbstate_t();
+
+   for (size_t i = 0; i < message.length(); i++)
+   {
+      const char *p = message.c_str() + i;
+      wchar_t wc = 0;
+      bool hex = false;
+      size_t len = mbrtowc(&wc, p, message.length() - i, &s);
+
+      if (len == 0)
+	 return out;
+
+      if (len == (size_t)-1 || len == (size_t)-2)
+      { /* invalid sequence */
+	 s = mbstate_t();
+	 len = 1;
+	 hex = true;
+      }
+      else if (!iswprint(wc))
+      { /* non-printable */
+	 hex = true;
+      }
+      i += len - 1;
+
+      if (hex)
+	 WriteHex(p, len);
+      else
+	 WriteNormal(p, len);
+   }
+   return out;
 }
 									/*}}}*/

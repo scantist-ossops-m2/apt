@@ -361,3 +361,19 @@ TEST(StrUtilTest, LookupTag)
    EXPECT_EQ("Value4", LookupTag(msg, "Field4", ""));
    EXPECT_EQ("Value5", LookupTag(msg, "Field5", ""));
 }
+
+
+TEST(StrUtilTest, StringEscaped)
+{
+   auto locale = setlocale(LC_ALL, "C.UTF-8");
+   auto StringEscaped = [](const std::string &s) {
+      std::ostringstream os;
+      os << APT::String::Escaped{s};
+      return os.str();
+   };
+
+   EXPECT_EQ("", StringEscaped(""));
+   EXPECT_EQ("\\x08", StringEscaped("\b"));
+   EXPECT_EQ("Hallöchen\\x0a", StringEscaped("Hallöchen\n"));
+   EXPECT_EQ("😀", StringEscaped("😀"));
+}
