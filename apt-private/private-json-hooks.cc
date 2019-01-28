@@ -8,15 +8,20 @@
 
 #include <apt-pkg/debsystem.h>
 #include <apt-pkg/macros.h>
+#include <apt-pkg/strutl.h>
 #include <apt-private/private-json-hooks.h>
 
 #include <ostream>
 #include <sstream>
 #include <stack>
 
+#include <errno.h>
 #include <signal.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+
+#define nullptr 0
 
 /**
  * @brief Simple JSON writer
@@ -36,7 +41,7 @@ class APT_HIDDEN JsonWriter
       in_object_first_key,
       in_object_key,
       in_object_val
-   } state = empty;
+   } state;
 
    std::stack<write_state> old_states;
 
@@ -79,7 +84,7 @@ class APT_HIDDEN JsonWriter
    }
 
    public:
-   JsonWriter(std::ostream &os) : os(os) { old_locale = os.imbue(std::locale::classic()); }
+   JsonWriter(std::ostream &os) : os(os), state(empty) { old_locale = os.imbue(std::locale::classic()); }
    ~JsonWriter() { os.imbue(old_locale); }
    JsonWriter &beginArray()
    {
@@ -184,7 +189,8 @@ static void verIterToJson(JsonWriter &writer, CacheFile &Cache, pkgCache::VerIte
    writer.name("id").value(Ver->ID);
    writer.name("version").value(Ver.VerStr());
    writer.name("architecture").value(Ver.Arch());
-   writer.name("pin").value(Cache->GetPolicy().GetPriority(Ver));
+   (void)Cache;
+   //writer.name("pin").value(Cache->GetPolicy().GetPriority(Ver));
    writer.endObject();
 }
 
@@ -209,8 +215,7 @@ static void DpkgChrootDirectory()
  */
 static void NotifyHook(std::ostream &os, std::string const &method, const char **FileList, CacheFile &Cache, std::set<std::string> const &UnknownPackages)
 {
-   SortedPackageUniverse Universe(Cache);
-   JsonWriter jsonWriter{os};
+   JsonWriter jsonWriter(os);
 
    jsonWriter.beginObject();
 
@@ -225,12 +230,12 @@ static void NotifyHook(std::ostream &os, std::string const &method, const char *
       jsonWriter.value(FileList[i]);
    jsonWriter.endArray();
    jsonWriter.name("unknown-packages").beginArray();
-   for (auto const &PkgName : UnknownPackages)
-      jsonWriter.value(PkgName);
+   for (std::set<std::string>::const_iterator PkgNameIter = UnknownPackages.begin(); PkgNameIter != UnknownPackages.end(); PkgNameIter++)
+      jsonWriter.value(*PkgNameIter);
    jsonWriter.endArray();
 
    jsonWriter.name("packages").beginArray();
-   for (auto const &Pkg : Universe)
+   for (pkgCache::PkgIterator Pkg = Cache->PkgBegin(); Pkg.end() == false; Pkg++)
    {
       switch (Cache[Pkg].Mode)
       {

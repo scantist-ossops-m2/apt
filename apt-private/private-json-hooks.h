@@ -11,4 +11,4 @@
 
 #include <apt-private/private-cachefile.h>
 
-bool RunJsonHook(std::string const &option, std::string const &method, const char **FileList, CacheFile &Cache, std::set<std::string> const &UnknownPackages = {});
+bool RunJsonHook(std::string const &option, std::string const &method, const char **FileList, CacheFile &Cache, std::set<std::string> const &UnknownPackages = std::set<std::string>());
