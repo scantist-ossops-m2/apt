@@ -36,6 +36,7 @@
 #include <apt-pkg/cacheiterators.h>
 #include <apt-pkg/pkgcache.h>
 #include <apt-pkg/versionmatch.h>
+#include <apt-pkg/netrc.h>
 
 #include <ctype.h>
 #include <stddef.h>
@@ -102,6 +103,33 @@ bool pkgPolicy::InitDefaults()
 	 PFPriority[I->ID] = 100;
       else if ((I->Flags & pkgCache::Flag::NotAutomatic) == pkgCache::Flag::NotAutomatic)
 	 PFPriority[I->ID] = 1;
+
+      // Packages that require authorization
+      if ((I->Flags & pkgCache::Flag::PackagesRequireAuthorization) == pkgCache::Flag::PackagesRequireAuthorization)
+      {
+	 // FIXME: We'd like to get the entire base URI please
+	 URI url(std::string("http://") + I.Site() + "/");
+	 maybe_add_auth(url, _config->FindFile("Dir::Etc::netrc"));
+	 if (url.Password.empty())
+	 {
+	    const std::string Dir = _config->FindDir("Dir::Etc::netrcparts");
+
+	    if (DirectoryExists(Dir) == true)
+	    {
+	       vector<string> const List = GetListOfFilesInDir(Dir, "conf", true, true);
+
+	       // Read the files
+	       for (vector<string>::const_iterator I = List.begin(); I != List.end(); ++I)
+	       {
+		  maybe_add_auth(url, *I);
+		  if (not url.Password.empty())
+		     break;
+	       }
+	    }
+	    if (url.Password.empty())
+	       PFPriority[I->ID] = -32768;
+	 }
+      }
    }
 
    // Apply the defaults..
