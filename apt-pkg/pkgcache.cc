@@ -91,9 +91,9 @@ pkgCache::Header::Header()
 
    FileList = 0;
    RlsFileList = 0;
-   VerSysName = 0;
-   Architecture = 0;
-   SetArchitectures(0);
+   VerSysName = {};
+   Architecture = {};
+   SetArchitectures({});
    SetHashTableSize(_config->FindI("APT::Cache-HashTableSize", 50503));
    memset(Pools,0,sizeof(Pools));
 

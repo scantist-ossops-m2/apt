@@ -210,7 +210,7 @@ map_stringitem_t pkgCacheGenerator::WriteStringInMap(const char *String,
 					const unsigned long &Len) {
    size_t oldSize = Map.Size();
    void const * const oldMap = Map.Data();
-   map_stringitem_t const index = Map.WriteString(String, Len);
+   map_stringitem_t const index{Map.WriteString(String, Len)};
    if (index != 0)
       ReMap(oldMap, Map.Data(), oldSize);
    return index;
@@ -220,7 +220,7 @@ map_stringitem_t pkgCacheGenerator::WriteStringInMap(const char *String,
 map_stringitem_t pkgCacheGenerator::WriteStringInMap(const char *String) {
    size_t oldSize = Map.Size();
    void const * const oldMap = Map.Data();
-   map_stringitem_t const index = Map.WriteString(String);
+   map_stringitem_t const index{Map.WriteString(String)};
    if (index != 0)
       ReMap(oldMap, Map.Data(), oldSize);
    return index;
@@ -506,7 +506,7 @@ bool pkgCacheGenerator::MergeListVersion(ListParser &List, pkgCache::PkgIterator
    }
 
    // We haven't found reusable descriptions, so add the first description(s)
-   map_stringitem_t md5idx = Ver->DescriptionList == 0 ? 0 : Ver.DescriptionList()->md5sum;
+   map_stringitem_t md5idx = Ver->DescriptionList == 0 ? map_stringitem_t{} : Ver.DescriptionList()->md5sum;
    std::vector<std::string> availDesc = List.AvailableDescriptionLanguages();
    for (std::vector<std::string>::const_iterator CurLang = availDesc.begin(); CurLang != availDesc.end(); ++CurLang)
       if (AddNewDescription(List, Ver, *CurLang, CurMd5, md5idx) == false)
@@ -773,7 +773,7 @@ bool pkgCacheGenerator::AddImplicitDepends(pkgCache::GrpIterator &G,
 		    OldDepLast);
       } else {
 	 // Conflicts: ${self}:other
-	 NewDepends(D, V, 0,
+	 NewDepends(D, V, map_stringitem_t{},
 		    pkgCache::Dep::NoOp | pkgCache::Dep::MultiArchImplicit, pkgCache::Dep::Conflicts,
 		    OldDepLast);
       }
@@ -801,7 +801,7 @@ bool pkgCacheGenerator::AddImplicitDepends(pkgCache::VerIterator &V,
 		 OldDepLast);
    } else {
       // Conflicts: ${self}:other
-      NewDepends(D, V, 0,
+      NewDepends(D, V, map_stringitem_t{},
 		 pkgCache::Dep::NoOp | pkgCache::Dep::MultiArchImplicit, pkgCache::Dep::Conflicts,
 		 OldDepLast);
    }
@@ -968,7 +968,7 @@ map_pointer_t pkgCacheGenerator::NewDescription(pkgCache::DescIterator &Desc,
    version and to the package that it is pointing to. */
 bool pkgCacheGenerator::NewDepends(pkgCache::PkgIterator &Pkg,
 				   pkgCache::VerIterator &Ver,
-				   map_pointer_t const Version,
+				   map_stringitem_t const Version,
 				   uint8_t const Op,
 				   uint8_t const Type,
 				   map_pointer_t* &OldDepLast)
@@ -988,7 +988,7 @@ bool pkgCacheGenerator::NewDepends(pkgCache::PkgIterator &Pkg,
       DependencyData = L->DependencyData;
       do {
 	 pkgCache::DependencyData const * const D = Cache.DepDataP + DependencyData;
-	 if (Version > D->Version)
+	 if (Version.val > D->Version.val)
 	    break;
 	 if (D->Version == Version && D->Type == Type && D->CompareOp == Op)
 	 {
@@ -1080,7 +1080,7 @@ bool pkgCacheListParser::NewDepends(pkgCache::VerIterator &Ver,
    if (unlikely(Owner->NewGroup(Grp, PackageName) == false))
       return false;
 
-   map_stringitem_t idxVersion = 0;
+   map_stringitem_t idxVersion{0};
    if (Version.empty() == false)
    {
       int const CmpOp = Op & 0x0F;
@@ -1160,7 +1160,7 @@ bool pkgCacheListParser::NewProvides(pkgCache::VerIterator &Ver,
    if (unlikely(Owner->NewPackage(Pkg,PkgName, PkgArch) == false))
       return false;
 
-   map_stringitem_t idxProvideVersion = 0;
+   map_stringitem_t idxProvideVersion{0};
    if (Version.empty() == false) {
       idxProvideVersion = StoreString(pkgCacheGenerator::VERSIONNUMBER, Version);
       if (unlikely(idxProvideVersion == 0))
@@ -1170,7 +1170,7 @@ bool pkgCacheListParser::NewProvides(pkgCache::VerIterator &Ver,
 }
 bool pkgCacheGenerator::NewProvides(pkgCache::VerIterator &Ver,
 				    pkgCache::PkgIterator &Pkg,
-				    map_pointer_t const ProvideVersion,
+				    map_stringitem_t const ProvideVersion,
 				    uint8_t const Flags)
 {
    // Get a structure
@@ -1207,7 +1207,7 @@ bool pkgCacheListParser::NewProvidesAllArch(pkgCache::VerIterator &Ver, StringVi
       return NewProvides(Ver, Package, Cache.NativeArch(), Version, Flags);
    else
    {
-      map_stringitem_t idxProvideVersion = 0;
+      map_stringitem_t idxProvideVersion{0};
       if (Version.empty() == false) {
 	 idxProvideVersion = StoreString(pkgCacheGenerator::VERSIONNUMBER, Version);
 	 if (unlikely(idxProvideVersion == 0))
@@ -1299,7 +1299,7 @@ bool pkgCacheGenerator::SelectFile(std::string const &File,
       return false;
    CurrentFile->IndexType = idxIndexType;
    if (Architecture.empty())
-      CurrentFile->Architecture = 0;
+      CurrentFile->Architecture = map_stringitem_t{0};
    else
    {
       map_stringitem_t const arch = StoreString(pkgCacheGenerator::MIXED, Architecture);
@@ -1337,7 +1337,7 @@ map_stringitem_t pkgCacheGenerator::StoreString(enum StringType const type, cons
       case MIXED: strings = &strMixed; break;
       case VERSIONNUMBER: strings = &strVersions; break;
       case SECTION: strings = &strSections; break;
-      default: _error->Fatal("Unknown enum type used for string storage of '%.*s'", Size, S); return 0;
+      default: _error->Fatal("Unknown enum type used for string storage of '%.*s'", Size, S); return {0};
    }
 
    auto const item = strings->find({S, Size, nullptr, 0});

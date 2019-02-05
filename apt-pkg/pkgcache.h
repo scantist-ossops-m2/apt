@@ -95,7 +95,37 @@ typedef uint16_t map_fileid_t;
 // relative pointer from cache start
 typedef uint32_t map_pointer_t;
 // same as the previous, but documented to be to a string item
-typedef map_pointer_t map_stringitem_t;
+struct map_stringitem_t {
+   uint32_t val = 0;
+};
+
+inline char *operator +(char *p, map_stringitem_t m) {
+   return p + m.val;
+}
+template<typename T> bool operator ==(map_stringitem_t m, T t) {
+   return t >= 0 && m.val == static_cast<unsigned long long>(t);
+}
+
+template<typename T> bool operator ==(T t, map_stringitem_t m) {
+   return t >= 0 && static_cast<unsigned long long>(t) = m.val;
+}
+inline bool operator ==(map_stringitem_t t, map_stringitem_t m) {
+   return t.val == m.val;
+}
+inline bool operator !=(map_stringitem_t t, map_stringitem_t m) {
+   return t.val != m.val;
+}
+inline bool operator <(map_stringitem_t t, map_stringitem_t m) {
+   return t.val < m.val;
+}
+template<typename T> constexpr bool operator !=(map_stringitem_t m, T t) {
+   return t < 0 || m.val != static_cast<unsigned long long>(t);
+}
+
+template<typename T> bool operator !=(T t, map_stringitem_t m) {
+   return t < 0 || static_cast<unsigned long long>(t) != m.val;
+}
+
 // we have only a small amount of flags for each item
 typedef uint8_t map_flags_t;
 typedef uint8_t map_number_t;
@@ -332,11 +362,11 @@ struct pkgCache::Header
    map_pointer_t RlsFileList;
 
    /** \brief String representing the version system used */
-   map_pointer_t VerSysName;
+   map_stringitem_t VerSysName;
    /** \brief native architecture the cache was built against */
-   map_pointer_t Architecture;
+   map_stringitem_t Architecture;
    /** \brief all architectures the cache was built against */
-   map_pointer_t Architectures;
+   map_stringitem_t Architectures;
    /** \brief The maximum size of a raw entry from the original Package file */
    map_filesize_t MaxVerFileSize;
    /** \brief The maximum size of a raw entry from the original Translation file */
@@ -365,8 +395,8 @@ struct pkgCache::Header
    uint32_t HashTableSize;
    uint32_t GetHashTableSize() const { return HashTableSize; }
    void SetHashTableSize(unsigned int const sz) { HashTableSize = sz; }
-   map_pointer_t GetArchitectures() const { return Architectures; }
-   void SetArchitectures(map_pointer_t const idx) { Architectures = idx; }
+   map_stringitem_t GetArchitectures() const { return Architectures; }
+   void SetArchitectures(map_stringitem_t idx) { Architectures = idx; }
    map_pointer_t * PkgHashTableP() const { return (map_pointer_t*) (this + 1); }
    map_pointer_t * GrpHashTableP() const { return PkgHashTableP() + GetHashTableSize(); }
 
