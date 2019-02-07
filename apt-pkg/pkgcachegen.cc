@@ -826,7 +826,12 @@ bool pkgCacheGenerator::NewFileVer(pkgCache::VerIterator &Ver,
    
    pkgCache::VerFileIterator VF(Cache,Cache.VerFileP + VerFile);
    VF->File = CurrentFile - Cache.PkgFileP;
-   
+
+   // Link to the list of versions in the PackageFile
+   pkgCache::PkgFileIterator PF(Cache, CurrentFile);
+   VF->NextVer = PF->VerFileList;
+   PF->VerFileList = VerFile;
+
    // Link it to the end of the list
    map_pointer_t *Last = &Ver->FileList;
    for (pkgCache::VerFileIterator V = Ver.FileList(); V.end() == false; ++V)
@@ -836,6 +841,7 @@ bool pkgCacheGenerator::NewFileVer(pkgCache::VerIterator &Ver,
    
    VF->Offset = List.Offset();
    VF->Size = List.Size();
+   VF->Version = Ver.Index();
    if (Cache.HeaderP->MaxVerFileSize < VF->Size)
       Cache.HeaderP->MaxVerFileSize = VF->Size;
    Cache.HeaderP->VerFileCount++;
@@ -1294,6 +1300,7 @@ bool pkgCacheGenerator::SelectFile(std::string const &File,
       return false;
    CurrentFile->FileName = idxFileName;
    CurrentFile->NextFile = Cache.HeaderP->FileList;
+   CurrentFile->VerFileList = 0;
    CurrentFile->ID = Cache.HeaderP->PackageFileCount;
    map_stringitem_t const idxIndexType = StoreString(MIXED, Index.GetType()->Label);
    if (unlikely(idxIndexType == 0))

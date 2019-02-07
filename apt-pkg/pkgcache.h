@@ -562,6 +562,9 @@ struct pkgCache::PackageFile
    map_pointer_t NextFile;        // PackageFile
    /** \brief unique sequel ID */
    map_fileid_t ID;
+
+   /** \brief Reverse ordered list of versions in the file */
+   map_pointer_t VerFileList; // VerFile
 };
 									/*}}}*/
 // VerFile structure							/*{{{*/
@@ -579,6 +582,10 @@ struct pkgCache::VerFile
    map_filesize_t Offset;         // File offset
    /** @TODO document pkgCache::VerFile::Size */
    map_filesize_t Size;
+   /** \brief Next VerFile for the same File */
+   map_pointer_t Version; // Version
+   /** \brief Next VerFile for the same File */
+   map_pointer_t NextVer; // VerFile
 };
 									/*}}}*/
 // DescFile structure							/*{{{*/
