@@ -208,6 +208,7 @@ class URI
    std::string Access;
    std::string User;
    std::string Password;
+   std::string Bearer;
    std::string Host;
    std::string Path;
    unsigned int Port;
