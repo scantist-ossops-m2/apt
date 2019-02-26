@@ -372,7 +372,6 @@ bool Hashes::AddFD(FileFd &Fd,unsigned long long Size)
 HashStringList Hashes::GetHashStringList()
 {
    HashStringList hashes;
-APT_IGNORE_DEPRECATED_PUSH
    if ((d->CalcHashes & MD5SUM) == MD5SUM)
       hashes.push_back(HashString("MD5Sum", MD5.Result().Value()));
    if ((d->CalcHashes & SHA1SUM) == SHA1SUM)
@@ -381,7 +380,6 @@ APT_IGNORE_DEPRECATED_PUSH
       hashes.push_back(HashString("SHA256", SHA256.Result().Value()));
    if ((d->CalcHashes & SHA512SUM) == SHA512SUM)
       hashes.push_back(HashString("SHA512", SHA512.Result().Value()));
-APT_IGNORE_DEPRECATED_POP
    hashes.FileSize(d->FileSize);
    return hashes;
 }
