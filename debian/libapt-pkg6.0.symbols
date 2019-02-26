@@ -401,7 +401,6 @@ libapt-pkg.so.6.0 libapt-pkg6.0 #MINVER#
  (c++)"pkgDPkgPM::WriteHistoryTag(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >)@APTPKG_6.0" 0.8.0
  (c++)"pkgDPkgPM::WriteApportReport(char const*, char const*)@APTPKG_6.0" 0.8.0
  (c++)"pkgDPkgPM::RunScriptsWithPkgs(char const*)@APTPKG_6.0" 0.8.0
- (c++)"pkgDPkgPM::Go(int)@APTPKG_6.0" 0.8.0
  (c++)"pkgDPkgPM::Reset()@APTPKG_6.0" 0.8.0
  (c++)"pkgDPkgPM::Remove(pkgCache::PkgIterator, bool)@APTPKG_6.0" 0.8.0
  (c++)"pkgDPkgPM::DoStdin(int)@APTPKG_6.0" 0.8.0
