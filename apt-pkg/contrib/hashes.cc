@@ -312,7 +312,6 @@ bool Hashes::Add(const unsigned char * const Data, unsigned long long const Size
    if (Size == 0)
       return true;
    bool Res = true;
-APT_IGNORE_DEPRECATED_PUSH
    if ((d->CalcHashes & MD5SUM) == MD5SUM)
       Res &= MD5.Add(Data, Size);
    if ((d->CalcHashes & SHA1SUM) == SHA1SUM)
@@ -321,7 +320,6 @@ APT_IGNORE_DEPRECATED_PUSH
       Res &= SHA256.Add(Data, Size);
    if ((d->CalcHashes & SHA512SUM) == SHA512SUM)
       Res &= SHA512.Add(Data, Size);
-APT_IGNORE_DEPRECATED_POP
    d->FileSize += Size;
    return Res;
 }
