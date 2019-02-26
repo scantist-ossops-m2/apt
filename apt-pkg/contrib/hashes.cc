@@ -325,11 +325,6 @@ APT_IGNORE_DEPRECATED_POP
    d->FileSize += Size;
    return Res;
 }
-bool Hashes::Add(const unsigned char * const Data, unsigned long long const Size, unsigned int const Hashes)
-{
-   d->CalcHashes = Hashes;
-   return Add(Data, Size);
-}
 bool Hashes::AddFD(int const Fd,unsigned long long Size)
 {
    unsigned char Buf[64*64];
@@ -348,11 +343,6 @@ bool Hashes::AddFD(int const Fd,unsigned long long Size)
 	 return false;
    }
    return true;
-}
-bool Hashes::AddFD(int const Fd,unsigned long long Size, unsigned int const Hashes)
-{
-   d->CalcHashes = Hashes;
-   return AddFD(Fd, Size);
 }
 bool Hashes::AddFD(FileFd &Fd,unsigned long long Size)
 {
@@ -378,11 +368,6 @@ bool Hashes::AddFD(FileFd &Fd,unsigned long long Size)
    }
    return true;
 }
-bool Hashes::AddFD(FileFd &Fd,unsigned long long Size, unsigned int const Hashes)
-{
-   d->CalcHashes = Hashes;
-   return AddFD(Fd, Size);
-}
 									/*}}}*/
 HashStringList Hashes::GetHashStringList()
 {
@@ -400,9 +385,7 @@ APT_IGNORE_DEPRECATED_POP
    hashes.FileSize(d->FileSize);
    return hashes;
 }
-APT_IGNORE_DEPRECATED_PUSH
 Hashes::Hashes() : d(new PrivateHashes(~0)) { }
 Hashes::Hashes(unsigned int const Hashes) : d(new PrivateHashes(Hashes)) {}
 Hashes::Hashes(HashStringList const &Hashes) : d(new PrivateHashes(Hashes)) {}
 Hashes::~Hashes() { delete d; }
-APT_IGNORE_DEPRECATED_POP
