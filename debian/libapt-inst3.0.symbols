@@ -1,4 +1,4 @@
-libapt-inst.so.3.0 libapt-inst2.0 #MINVER#
+libapt-inst.so.3.0 libapt-inst3.0 #MINVER#
 * Build-Depends-Package: libapt-pkg-dev
  (c++)"ExtractTar::Done(bool)@APTINST_3.0" 0.8.0
  (c++)"ExtractTar::Done()@APTINST_3.0" 1.1~exp12
@@ -65,5 +65,5 @@ libapt-inst.so.3.0 libapt-inst2.0 #MINVER#
  (c++|optional=std)"void std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_construct<char*>(char*, char*, std::forward_iterator_tag)@APTINST_3.0" 1.7.0~alpha3~
  (c++|optional=std)"void std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_construct<char const*>(char const*, char const*, std::forward_iterator_tag)@APTINST_3.0" 1.7.0~alpha3~
 ### symbol versioning
- APTINST_3.0@APTINST_2.0 1.1~exp9
+ APTINST_3.0@APTINST_3.0 1.1~exp9
 ### try to ignore std:: template instances

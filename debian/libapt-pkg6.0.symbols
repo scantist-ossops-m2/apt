@@ -1,4 +1,4 @@
-libapt-pkg.so.6.0 libapt-pkg5.0 #MINVER#
+libapt-pkg.so.6.0 libapt-pkg6.0 #MINVER#
 * Build-Depends-Package: libapt-pkg-dev
  TFRewritePackageOrder@APTPKG_6.0 0.8.0
  TFRewriteSourceOrder@APTPKG_6.0 0.8.0
@@ -1427,7 +1427,7 @@ libapt-pkg.so.6.0 libapt-pkg5.0 #MINVER#
  (c++)"pkgTagFile::Init(FileFd*, pkgTagFile::Flags, unsigned long long)@APTPKG_6.0" 1.2~exp1
  (c++)"pkgTagFile::pkgTagFile(FileFd*, pkgTagFile::Flags, unsigned long long)@APTPKG_6.0" 1.2~exp1
 ### symbol versioning:
- APTPKG_6.0@APTPKG_5.0 1.1~exp9
+ APTPKG_6.0@APTPKG_6.0 1.1~exp9
 ### gcc artifacts
  (c++|optional=std)"void std::vector<char const*, std::allocator<char const*> >::emplace_back<char const*>(char const*&&)@APTPKG_6.0" 1.1~exp9
  (c++|optional=std)"void std::vector<pkgCache::GrpIterator*, std::allocator<pkgCache::GrpIterator*> >::emplace_back<pkgCache::GrpIterator*>(pkgCache::GrpIterator*&&)@APTPKG_6.0" 1.1~exp9
