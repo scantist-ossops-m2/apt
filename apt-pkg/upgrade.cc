@@ -267,7 +267,6 @@ bool pkgMinimizeUpgrade(pkgDepCache &Cache)
 // APT::Upgrade::Upgrade - Upgrade using a specific strategy		/*{{{*/
 bool APT::Upgrade::Upgrade(pkgDepCache &Cache, int mode, OpProgress * const Progress)
 {
-APT_IGNORE_DEPRECATED_PUSH
    if (mode == ALLOW_EVERYTHING)
       return pkgDistUpgrade(Cache, Progress);
    else if ((mode & ~FORBID_REMOVE_PACKAGES) == 0)
@@ -276,7 +275,6 @@ APT_IGNORE_DEPRECATED_PUSH
       return pkgAllUpgradeNoNewPackages(Cache, Progress);
    else
       _error->Error("pkgAllUpgrade called with unsupported mode %i", mode);
-APT_IGNORE_DEPRECATED_POP
    return false;
 }
 									/*}}}*/
