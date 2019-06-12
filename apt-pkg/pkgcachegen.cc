@@ -612,13 +612,7 @@ bool pkgCacheGenerator::NewPackage(pkgCache::PkgIterator &Pkg, StringView Name,
    if (Grp->FirstPackage == 0) // the group is new
    {
       Grp->FirstPackage = Package;
-      // Insert it into the hash table
-      map_id_t const Hash = Cache.Hash(Name);
-      map_pointer_t *insertAt = &Cache.HeaderP->PkgHashTableP()[Hash];
-      while (*insertAt != 0 && StringViewCompareFast(Name, Cache.ViewString((Cache.GrpP + (Cache.PkgP + *insertAt)->Group)->Name)) > 0)
-	 insertAt = &(Cache.PkgP + *insertAt)->NextPackage;
-      Pkg->NextPackage = *insertAt;
-      *insertAt = Package;
+      Pkg->NextPackage = 0;
    }
    else // Group the Packages together
    {
