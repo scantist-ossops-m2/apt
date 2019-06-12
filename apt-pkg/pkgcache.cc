@@ -477,14 +477,27 @@ pkgCache::GrpIterator& pkgCache::GrpIterator::operator++()
 pkgCache::PkgIterator& pkgCache::PkgIterator::operator++()
 {
    // Follow the current links
-   if (S != Owner->PkgP)
-      S = Owner->PkgP + S->NextPackage;
+   if (S != Owner->PkgP) {
+      auto G = Owner->GrpP + S->Group;
+      if (G->LastPackage == Index()) {
+         S = Owner->PkgP;
+         G = Owner->GrpP + G->Next;
+         if (G != Owner->GrpP) {
+            S = Owner->PkgP + G->FirstPackage;
+         }
+      } else {
+         S = Owner->PkgP + S->NextPackage;
+      }
+   }
 
    // Follow the hash table
    while (S == Owner->PkgP && (HashIndex+1) < (signed)Owner->HeaderP->GetHashTableSize())
    {
       ++HashIndex;
-      S = Owner->PkgP + Owner->HeaderP->PkgHashTableP()[HashIndex];
+      auto G = Owner->GrpP + Owner->HeaderP->GrpHashTableP()[HashIndex];
+      if (G != Owner->GrpP)  {
+         S = Owner->PkgP + G->FirstPackage;
+      }
    }
    return *this;
 }
