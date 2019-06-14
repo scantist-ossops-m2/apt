@@ -172,6 +172,7 @@ protected:
 	bool PackageFromFnmatch(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
 	bool PackageFromPackageName(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
 	bool PackageFromString(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string const &pattern);
+private:
 	void showTaskSelection(pkgCache::PkgIterator const &pkg, std::string const &pattern);
 	void showRegExSelection(pkgCache::PkgIterator const &pkg, std::string const &pattern);
 	void showFnmatchSelection(pkgCache::PkgIterator const &pkg, std::string const &pattern);
@@ -188,7 +189,6 @@ protected:
 	pkgCache::VerIterator canNotFindCandidateVer(pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
 	pkgCache::VerIterator canNotFindInstalledVer(pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
 
-	private:
 	void * const d;
 };									/*}}}*/
 // Iterator templates for our Containers				/*{{{*/
