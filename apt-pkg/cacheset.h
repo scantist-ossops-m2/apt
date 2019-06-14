@@ -137,12 +137,6 @@ public:									/*{{{*/
 	 * \param Pkg is the package we wanted a version from
 	 */
 	virtual void canNotFindVersion(enum VerSelector const select, VersionContainerInterface * const vci, pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
-	APT_DEPRECATED_MSG("override .canNotFindVersion and select via switch") virtual void canNotFindAllVer(VersionContainerInterface * const vci, pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
-	APT_DEPRECATED_MSG("override .canNotFindVersion and select via switch") virtual void canNotFindInstCandVer(VersionContainerInterface * const vci, pkgCacheFile &Cache,
-				pkgCache::PkgIterator const &Pkg);
-	APT_DEPRECATED_MSG("override .canNotFindVersion and select via switch") virtual void canNotFindCandInstVer(VersionContainerInterface * const vci,
-				pkgCacheFile &Cache,
-				pkgCache::PkgIterator const &Pkg);
 
 	// the difference between canNotFind and canNotGet is that the later is more low-level
 	// and called from other places: In this case looking into the code is the only real answer…
@@ -193,6 +187,9 @@ protected:
 	void canNotFindPackage(PackageContainerInterface *const pci, pkgCacheFile &Cache, std::string const &str);
 	void showSelectedVersion(pkgCache::PkgIterator const &Pkg, pkgCache::VerIterator const Ver,
 				 std::string const &ver, bool const verIsRel);
+	void canNotFindAllVer(VersionContainerInterface * const vci, pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
+	void canNotFindInstCandVer(VersionContainerInterface * const vci, pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
+	void canNotFindCandInstVer(VersionContainerInterface * const vci, pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
 private:
 	void * const d;
 };									/*}}}*/
