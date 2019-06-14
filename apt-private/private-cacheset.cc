@@ -308,6 +308,20 @@ pkgCache::VerIterator CacheSetHelperAPTGet::canNotGetVersion(enum VerSelector co
       return APT::CacheSetHelper::canNotGetVersion(select, Cache, Pkg);
    }
 }
+void CacheSetHelperAPTGet::canNotFindVersion(enum VerSelector const select, APT::VersionContainerInterface * const vci, pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg)
+{
+   switch (select)
+   {
+   case NEWEST:
+      canNotFindNewestVer(Cache, Pkg);
+      break;
+   case CANDIDATE:
+      canNotFindCandidateVer(Cache, Pkg);
+      break;
+   default:
+      return APT::CacheSetHelper::canNotFindVersion(select, vci, Cache, Pkg);
+   }
+}
 
 pkgCache::VerIterator CacheSetHelperAPTGet::canNotFindCandidateVer(pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg)
 {
