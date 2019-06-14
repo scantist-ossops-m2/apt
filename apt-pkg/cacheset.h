@@ -79,11 +79,6 @@ public:									/*{{{*/
 	 * \param pattern is the string used by the selection method to pick the package
 	 */
 	virtual void showPackageSelection(pkgCache::PkgIterator const &pkg, PkgSelector const select, std::string const &pattern);
-	// use the method above instead, react only on the type you need and let the base handle the rest if need be
-	// this allows us to add new selection methods without breaking the ABI constantly with new virtual methods
-	APT_DEPRECATED_MSG("override .showPackageSelection and select with switch") virtual void showTaskSelection(pkgCache::PkgIterator const &pkg, std::string const &pattern);
-	APT_DEPRECATED_MSG("override .showPackageSelection and select with switch") virtual void showRegExSelection(pkgCache::PkgIterator const &pkg, std::string const &pattern);
-	APT_DEPRECATED_MSG("override .showPackageSelection and select with switch") virtual void showFnmatchSelection(pkgCache::PkgIterator const &pkg, std::string const &pattern);
 
 	/** \brief be notified if a package can't be found via pattern
 	 *
@@ -95,11 +90,6 @@ public:									/*{{{*/
 	 * \param pattern is the string not matching anything
 	 */
 	virtual void canNotFindPackage(enum PkgSelector const select, PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string const &pattern);
-	// same as above for showPackageSelection
-	APT_DEPRECATED_MSG("override .canNotFindPackage and select with switch") virtual void canNotFindTask(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
-	APT_DEPRECATED_MSG("override .canNotFindPackage and select with switch") virtual void canNotFindRegEx(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
-	APT_DEPRECATED_MSG("override .canNotFindPackage and select with switch") virtual void canNotFindFnmatch(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
-	APT_DEPRECATED_MSG("override .canNotFindPackage and select with switch") virtual void canNotFindPackage(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string const &str);
 
 	/** \brief specifies which version(s) we want to refer to */
 	enum VerSelector {
@@ -136,8 +126,6 @@ public:									/*{{{*/
 	 */
 	virtual void showVersionSelection(pkgCache::PkgIterator const &Pkg, pkgCache::VerIterator const &Ver,
 	      enum VerSelector const select, std::string const &pattern);
-	APT_DEPRECATED_MSG("use .showVersionSelection instead, similar to .showPackageSelection") virtual void showSelectedVersion(pkgCache::PkgIterator const &Pkg, pkgCache::VerIterator const Ver,
-				 std::string const &ver, bool const verIsRel);
 
 	/** \brief be notified if a version can't be found for a package
 	 *
@@ -196,6 +184,15 @@ protected:
 	bool PackageFromFnmatch(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
 	bool PackageFromPackageName(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
 	bool PackageFromString(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string const &pattern);
+	void showTaskSelection(pkgCache::PkgIterator const &pkg, std::string const &pattern);
+	void showRegExSelection(pkgCache::PkgIterator const &pkg, std::string const &pattern);
+	void showFnmatchSelection(pkgCache::PkgIterator const &pkg, std::string const &pattern);
+	void canNotFindTask(PackageContainerInterface *const pci, pkgCacheFile &Cache, std::string pattern);
+	void canNotFindRegEx(PackageContainerInterface *const pci, pkgCacheFile &Cache, std::string pattern);
+	void canNotFindFnmatch(PackageContainerInterface *const pci, pkgCacheFile &Cache, std::string pattern);
+	void canNotFindPackage(PackageContainerInterface *const pci, pkgCacheFile &Cache, std::string const &str);
+	void showSelectedVersion(pkgCache::PkgIterator const &Pkg, pkgCache::VerIterator const Ver,
+				 std::string const &ver, bool const verIsRel);
 private:
 	void * const d;
 };									/*}}}*/

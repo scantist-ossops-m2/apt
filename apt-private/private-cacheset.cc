@@ -188,6 +188,25 @@ CacheSetHelperAPTGet::CacheSetHelperAPTGet(std::ostream &pout) :
 {
    explicitlyNamed = true;
 }
+void CacheSetHelperAPTGet::showPackageSelection(pkgCache::PkgIterator const &pkg, enum PkgSelector const select,
+						std::string const &pattern)
+{
+   switch (select)
+   {
+   case REGEX:
+      showRegExSelection(pkg, pattern);
+      break;
+   case TASK:
+      showTaskSelection(pkg, pattern);
+      break;
+   case FNMATCH:
+      showFnmatchSelection(pkg, pattern);
+      break;
+   default:
+      APT::CacheSetHelper::showPackageSelection(pkg, select, pattern);
+      break;
+   }
+}
 void CacheSetHelperAPTGet::showTaskSelection(pkgCache::PkgIterator const &Pkg, std::string const &pattern)
 {
    ioprintf(out, _("Note, selecting '%s' for task '%s'\n"),
@@ -206,13 +225,20 @@ void CacheSetHelperAPTGet::showRegExSelection(pkgCache::PkgIterator const &Pkg, 
 	 Pkg.FullName(true).c_str(), pattern.c_str());
    explicitlyNamed = false;
 }
-void CacheSetHelperAPTGet::showSelectedVersion(pkgCache::PkgIterator const &/*Pkg*/, pkgCache::VerIterator const Ver,
-      std::string const &ver, bool const /*verIsRel*/)
+void CacheSetHelperAPTGet::showVersionSelection(pkgCache::PkgIterator const &Pkg,
+						pkgCache::VerIterator const &Ver, enum VerSelector const select, std::string const &pattern)
 {
-   if (ver == Ver.VerStr())
-      return;
-   selectedByRelease.push_back(make_pair(Ver, ver));
+   switch (select)
+   {
+      if (pattern == Ver.VerStr())
+	 return;
+      selectedByRelease.push_back(make_pair(Ver, pattern));
+      break;
+   default:
+      return APT::CacheSetHelper::showVersionSelection(Pkg, Ver, select, pattern);
+   }
 }
+
 bool CacheSetHelperAPTGet::showVirtualPackageErrors(pkgCacheFile &Cache)
 {
    if (virtualPkgs.empty() == true)

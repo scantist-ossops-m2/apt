@@ -107,11 +107,11 @@ public:
 
 	explicit CacheSetHelperAPTGet(std::ostream &out);
 
-	virtual void showTaskSelection(pkgCache::PkgIterator const &Pkg, std::string const &pattern) APT_OVERRIDE;
-        virtual void showFnmatchSelection(pkgCache::PkgIterator const &Pkg, std::string const &pattern) APT_OVERRIDE;
-	virtual void showRegExSelection(pkgCache::PkgIterator const &Pkg, std::string const &pattern) APT_OVERRIDE;
-	virtual void showSelectedVersion(pkgCache::PkgIterator const &/*Pkg*/, pkgCache::VerIterator const Ver,
-				 std::string const &ver, bool const /*verIsRel*/) APT_OVERRIDE;
+	virtual void showPackageSelection(pkgCache::PkgIterator const &Pkg, enum PkgSelector const select, std::string const &pattern) APT_OVERRIDE;
+	void showTaskSelection(pkgCache::PkgIterator const &Pkg, std::string const &pattern);
+	void showFnmatchSelection(pkgCache::PkgIterator const &Pkg, std::string const &pattern);
+	void showRegExSelection(pkgCache::PkgIterator const &Pkg, std::string const &pattern);
+	void showVersionSelection(pkgCache::PkgIterator const &Pkg, pkgCache::VerIterator const &Ver, enum VerSelector const select, std::string const &pattern) APT_OVERRIDE;
 	bool showVirtualPackageErrors(pkgCacheFile &Cache);
 
 	virtual pkgCache::VerIterator canNotFindCandidateVer(pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg) APT_OVERRIDE;
