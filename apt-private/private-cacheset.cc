@@ -294,6 +294,19 @@ bool CacheSetHelperAPTGet::showVirtualPackageErrors(pkgCacheFile &Cache)
    }
    return false;
 }
+pkgCache::VerIterator CacheSetHelperAPTGet::canNotGetVersion(enum VerSelector const select, pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg)
+{
+   switch (select)
+   {
+   case NEWEST:
+      return canNotFindNewestVer(Cache, Pkg);
+   case CANDIDATE:
+      return canNotFindCandidateVer(Cache, Pkg);
+   default:
+      return APT::CacheSetHelper::canNotGetVersion(select, Cache, Pkg);
+   }
+}
+
 pkgCache::VerIterator CacheSetHelperAPTGet::canNotFindCandidateVer(pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg)
 {
    APT::VersionSet const verset = tryVirtualPackage(Cache, Pkg, CacheSetHelper::CANDIDATE);

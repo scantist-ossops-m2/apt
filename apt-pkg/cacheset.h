@@ -141,12 +141,6 @@ public:									/*{{{*/
 	// the difference between canNotFind and canNotGet is that the later is more low-level
 	// and called from other places: In this case looking into the code is the only real answer…
 	virtual pkgCache::VerIterator canNotGetVersion(enum VerSelector const select, pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
-	APT_DEPRECATED_MSG("override .canNotGetVersion and select via switch") virtual pkgCache::VerIterator canNotFindNewestVer(pkgCacheFile &Cache,
-				pkgCache::PkgIterator const &Pkg);
-	APT_DEPRECATED_MSG("override .canNotGetVersion and select via switch") virtual pkgCache::VerIterator canNotFindCandidateVer(pkgCacheFile &Cache,
-				pkgCache::PkgIterator const &Pkg);
-	APT_DEPRECATED_MSG("override .canNotGetVersion and select via switch") virtual pkgCache::VerIterator canNotFindInstalledVer(pkgCacheFile &Cache,
-				pkgCache::PkgIterator const &Pkg);
 
 	virtual pkgCache::PkgIterator canNotFindPkgName(pkgCacheFile &Cache, std::string const &str);
 
@@ -190,7 +184,11 @@ protected:
 	void canNotFindAllVer(VersionContainerInterface * const vci, pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
 	void canNotFindInstCandVer(VersionContainerInterface * const vci, pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
 	void canNotFindCandInstVer(VersionContainerInterface * const vci, pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
-private:
+	pkgCache::VerIterator canNotFindNewestVer(pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
+	pkgCache::VerIterator canNotFindCandidateVer(pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
+	pkgCache::VerIterator canNotFindInstalledVer(pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
+
+	private:
 	void * const d;
 };									/*}}}*/
 // Iterator templates for our Containers				/*{{{*/
