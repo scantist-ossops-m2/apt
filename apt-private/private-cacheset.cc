@@ -230,6 +230,8 @@ void CacheSetHelperAPTGet::showVersionSelection(pkgCache::PkgIterator const &Pkg
 {
    switch (select)
    {
+   case RELEASE:
+   case VERSIONNUMBER:
       if (pattern == Ver.VerStr())
 	 return;
       selectedByRelease.push_back(make_pair(Ver, pattern));
