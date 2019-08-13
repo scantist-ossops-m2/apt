@@ -44,7 +44,7 @@
 // abstract Iterator template						/*{{{*/
 /* This template provides the very basic iterator methods we
    need to have for doing some walk-over-the-cache magic */
-template<typename Str, typename Itr> class pkgCache::Iterator :
+template<typename Str, typename Itr> class APT_PUBLIC pkgCache::Iterator :
 			public std::iterator<std::forward_iterator_tag, Str> {
 	/** \brief Returns the Pointer for this struct in the owner
 	 *  The implementation of this method should be pretty short
@@ -97,7 +97,7 @@ template<typename Str, typename Itr> class pkgCache::Iterator :
    interest in package names can iterate easily over the names, so the
    different architectures can be treated as of the "same" package
    (apt internally treat them as totally different packages) */
-class pkgCache::GrpIterator: public Iterator<Group, GrpIterator> {
+class APT_PUBLIC pkgCache::GrpIterator: public Iterator<Group, GrpIterator> {
 	long HashIndex;
 
 	public:
@@ -137,7 +137,7 @@ class pkgCache::GrpIterator: public Iterator<Group, GrpIterator> {
 };
 									/*}}}*/
 // Package Iterator							/*{{{*/
-class pkgCache::PkgIterator: public Iterator<Package, PkgIterator> {
+class APT_PUBLIC pkgCache::PkgIterator: public Iterator<Package, PkgIterator> {
 	long HashIndex;
 
 	public:
@@ -183,7 +183,7 @@ class pkgCache::PkgIterator: public Iterator<Package, PkgIterator> {
 };
 									/*}}}*/
 // Version Iterator							/*{{{*/
-class pkgCache::VerIterator : public Iterator<Version, VerIterator> {
+class APT_PUBLIC pkgCache::VerIterator : public Iterator<Version, VerIterator> {
 	public:
 	inline Version* OwnerPointer() const {
 		return (Owner != 0) ? Owner->VerP : 0;
@@ -240,7 +240,7 @@ class pkgCache::VerIterator : public Iterator<Version, VerIterator> {
 };
 									/*}}}*/
 // Description Iterator							/*{{{*/
-class pkgCache::DescIterator : public Iterator<Description, DescIterator> {
+class APT_PUBLIC pkgCache::DescIterator : public Iterator<Description, DescIterator> {
 	public:
 	inline Description* OwnerPointer() const {
 		return (Owner != 0) ? Owner->DescP : 0;
@@ -266,7 +266,7 @@ class pkgCache::DescIterator : public Iterator<Description, DescIterator> {
 };
 									/*}}}*/
 // Dependency iterator							/*{{{*/
-class pkgCache::DepIterator : public Iterator<Dependency, DepIterator> {
+class APT_PUBLIC pkgCache::DepIterator : public Iterator<Dependency, DepIterator> {
 	enum {DepVer, DepRev} Type;
 	DependencyData * S2;
 
@@ -351,7 +351,7 @@ class pkgCache::DepIterator : public Iterator<Dependency, DepIterator> {
 };
 									/*}}}*/
 // Provides iterator							/*{{{*/
-class pkgCache::PrvIterator : public Iterator<Provides, PrvIterator> {
+class APT_PUBLIC pkgCache::PrvIterator : public Iterator<Provides, PrvIterator> {
 	enum {PrvVer, PrvPkg} Type;
 
 	public:
@@ -392,7 +392,7 @@ class pkgCache::PrvIterator : public Iterator<Provides, PrvIterator> {
 };
 									/*}}}*/
 // Release file								/*{{{*/
-class pkgCache::RlsFileIterator : public Iterator<ReleaseFile, RlsFileIterator> {
+class APT_PUBLIC pkgCache::RlsFileIterator : public Iterator<ReleaseFile, RlsFileIterator> {
 	public:
 	inline ReleaseFile* OwnerPointer() const {
 		return (Owner != 0) ? Owner->RlsFileP : 0;
@@ -421,7 +421,7 @@ class pkgCache::RlsFileIterator : public Iterator<ReleaseFile, RlsFileIterator> 
 };
 									/*}}}*/
 // Package file								/*{{{*/
-class pkgCache::PkgFileIterator : public Iterator<PackageFile, PkgFileIterator> {
+class APT_PUBLIC pkgCache::PkgFileIterator : public Iterator<PackageFile, PkgFileIterator> {
 	public:
 	inline PackageFile* OwnerPointer() const {
 		return (Owner != 0) ? Owner->PkgFileP : 0;
@@ -455,7 +455,7 @@ class pkgCache::PkgFileIterator : public Iterator<PackageFile, PkgFileIterator> 
 };
 									/*}}}*/
 // Version File								/*{{{*/
-class pkgCache::VerFileIterator : public pkgCache::Iterator<VerFile, VerFileIterator> {
+class APT_PUBLIC pkgCache::VerFileIterator : public pkgCache::Iterator<VerFile, VerFileIterator> {
 	public:
 	inline VerFile* OwnerPointer() const {
 		return (Owner != 0) ? Owner->VerFileP : 0;
@@ -473,7 +473,7 @@ class pkgCache::VerFileIterator : public pkgCache::Iterator<VerFile, VerFileIter
 };
 									/*}}}*/
 // Description File							/*{{{*/
-class pkgCache::DescFileIterator : public Iterator<DescFile, DescFileIterator> {
+class APT_PUBLIC pkgCache::DescFileIterator : public Iterator<DescFile, DescFileIterator> {
 	public:
 	inline DescFile* OwnerPointer() const {
 		return (Owner != 0) ? Owner->DescFileP : 0;

@@ -41,8 +41,8 @@ class ARArchive
    const Member *FindMember(const char *Name) const;
    inline Member *Members() { return List; }
    
-   explicit ARArchive(FileFd &File);
-   ~ARArchive();
+   APT_PUBLIC explicit ARArchive(FileFd &File);
+   APT_PUBLIC ~ARArchive();
 };
 
 // A member of the archive

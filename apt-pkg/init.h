@@ -16,10 +16,10 @@
 class pkgSystem;
 class Configuration;
 
-extern const char *pkgVersion;
-extern const char *pkgLibVersion;
+APT_PUBLIC extern const char *pkgVersion;
+APT_PUBLIC extern const char *pkgLibVersion;
 
-bool pkgInitConfig(Configuration &Cnf);
-bool pkgInitSystem(Configuration &Cnf,pkgSystem *&Sys);
+APT_PUBLIC bool pkgInitConfig(Configuration &Cnf);
+APT_PUBLIC bool pkgInitSystem(Configuration &Cnf,pkgSystem *&Sys);
 
 #endif

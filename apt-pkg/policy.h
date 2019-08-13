@@ -40,7 +40,7 @@
 #include <vector>
 
 
-class pkgPolicy : public pkgDepCache::Policy
+class APT_PUBLIC pkgPolicy : public pkgDepCache::Policy
 {
    protected:
 
@@ -84,7 +84,7 @@ class pkgPolicy : public pkgDepCache::Policy
    void * const d;
 };
 
-bool ReadPinFile(pkgPolicy &Plcy, std::string File = "");
-bool ReadPinDir(pkgPolicy &Plcy, std::string Dir = "");
+APT_PUBLIC bool ReadPinFile(pkgPolicy &Plcy, std::string File = "");
+APT_PUBLIC bool ReadPinDir(pkgPolicy &Plcy, std::string Dir = "");
 
 #endif

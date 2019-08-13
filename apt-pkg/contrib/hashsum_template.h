@@ -19,7 +19,7 @@
 class FileFd;
 
 template<int N>
-class HashSumValue
+class APT_PUBLIC HashSumValue
 {
    unsigned char Sum[N/8];
 
@@ -97,7 +97,7 @@ class HashSumValue
    }
 };
 
-class SummationImplementation
+class APT_PUBLIC SummationImplementation
 {
    public:
    virtual bool Add(const unsigned char *inbuf, unsigned long long inlen) APT_NONNULL(2) = 0;

@@ -89,7 +89,7 @@ class metaIndex;
  *
  *  \todo Why all the protected data items and methods?
  */
-class pkgAcquire
+class APT_PUBLIC pkgAcquire
 {   
    private:
    /** \brief FD of the Lock file we acquire in Setup (if any) */
@@ -377,7 +377,7 @@ class pkgAcquire
  *
  *  An item may have several associated ItemDescs over its lifetime.
  */
-struct pkgAcquire::ItemDesc : public WeakPointable
+struct APT_PUBLIC pkgAcquire::ItemDesc : public WeakPointable
 {
    /** \brief URI from which to download this item. */
    std::string URI;
@@ -393,7 +393,7 @@ struct pkgAcquire::ItemDesc : public WeakPointable
  *
  *  \todo Why so many protected values?
  */
-class pkgAcquire::Queue
+class APT_PUBLIC pkgAcquire::Queue
 {
    friend class pkgAcquire;
    friend class pkgAcquire::UriIterator;
@@ -591,7 +591,7 @@ class pkgAcquire::Queue
 };
 									/*}}}*/
 /** \brief Iterates over all the URIs being fetched by a pkgAcquire object.	{{{*/
-class pkgAcquire::UriIterator
+class APT_PUBLIC pkgAcquire::UriIterator
 {
    /** \brief dpointer placeholder (for later in case we need it) */
    void * const d;
@@ -628,7 +628,7 @@ class pkgAcquire::UriIterator
 };
 									/*}}}*/
 /** \brief Information about the properties of a single acquire method.	{{{*/
-struct pkgAcquire::MethodConfig
+struct APT_PUBLIC pkgAcquire::MethodConfig
 {
    class Private;
    /** \brief dpointer placeholder (for later in case we need it) */
@@ -693,7 +693,7 @@ struct pkgAcquire::MethodConfig
  *
  *  \todo Why protected members?
  */
-class pkgAcquireStatus
+class APT_PUBLIC pkgAcquireStatus
 {
    /** \brief dpointer placeholder (for later in case we need it) */
    void * const d;

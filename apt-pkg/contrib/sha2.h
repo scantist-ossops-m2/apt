@@ -23,7 +23,7 @@
 typedef HashSumValue<512> SHA512SumValue;
 typedef HashSumValue<256> SHA256SumValue;
 
-class SHA2SummationBase : public SummationImplementation
+class APT_PUBLIC SHA2SummationBase : public SummationImplementation
 {
  protected:
    bool Done;
@@ -33,7 +33,7 @@ class SHA2SummationBase : public SummationImplementation
    void Result();
 };
 
-class SHA256Summation : public SHA2SummationBase
+class APT_PUBLIC SHA256Summation : public SHA2SummationBase
 {
    SHA256_CTX ctx;
    unsigned char Sum[32];
@@ -66,7 +66,7 @@ class SHA256Summation : public SHA2SummationBase
    };
 };
 
-class SHA512Summation : public SHA2SummationBase
+class APT_PUBLIC SHA512Summation : public SHA2SummationBase
 {
    SHA512_CTX ctx;
    unsigned char Sum[64];

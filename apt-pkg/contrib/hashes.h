@@ -26,7 +26,7 @@ class FileFd;
 
 // helper class that contains hash function name
 // and hash
-class HashString
+class APT_PUBLIC HashString
 {
  protected:
    std::string Type;
@@ -63,7 +63,7 @@ class HashString
    static APT_PURE const char** SupportedHashes();
 };
 
-class HashStringList
+class APT_PUBLIC HashStringList
 {
    public:
    /** find best hash if no specific one is requested
@@ -168,7 +168,7 @@ class HashStringList
 };
 
 class PrivateHashes;
-class Hashes
+class APT_PUBLIC Hashes
 {
    PrivateHashes * const d;
    /* TODO: those will disappear in the future as it is hard to add new ones this way.

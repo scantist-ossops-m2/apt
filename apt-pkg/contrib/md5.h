@@ -29,7 +29,7 @@
 
 typedef HashSumValue<128> MD5SumValue;
 
-class MD5Summation : public SummationImplementation
+class APT_PUBLIC MD5Summation : public SummationImplementation
 {
    uint32_t Buf[4];
    unsigned char Bytes[2*4];
