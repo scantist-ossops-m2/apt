@@ -794,6 +794,9 @@ bool pkgAcquire::Worker::QueueItem(pkgAcquire::Queue::QItem *Item)
       }
    }
 
+   if (Item->Owner->HadCrossOriginRedirections())
+      Message += "\nHad-Cross-Origin-Redirections: yes";
+
    Message += "\n\n";
 
    if (RealFileExists(Item->Owner->DestFile))

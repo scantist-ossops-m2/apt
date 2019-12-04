@@ -54,6 +54,8 @@ class pkgAcqMethod
       virtual ~FetchItem();
       std::string Proxy(); // For internal use only.
       void Proxy(std::string const &Proxy) APT_HIDDEN;
+      bool HadCrossOriginRedirections();				// For internal use only.
+      void HadCrossOriginRedirections(bool HadCrossOriginRedirections); // For internal use only.
 
       private:
       struct Private;

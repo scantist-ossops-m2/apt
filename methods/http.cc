@@ -966,7 +966,11 @@ void HttpMethod::SendReq(FetchItem *Itm)
       Req << "Proxy-Authorization: Basic "
 	 << Base64Encode(Server->Proxy.User + ":" + Server->Proxy.Password) << "\r\n";
 
-   MaybeAddAuthTo(Uri);
+   if (not Itm->HadCrossOriginRedirections())
+      MaybeAddAuthTo(Uri);
+   else if (Debug)
+      cerr << requesturi << " had redirections, not sending authentication" << endl;
+
    if (Uri.User.empty() == false || Uri.Password.empty() == false)
       Req << "Authorization: Basic "
 	 << Base64Encode(Uri.User + ":" + Uri.Password) << "\r\n";

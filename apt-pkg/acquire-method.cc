@@ -544,6 +544,7 @@ pkgAcqMethod::~pkgAcqMethod() {}
 struct pkgAcqMethod::FetchItem::Private
 {
    std::string Proxy;
+   bool HadCrossOriginRedirections;
 };
 
 pkgAcqMethod::FetchItem::FetchItem() : Next(nullptr), DestFileFd(-1), LastModified(0), IndexFile(false),
@@ -558,6 +559,16 @@ std::string pkgAcqMethod::FetchItem::Proxy()
 void pkgAcqMethod::FetchItem::Proxy(std::string const &Proxy)
 {
    d->Proxy = Proxy;
+}
+
+bool pkgAcqMethod::FetchItem::HadCrossOriginRedirections()
+{
+   return d->HadCrossOriginRedirections;
+}
+
+void pkgAcqMethod::FetchItem::HadCrossOriginRedirections(bool HadCrossOriginRedirections)
+{
+   d->HadCrossOriginRedirections = HadCrossOriginRedirections;
 }
 
 pkgAcqMethod::FetchItem::~FetchItem() { delete d; }

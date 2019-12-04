@@ -292,6 +292,7 @@ public:
    std::vector<std::string> PastRedirections;
    std::unordered_map<std::string, std::string> CustomFields;
    unsigned int Retries;
+   bool HadCrossOriginRedirections = false;
 
    Private() : Retries(_config->FindI("Acquire::Retries", 0))
    {
@@ -815,6 +816,8 @@ bool pkgAcquire::Item::PopAlternativeURI(std::string &NewURI) /*{{{*/
       else
 	 CustomFields[f.first] = f.second;
    }
+
+   d->HadCrossOriginRedirections = false;
    return true;
 }
 									/*}}}*/
@@ -1132,6 +1135,16 @@ bool pkgAcquire::Item::IsRedirectionLoop(std::string const &NewURI)	/*{{{*/
    // store can fail due to permission errors and the item will "loop" then
    if (APT::String::Startswith(NewURI, "store:"))
       return false;
+
+   URI NewURIParsed(NewURI);
+   URI OldURIParsed(Desc.URI);
+   if (OldURIParsed.Host != NewURIParsed.Host)
+   {
+      if (_config->FindB("Debug::Acquire::Redirect", false))
+	 std::clog << "Cross origin redirect form " << Desc.URI << " to " << NewURI << std::endl;
+      d->HadCrossOriginRedirections = true;
+   }
+
    if (d->PastRedirections.empty())
    {
       d->PastRedirections.push_back(NewURI);
@@ -1174,7 +1187,11 @@ int pkgAcquire::Item::Priority()					/*{{{*/
    return 500;
 }
 									/*}}}*/
-
+bool pkgAcquire::Item::HadCrossOriginRedirections() /*{{{*/
+{
+   return d->HadCrossOriginRedirections;
+}
+									/*}}}*/
 pkgAcqTransactionItem::pkgAcqTransactionItem(pkgAcquire * const Owner,	/*{{{*/
       pkgAcqMetaClearSig * const transactionManager, IndexTarget const &target) :
    pkgAcquire::Item(Owner), d(NULL), Target(target), TransactionManager(transactionManager)

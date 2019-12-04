@@ -300,6 +300,8 @@ class pkgAcquire::Item : public WeakPointable				/*{{{*/
    /** \brief The priority of the item, used for queuing */
    int APT_HIDDEN Priority();
 
+   bool APT_HIDDEN HadCrossOriginRedirections();
+
    protected:
    /** \brief The acquire object with which this item is associated. */
    pkgAcquire * const Owner;
