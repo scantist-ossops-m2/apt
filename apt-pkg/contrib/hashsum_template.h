@@ -105,6 +105,7 @@ class SummationImplementation
    SummationImplementation(int hashtype = 0);
    virtual ~SummationImplementation();
    const unsigned char *InternalResult() APT_HIDDEN;
+
    virtual bool Add(const unsigned char *inbuf, unsigned long long inlen) APT_NONNULL(2);
    inline bool Add(const char *inbuf, unsigned long long const inlen) APT_NONNULL(2)
    { return Add(reinterpret_cast<const unsigned char *>(inbuf), inlen); }
