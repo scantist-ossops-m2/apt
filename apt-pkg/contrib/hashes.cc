@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <iostream>
 #include <string>
+#include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -89,32 +90,28 @@ std::string HashString::GetHashForFile(std::string filename) const      /*{{{*/
    std::string fileHash;
 
    FileFd Fd(filename, FileFd::ReadOnly);
-   if(strcasecmp(Type.c_str(), "MD5Sum") == 0)
+
+   if (strcasecmp(Type.c_str(), "Checksum-FileSize") == 0)
    {
-      MD5Summation MD5;
-      MD5.AddFD(Fd);
-      fileHash = (std::string)MD5.Result();
-   }
-   else if (strcasecmp(Type.c_str(), "SHA1") == 0)
-   {
-      SHA1Summation SHA1;
-      SHA1.AddFD(Fd);
-      fileHash = (std::string)SHA1.Result();
-   }
-   else if (strcasecmp(Type.c_str(), "SHA256") == 0)
-   {
-      SHA256Summation SHA256;
-      SHA256.AddFD(Fd);
-      fileHash = (std::string)SHA256.Result();
-   }
-   else if (strcasecmp(Type.c_str(), "SHA512") == 0)
-   {
-      SHA512Summation SHA512;
-      SHA512.AddFD(Fd);
-      fileHash = (std::string)SHA512.Result();
-   }
-   else if (strcasecmp(Type.c_str(), "Checksum-FileSize") == 0)
       strprintf(fileHash, "%llu", Fd.FileSize());
+   }
+   else
+   {
+      Hashes hashes;
+      hashes.AddFD(Fd);
+      auto hsl = hashes.GetHashStringList();
+
+      for (auto i = hsl.begin(); i != hsl.end(); i++)
+      {
+	 if (stringcasecmp(i->Type, Type) == 0)
+	 {
+	    fileHash = i->Hash;
+	    break;
+	 }
+      }
+
+      assert(not fileHash.empty());
+   }
    Fd.Close();
 
    return fileHash;
