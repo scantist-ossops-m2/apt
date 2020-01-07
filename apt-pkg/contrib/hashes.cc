@@ -374,16 +374,15 @@ bool Hashes::AddFD(FileFd &Fd,unsigned long long Size)
 HashStringList Hashes::GetHashStringList()
 {
    HashStringList hashes;
-   gcry_md_hd_t hd;
 
-   auto Value = [&hd](int N, int algo) -> std::string {
+   auto Value = [this](int N, int algo) -> std::string {
       char Conv[16] =
 	 {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b',
 	  'c', 'd', 'e', 'f'};
       char Result[((N / 8) * 2) + 1];
       Result[(N / 8) * 2] = 0;
 
-      auto Sum = gcry_md_read(hd, algo);
+      auto Sum = gcry_md_read(d->hd, algo);
 
       // Convert each char into two letters
       int J = 0;
@@ -396,7 +395,7 @@ HashStringList Hashes::GetHashStringList()
       return std::string(Result);
    };
 
-   gcry_md_copy(&hd, d->hd);
+
    if (gcry_md_is_enabled(d->hd, GCRY_MD_MD5))
       hashes.push_back(HashString("MD5Sum", Value(128, GCRY_MD_MD5)));
    if (gcry_md_is_enabled(d->hd, GCRY_MD_SHA1))
@@ -406,8 +405,6 @@ HashStringList Hashes::GetHashStringList()
    if (gcry_md_is_enabled(d->hd, GCRY_MD_SHA512))
       hashes.push_back(HashString("SHA512", Value(512, GCRY_MD_SHA512)));
    hashes.FileSize(d->FileSize);
-
-   gcry_md_close(hd);
 
    return hashes;
 }
