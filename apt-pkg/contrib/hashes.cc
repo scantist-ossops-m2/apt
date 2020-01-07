@@ -30,6 +30,18 @@
 #include <gcrypt.h>
 									/*}}}*/
 
+static struct HashAlgo
+{
+   const char *name;
+   int gcryAlgo;
+   Hashes::SupportedHashes ourAlgo;
+} Algorithms[] = {
+   {"MD5Sum", GCRY_MD_MD5, Hashes::MD5SUM},
+   {"SHA1", GCRY_MD_SHA1, Hashes::SHA1SUM},
+   {"SHA256", GCRY_MD_SHA256, Hashes::SHA256SUM},
+   {"SHA512", GCRY_MD_SHA512, Hashes::SHA512SUM},
+};
+
 const char * HashString::_SupportedHashes[] =
 {
    "SHA512", "SHA256", "SHA1", "MD5Sum", "Checksum-FileSize", NULL
@@ -290,26 +302,20 @@ public:
    explicit PrivateHashes(unsigned int const CalcHashes) : FileSize(0)
    {
       gcry_md_open(&hd, 0, 0);
-      if ((CalcHashes & Hashes::MD5SUM) == Hashes::MD5SUM)
-	 gcry_md_enable(hd, GCRY_MD_MD5);
-      if ((CalcHashes & Hashes::SHA1SUM) == Hashes::SHA1SUM)
-	 gcry_md_enable(hd, GCRY_MD_SHA1);
-      if ((CalcHashes & Hashes::SHA256SUM) == Hashes::SHA256SUM)
-	 gcry_md_enable(hd, GCRY_MD_SHA256);
-      if ((CalcHashes & Hashes::SHA512SUM) == Hashes::SHA512SUM)
-	 gcry_md_enable(hd, GCRY_MD_SHA512);
+      for (size_t i = 0; i < _count(Algorithms); i++)
+      {
+	 if ((CalcHashes & Algorithms[i].ourAlgo) == Algorithms[i].ourAlgo)
+	    gcry_md_enable(hd, Algorithms[i].gcryAlgo);
+      }
    }
 
    explicit PrivateHashes(HashStringList const &Hashes) : FileSize(0) {
       gcry_md_open(&hd, 0, 0);
-      if (not Hashes.usable() || Hashes.find("MD5Sum") != NULL)
-	 gcry_md_enable(hd, GCRY_MD_MD5);
-      if (not Hashes.usable() || Hashes.find("SHA1") != NULL)
-	 gcry_md_enable(hd, GCRY_MD_SHA1);
-      if (not Hashes.usable() || Hashes.find("SHA256") != NULL)
-	 gcry_md_enable(hd, GCRY_MD_SHA256);
-      if (not Hashes.usable() || Hashes.find("SHA512") != NULL)
-	 gcry_md_enable(hd, GCRY_MD_SHA512);
+      for (size_t i = 0; i < _count(Algorithms); i++)
+      {
+	 if (not Hashes.usable() || Hashes.find(Algorithms[i].name) != NULL)
+	    gcry_md_enable(hd, Algorithms[i].gcryAlgo);
+      }
    }
    ~PrivateHashes()
    {
@@ -375,19 +381,21 @@ HashStringList Hashes::GetHashStringList()
 {
    HashStringList hashes;
 
-   auto Value = [this](int N, int algo) -> std::string {
+   auto Value = [this](int algo) -> std::string {
       char Conv[16] =
 	 {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b',
 	  'c', 'd', 'e', 'f'};
-      char Result[((N / 8) * 2) + 1];
-      Result[(N / 8) * 2] = 0;
+
+      auto Size = gcry_md_get_algo_dlen(algo);
+      char Result[((Size)*2) + 1];
+      Result[(Size)*2] = 0;
 
       auto Sum = gcry_md_read(d->hd, algo);
 
       // Convert each char into two letters
       int J = 0;
       int I = 0;
-      for (; I != (N / 8) * 2; J++, I += 2)
+      for (; I != (Size)*2; J++, I += 2)
       {
 	 Result[I] = Conv[Sum[J] >> 4];
 	 Result[I + 1] = Conv[Sum[J] & 0xF];
@@ -395,15 +403,9 @@ HashStringList Hashes::GetHashStringList()
       return std::string(Result);
    };
 
-
-   if (gcry_md_is_enabled(d->hd, GCRY_MD_MD5))
-      hashes.push_back(HashString("MD5Sum", Value(128, GCRY_MD_MD5)));
-   if (gcry_md_is_enabled(d->hd, GCRY_MD_SHA1))
-      hashes.push_back(HashString("SHA1", Value(160, GCRY_MD_SHA1)));
-   if (gcry_md_is_enabled(d->hd, GCRY_MD_SHA256))
-      hashes.push_back(HashString("SHA256", Value(256, GCRY_MD_SHA256)));
-   if (gcry_md_is_enabled(d->hd, GCRY_MD_SHA512))
-      hashes.push_back(HashString("SHA512", Value(512, GCRY_MD_SHA512)));
+   for (size_t i = 0; i < _count(Algorithms); i++)
+      if (gcry_md_is_enabled(d->hd, Algorithms[i].gcryAlgo))
+	 hashes.push_back(HashString(Algorithms[i].name, Value(Algorithms[i].gcryAlgo)));
    hashes.FileSize(d->FileSize);
 
    return hashes;
