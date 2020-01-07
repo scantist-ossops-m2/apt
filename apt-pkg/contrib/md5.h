@@ -29,20 +29,9 @@
 
 typedef HashSumValue<128> MD5SumValue;
 
-class MD5Summation : public SummationImplementation
+struct MD5Summation : public SummationImplementation
 {
-   uint32_t Buf[4];
-   unsigned char Bytes[2*4];
-   unsigned char In[16*4];
-   bool Done;
-
-   public:
-
-   bool Add(const unsigned char *inbuf, unsigned long long inlen) APT_OVERRIDE APT_NONNULL(2);
-   using SummationImplementation::Add;
-
    MD5SumValue Result();
-
    MD5Summation();
 };
 

@@ -61,6 +61,7 @@ target_link_libraries(apt-pkg
                              $<$<BOOL:${UDEV_FOUND}>:${UDEV_LIBRARIES}>
                              $<$<BOOL:${SYSTEMD_FOUND}>:${SYSTEMD_LIBRARIES}>
                              ${ICONV_LIBRARIES}
+                             -lgcrypt
 )
 set_target_properties(apt-pkg PROPERTIES VERSION ${MAJOR}.${MINOR})
 set_target_properties(apt-pkg PROPERTIES SOVERSION ${MAJOR})
