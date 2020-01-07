@@ -171,12 +171,6 @@ class PrivateHashes;
 class Hashes
 {
    PrivateHashes * const d;
-   /* TODO: those will disappear in the future as it is hard to add new ones this way.
-    * Use Add* to build the results and get them via GetHashStringList() instead */
-   MD5Summation MD5;
-   SHA1Summation SHA1;
-   SHA256Summation SHA256;
-   SHA512Summation SHA512;
 
    public:
    static const int UntilEOF = 0;

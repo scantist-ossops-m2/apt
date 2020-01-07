@@ -25,6 +25,8 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <unistd.h>
+
+#include <gcrypt.h>
 									/*}}}*/
 
 const char * HashString::_SupportedHashes[] =
@@ -286,39 +288,47 @@ bool HashStringList::operator!=(HashStringList const &other) const
 class PrivateHashes {
 public:
    unsigned long long FileSize;
-   unsigned int CalcHashes;
+   gcry_md_hd_t hd;
 
-   explicit PrivateHashes(unsigned int const CalcHashes) : FileSize(0), CalcHashes(CalcHashes) {}
+   explicit PrivateHashes(unsigned int const CalcHashes) : FileSize(0)
+   {
+      gcry_md_open(&hd, 0, 0);
+      if ((CalcHashes & Hashes::MD5SUM) == Hashes::MD5SUM)
+	 gcry_md_enable(hd, GCRY_MD_MD5);
+      if ((CalcHashes & Hashes::SHA1SUM) == Hashes::SHA1SUM)
+	 gcry_md_enable(hd, GCRY_MD_SHA1);
+      if ((CalcHashes & Hashes::SHA256SUM) == Hashes::SHA256SUM)
+	 gcry_md_enable(hd, GCRY_MD_SHA256);
+      if ((CalcHashes & Hashes::SHA512SUM) == Hashes::SHA512SUM)
+	 gcry_md_enable(hd, GCRY_MD_SHA512);
+   }
+
    explicit PrivateHashes(HashStringList const &Hashes) : FileSize(0) {
-      unsigned int calcHashes = Hashes.usable() ? 0 : ~0;
-      if (Hashes.find("MD5Sum") != NULL)
-	 calcHashes |= Hashes::MD5SUM;
-      if (Hashes.find("SHA1") != NULL)
-	 calcHashes |= Hashes::SHA1SUM;
-      if (Hashes.find("SHA256") != NULL)
-	 calcHashes |= Hashes::SHA256SUM;
-      if (Hashes.find("SHA512") != NULL)
-	 calcHashes |= Hashes::SHA512SUM;
-      CalcHashes = calcHashes;
+      gcry_md_open(&hd, 0, 0);
+      if (not Hashes.usable() || Hashes.find("MD5Sum") != NULL)
+	 gcry_md_enable(hd, GCRY_MD_MD5);
+      if (not Hashes.usable() || Hashes.find("SHA1") != NULL)
+	 gcry_md_enable(hd, GCRY_MD_SHA1);
+      if (not Hashes.usable() || Hashes.find("SHA256") != NULL)
+	 gcry_md_enable(hd, GCRY_MD_SHA256);
+      if (not Hashes.usable() || Hashes.find("SHA512") != NULL)
+	 gcry_md_enable(hd, GCRY_MD_SHA512);
+   }
+   ~PrivateHashes()
+   {
+      gcry_md_close(hd);
    }
 };
 									/*}}}*/
 // Hashes::Add* - Add the contents of data or FD			/*{{{*/
 bool Hashes::Add(const unsigned char * const Data, unsigned long long const Size)
 {
-   if (Size == 0)
-      return true;
-   bool Res = true;
-   if ((d->CalcHashes & MD5SUM) == MD5SUM)
-      Res &= MD5.Add(Data, Size);
-   if ((d->CalcHashes & SHA1SUM) == SHA1SUM)
-      Res &= SHA1.Add(Data, Size);
-   if ((d->CalcHashes & SHA256SUM) == SHA256SUM)
-      Res &= SHA256.Add(Data, Size);
-   if ((d->CalcHashes & SHA512SUM) == SHA512SUM)
-      Res &= SHA512.Add(Data, Size);
-   d->FileSize += Size;
-   return Res;
+   if (Size != 0)
+   {
+      gcry_md_write(d->hd, Data, Size);
+      d->FileSize += Size;
+   }
+   return true;
 }
 bool Hashes::AddFD(int const Fd,unsigned long long Size)
 {
@@ -367,15 +377,41 @@ bool Hashes::AddFD(FileFd &Fd,unsigned long long Size)
 HashStringList Hashes::GetHashStringList()
 {
    HashStringList hashes;
-   if ((d->CalcHashes & MD5SUM) == MD5SUM)
-      hashes.push_back(HashString("MD5Sum", MD5.Result().Value()));
-   if ((d->CalcHashes & SHA1SUM) == SHA1SUM)
-      hashes.push_back(HashString("SHA1", SHA1.Result().Value()));
-   if ((d->CalcHashes & SHA256SUM) == SHA256SUM)
-      hashes.push_back(HashString("SHA256", SHA256.Result().Value()));
-   if ((d->CalcHashes & SHA512SUM) == SHA512SUM)
-      hashes.push_back(HashString("SHA512", SHA512.Result().Value()));
+   gcry_md_hd_t hd;
+
+   auto Value = [&hd](int N, int algo) -> std::string {
+      char Conv[16] =
+	 {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b',
+	  'c', 'd', 'e', 'f'};
+      char Result[((N / 8) * 2) + 1];
+      Result[(N / 8) * 2] = 0;
+
+      auto Sum = gcry_md_read(hd, algo);
+
+      // Convert each char into two letters
+      int J = 0;
+      int I = 0;
+      for (; I != (N / 8) * 2; J++, I += 2)
+      {
+	 Result[I] = Conv[Sum[J] >> 4];
+	 Result[I + 1] = Conv[Sum[J] & 0xF];
+      }
+      return std::string(Result);
+   };
+
+   gcry_md_copy(&hd, d->hd);
+   if (gcry_md_is_enabled(d->hd, GCRY_MD_MD5))
+      hashes.push_back(HashString("MD5Sum", Value(128, GCRY_MD_MD5)));
+   if (gcry_md_is_enabled(d->hd, GCRY_MD_SHA1))
+      hashes.push_back(HashString("SHA1", Value(160, GCRY_MD_SHA1)));
+   if (gcry_md_is_enabled(d->hd, GCRY_MD_SHA256))
+      hashes.push_back(HashString("SHA256", Value(256, GCRY_MD_SHA256)));
+   if (gcry_md_is_enabled(d->hd, GCRY_MD_SHA512))
+      hashes.push_back(HashString("SHA512", Value(512, GCRY_MD_SHA512)));
    hashes.FileSize(d->FileSize);
+
+   gcry_md_close(hd);
+
    return hashes;
 }
 Hashes::Hashes() : d(new PrivateHashes(~0)) { }
