@@ -50,14 +50,14 @@ using APT::StringView;
 // Cache::Header::Header - Constructor					/*{{{*/
 // ---------------------------------------------------------------------
 /* Simply initialize the header */
-pkgCache::Header::Header()
+pkgCache::Header::Header() : AptVersion(PACKAGE_VERSION)
 {
 #define APT_HEADER_SET(X,Y) X = Y; static_assert(std::numeric_limits<decltype(X)>::max() > Y, "Size violation detected in pkgCache::Header")
    APT_HEADER_SET(Signature, 0x98FE76DC);
 
    /* Whenever the structures change the major version should be bumped,
       whenever the generator changes the minor version should be bumped. */
-   APT_HEADER_SET(MajorVersion, 16);
+   APT_HEADER_SET(MajorVersion, 42);
    APT_HEADER_SET(MinorVersion, 0);
    APT_HEADER_SET(Dirty, false);
 
@@ -169,6 +169,7 @@ bool pkgCache::ReMap(bool const &Errorchecks)
    
    if (HeaderP->MajorVersion != DefHeader.MajorVersion ||
        HeaderP->MinorVersion != DefHeader.MinorVersion ||
+       memcmp(HeaderP->AptVersion, DefHeader.AptVersion, sizeof(DefHeader.AptVersion)) != 0 ||
        HeaderP->CheckSizes(DefHeader) == false)
       return _error->Error(_("The package cache file is an incompatible version"));
 

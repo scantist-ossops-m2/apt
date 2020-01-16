@@ -306,9 +306,14 @@ struct pkgCache::Header
        verify that the system loading the image has the same byte order
        and byte size as the system saving the image */
    uint32_t Signature;
-   /** These contain the version of the cache file */
+   /** These contain the version of the cache file (42:0), deprecated,
+    *  use AptVersion below. */
    map_number_t MajorVersion;
    map_number_t MinorVersion;
+
+   /** \brief The version of the APT that created this cache */
+   char AptVersion[64];
+
    /** \brief indicates if the cache should be erased
 
        Dirty is true if the cache file was opened for reading, the client
