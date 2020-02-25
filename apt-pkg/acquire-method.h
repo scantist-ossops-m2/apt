@@ -29,8 +29,9 @@
 #include <unordered_map>
 #include <vector>
 
+#pragma GCC visibility push(hidden)
 
-class pkgAcqMethod
+class APT_PUBLIC pkgAcqMethod
 {
    protected:
 
@@ -133,4 +134,5 @@ class pkgAcqMethod
 
 /** @} */
 
+#pragma GCC visibility pop
 #endif
