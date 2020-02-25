@@ -48,6 +48,7 @@
 
 class Configuration;
 
+#pragma GCC visibility push(hidden)
 class CommandLine
 {
    public:
@@ -61,7 +62,9 @@ class CommandLine
    Configuration *Conf;
    bool HandleOpt(int &I,int argc,const char *argv[],
 		  const char *&Opt,Args *A,bool PreceedeMatch = false);
-   void static SaveInConfig(unsigned int const &argc, char const * const * const argv);
+
+   // Public for testing
+   APT_PUBLIC void static SaveInConfig(unsigned int const &argc, char const * const * const argv);
 
    public:
    
@@ -77,22 +80,22 @@ class CommandLine
 
    const char **FileList;
    
-   bool Parse(int argc,const char **argv);
-   void ShowHelp();
-   unsigned int FileSize() const APT_PURE;
+   APT_PUBLIC bool Parse(int argc,const char **argv);
+   APT_PUBLIC void ShowHelp();
+   APT_PUBLIC unsigned int FileSize() const APT_PURE;
    // FIXME: merge on next ABI break
-   bool DispatchArg(Dispatch *List,bool NoMatch = true);
-   bool DispatchArg(Dispatch const * const List,bool NoMatch = true);
+   APT_PUBLIC bool DispatchArg(Dispatch *List,bool NoMatch = true);
+   APT_PUBLIC bool DispatchArg(Dispatch const * const List,bool NoMatch = true);
       
-   static char const * GetCommand(Dispatch const * const Map,
+   APT_PUBLIC static char const * GetCommand(Dispatch const * const Map,
 	 unsigned int const argc, char const * const * const argv) APT_PURE;
 
-   static CommandLine::Args MakeArgs(char ShortOpt, char const *LongOpt,
+   APT_PUBLIC static CommandLine::Args MakeArgs(char ShortOpt, char const *LongOpt,
 	 char const *ConfName, unsigned long Flags) APT_PURE;
 
-   CommandLine();
-   CommandLine(Args *AList,Configuration *Conf);
-   ~CommandLine();
+   APT_PUBLIC CommandLine();
+   APT_PUBLIC CommandLine(Args *AList,Configuration *Conf);
+   APT_PUBLIC ~CommandLine();
 };
 
 struct CommandLine::Args
@@ -112,4 +115,5 @@ struct CommandLine::Dispatch
    bool (*Handler)(CommandLine &);
 };
 
+#pragma GCC visibility pop
 #endif

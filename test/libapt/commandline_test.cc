@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h>
 
-class CLT: public CommandLine {
+class APT_HIDDEN CLT: public CommandLine {
    public:
       std::string static AsString(const char * const * const argv,
 	    unsigned int const argc) {
