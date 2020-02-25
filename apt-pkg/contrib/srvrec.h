@@ -9,9 +9,13 @@
 #ifndef SRVREC_H
 #define SRVREC_H
 
+#include <apt-pkg/macros.h>
+
 #include <string>
 #include <vector>
 #include <arpa/nameser.h>
+
+#pragma GCC visibility push(hidden)
 
 class SrvRec
 {
@@ -29,7 +33,7 @@ class SrvRec
    bool operator<(SrvRec const &other) const {
       return this->priority < other.priority;
    }
-   bool operator==(SrvRec const &other) const;
+   APT_PUBLIC bool operator==(SrvRec const &other) const;
 
    SrvRec(std::string const Target, u_int16_t const Priority,
 	 u_int16_t const Weight, u_int16_t const Port) :
@@ -40,15 +44,16 @@ class SrvRec
 
 /** \brief Get SRV records from host/port (builds the query string internally) 
  */
-bool GetSrvRecords(std::string name, std::vector<SrvRec> &Result);
+APT_PUBLIC bool GetSrvRecords(std::string name, std::vector<SrvRec> &Result);
 
 /** \brief Get SRV records for query string like: _http._tcp.example.com
  */
-bool GetSrvRecords(std::string host, int port, std::vector<SrvRec> &Result);
+APT_PUBLIC bool GetSrvRecords(std::string host, int port, std::vector<SrvRec> &Result);
 
 /** \brief Pop a single SRV record from the vector of SrvRec taking
  *         priority and weight into account
  */
-SrvRec PopFromSrvRecs(std::vector<SrvRec> &Recs);
+APT_PUBLIC SrvRec PopFromSrvRecs(std::vector<SrvRec> &Recs);
 
+#pragma GCC visibility pop
 #endif
