@@ -30,6 +30,7 @@
 #include <unordered_map>
 #include <vector>
 
+#pragma GCC visibility push(hidden)
 
 /** \addtogroup acquire
  *  @{
@@ -939,7 +940,7 @@ class APT_HIDDEN pkgAcqIndexDiffs : public pkgAcqBaseIndex
  *  If the package file already exists in the cache, nothing will be
  *  done.
  */
-class pkgAcqArchive : public pkgAcquire::Item
+class APT_PUBLIC pkgAcqArchive : public pkgAcquire::Item /* yikes, apt-private does a dynamic-cast */
 {
    void * const d;
 
@@ -1006,10 +1007,10 @@ class pkgAcqArchive : public pkgAcquire::Item
     *  basename in the constructor, and filled in with a fully
     *  qualified filename once the download finishes.
     */
-   pkgAcqArchive(pkgAcquire * const Owner,pkgSourceList * const Sources,
+   APT_PUBLIC pkgAcqArchive(pkgAcquire * const Owner,pkgSourceList * const Sources,
 		 pkgRecords * const Recs,pkgCache::VerIterator const &Version,
 		 std::string &StoreFilename);
-   virtual ~pkgAcqArchive();
+   APT_PUBLIC virtual ~pkgAcqArchive() override;
 };
 									/*}}}*/
 /** \brief Retrieve the changelog for the given version			{{{
@@ -1085,7 +1086,7 @@ class pkgAcqChangelog : public pkgAcquire::Item
     *  \param DestFilename The filename the file should have in #DestDir
     *  Defaults to sourcepackagename.changelog if not set.
     */
-   pkgAcqChangelog(pkgAcquire * const Owner, pkgCache::VerIterator const &Ver,
+   APT_PUBLIC pkgAcqChangelog(pkgAcquire * const Owner, pkgCache::VerIterator const &Ver,
 	 std::string const &DestDir="", std::string const &DestFilename="");
 
    /** \brief Create a new pkgAcqChangelog object.
@@ -1101,7 +1102,7 @@ class pkgAcqChangelog : public pkgAcquire::Item
     *  \param DestFilename The filename the file should have in #DestDir
     *  Defaults to sourcepackagename.changelog if not set.
     */
-   pkgAcqChangelog(pkgAcquire * const Owner, pkgCache::RlsFileIterator const &Rls,
+   APT_PUBLIC pkgAcqChangelog(pkgAcquire * const Owner, pkgCache::RlsFileIterator const &Rls,
 	 char const * const Component, char const * const SrcName, char const * const SrcVersion,
 	 std::string const &DestDir="", std::string const &DestFilename="");
 
@@ -1117,11 +1118,11 @@ class pkgAcqChangelog : public pkgAcquire::Item
     *  \param DestFilename The filename the file should have in #DestDir
     *  Defaults to sourcepackagename.changelog if not set.
     */
-   pkgAcqChangelog(pkgAcquire * const Owner, std::string const &URI,
+   APT_PUBLIC pkgAcqChangelog(pkgAcquire * const Owner, std::string const &URI,
 	 char const * const SrcName, char const * const SrcVersion,
 	 std::string const &DestDir="", std::string const &DestFilename="");
 
-   virtual ~pkgAcqChangelog();
+   APT_PUBLIC virtual ~pkgAcqChangelog() override;
 
 private:
    APT_HIDDEN void Init(std::string const &DestDir, std::string const &DestFilename);
@@ -1183,11 +1184,11 @@ class pkgAcqFile : public pkgAcquire::Item
     * is the absolute name to which the file should be downloaded.
     */
 
-   pkgAcqFile(pkgAcquire * const Owner, std::string const &URI, HashStringList const &Hashes, unsigned long long const Size,
+   APT_PUBLIC pkgAcqFile(pkgAcquire * const Owner, std::string const &URI, HashStringList const &Hashes, unsigned long long const Size,
 	      std::string const &Desc, std::string const &ShortDesc,
 	      std::string const &DestDir="", std::string const &DestFilename="",
 	      bool const IsIndexFile=false);
-   virtual ~pkgAcqFile();
+   APT_PUBLIC virtual ~pkgAcqFile() override;
 };
 									/*}}}*/
 class APT_HIDDEN pkgAcqAuxFile : public pkgAcqFile /*{{{*/
@@ -1210,5 +1211,6 @@ class APT_HIDDEN pkgAcqAuxFile : public pkgAcqFile /*{{{*/
 };
 									/*}}}*/
 /** @} */
+#pragma GCC visibility pop
 
 #endif
