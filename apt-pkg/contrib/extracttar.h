@@ -21,7 +21,9 @@
 
 class pkgDirStream;
 
-class APT_PUBLIC ExtractTar
+#pragma GCC visibility push(hidden)
+
+class ExtractTar
 {
    protected:
    
@@ -41,15 +43,16 @@ class APT_PUBLIC ExtractTar
    std::string DecompressProg;
    
    // Fork and reap gzip
-   APT_HIDDEN bool StartGzip();
-   APT_HIDDEN bool Done();
+   bool StartGzip();
+   bool Done();
 
    public:
 
-   bool Go(pkgDirStream &Stream);
+   APT_PUBLIC bool Go(pkgDirStream &Stream);
 
-   ExtractTar(FileFd &Fd,unsigned long long Max,std::string DecompressionProgram);
-   virtual ~ExtractTar();
+   APT_PUBLIC ExtractTar(FileFd &Fd,unsigned long long Max,std::string DecompressionProgram);
+   APT_PUBLIC virtual ~ExtractTar();
 };
 
+#pragma GCC visibility pop
 #endif
