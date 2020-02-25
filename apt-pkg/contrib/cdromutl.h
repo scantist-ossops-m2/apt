@@ -10,13 +10,17 @@
 #define PKGLIB_CDROMUTL_H
 
 #include <string>
+#include <apt-pkg/macros.h>
 
+#pragma GCC visibility push(hidden)
 
 // mount cdrom, DeviceName (e.g. /dev/sr0) is optional
-bool MountCdrom(std::string Path, std::string DeviceName="");
-bool UnmountCdrom(std::string Path);
-bool IdentCdrom(std::string CD,std::string &Res,unsigned int Version = 2);
-bool IsMounted(std::string &Path);
-std::string FindMountPointForDevice(const char *device);
+APT_PUBLIC bool MountCdrom(std::string Path, std::string DeviceName="");
+APT_PUBLIC bool UnmountCdrom(std::string Path);
+APT_PUBLIC bool IdentCdrom(std::string CD,std::string &Res,unsigned int Version = 2);
+APT_PUBLIC bool IsMounted(std::string &Path);
+APT_PUBLIC std::string FindMountPointForDevice(const char *device);
+
+#pragma GCC visibility pop
 
 #endif
