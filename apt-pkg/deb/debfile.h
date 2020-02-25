@@ -32,6 +32,7 @@
 
 class FileFd;
 
+#pragma GCC visibility push(hidden)
 class APT_PUBLIC debDebFile
 {
    protected:
@@ -39,28 +40,28 @@ class APT_PUBLIC debDebFile
    FileFd &File;
    ARArchive AR;
    
-   APT_HIDDEN bool CheckMember(const char *Name);
+   bool CheckMember(const char *Name);
    
    public:
    class ControlExtract;
    class MemControlExtract;
 
-   bool ExtractTarMember(pkgDirStream &Stream, const char *Name);
-   bool ExtractArchive(pkgDirStream &Stream);
+   APT_PUBLIC bool ExtractTarMember(pkgDirStream &Stream, const char *Name);
+   APT_PUBLIC bool ExtractArchive(pkgDirStream &Stream);
    const ARArchive::Member *GotoMember(const char *Name);
-   inline FileFd &GetFile() {return File;};
+   APT_PUBLIC inline FileFd &GetFile() {return File;};
    
-   explicit debDebFile(FileFd &File);
+   APT_PUBLIC explicit debDebFile(FileFd &File);
 };
 
-class APT_PUBLIC debDebFile::ControlExtract : public pkgDirStream
+class debDebFile::ControlExtract : public pkgDirStream
 {
    public:
    
    virtual bool DoItem(Item &Itm,int &Fd) APT_OVERRIDE;
 };
 
-class APT_PUBLIC debDebFile::MemControlExtract : public pkgDirStream
+class debDebFile::MemControlExtract : public pkgDirStream
 {
    bool IsControl;
    
@@ -77,8 +78,8 @@ class APT_PUBLIC debDebFile::MemControlExtract : public pkgDirStream
 			unsigned long long Size,unsigned long long Pos) APT_OVERRIDE;
 
    // Helpers
-   bool Read(debDebFile &Deb);
-   bool TakeControl(const void *Data,unsigned long long Size);
+   APT_PUBLIC bool Read(debDebFile &Deb);
+   APT_PUBLIC bool TakeControl(const void *Data,unsigned long long Size);
 
    MemControlExtract() : IsControl(false), Control(0), Length(0), Member("control") {};
    explicit MemControlExtract(std::string Member) : IsControl(false), Control(0), Length(0), Member(Member) {};
@@ -86,4 +87,5 @@ class APT_PUBLIC debDebFile::MemControlExtract : public pkgDirStream
 };
 									/*}}}*/
 
+#pragma GCC visibility pop
 #endif
