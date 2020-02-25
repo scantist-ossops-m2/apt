@@ -19,7 +19,9 @@
 
 class FileFd;
 
-class APT_PUBLIC ARArchive
+#pragma GCC visibility push(hidden)
+
+class ARArchive
 {
    struct MemberHeader;
    public:
@@ -41,8 +43,8 @@ class APT_PUBLIC ARArchive
    const Member *FindMember(const char *Name) const;
    inline Member *Members() { return List; }
    
-   explicit ARArchive(FileFd &File);
-   ~ARArchive();
+   APT_PUBLIC explicit ARArchive(FileFd &File);
+   APT_PUBLIC ~ARArchive();
 };
 
 // A member of the archive
@@ -63,4 +65,5 @@ struct ARArchive::Member
    Member() : Start(0), Next(0) {};
 };
 
+#pragma GCC visibility pop
 #endif
