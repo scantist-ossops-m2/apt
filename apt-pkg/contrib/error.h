@@ -48,6 +48,8 @@
 #include <stdarg.h>
 #include <stddef.h>
 
+#pragma GCC visibility push(hidden)
+
 class GlobalError							/*{{{*/
 {
 public:									/*{{{*/
@@ -73,7 +75,7 @@ public:									/*{{{*/
 	 *
 	 *  \return \b false
 	 */
-	bool FatalE(const char *Function,const char *Description,...) APT_PRINTF(3) APT_COLD;
+	APT_PUBLIC bool FatalE(const char *Function,const char *Description,...) APT_PRINTF(3) APT_COLD;
 
 	/** \brief add an Error message with errno to the list
 	 *
@@ -82,7 +84,7 @@ public:									/*{{{*/
 	 *
 	 *  \return \b false
 	 */
-	bool Errno(const char *Function,const char *Description,...) APT_PRINTF(3) APT_COLD;
+	APT_PUBLIC bool Errno(const char *Function,const char *Description,...) APT_PRINTF(3) APT_COLD;
 
 	/** \brief add a warning message with errno to the list
 	 *
@@ -94,7 +96,7 @@ public:									/*{{{*/
 	 *
 	 *  \return \b false
 	 */
-	bool WarningE(const char *Function,const char *Description,...) APT_PRINTF(3) APT_COLD;
+	APT_PUBLIC bool WarningE(const char *Function,const char *Description,...) APT_PRINTF(3) APT_COLD;
 
 	/** \brief add a notice message with errno to the list
 	 *
@@ -103,7 +105,7 @@ public:									/*{{{*/
 	 *
 	 *  \return \b false
 	 */
-	bool NoticeE(const char *Function,const char *Description,...) APT_PRINTF(3) APT_COLD;
+	APT_PUBLIC bool NoticeE(const char *Function,const char *Description,...) APT_PRINTF(3) APT_COLD;
 
 	/** \brief add a debug message with errno to the list
 	 *
@@ -112,7 +114,7 @@ public:									/*{{{*/
 	 *
 	 *  \return \b false
 	 */
-	bool DebugE(const char *Function,const char *Description,...) APT_PRINTF(3) APT_COLD;
+	APT_PUBLIC bool DebugE(const char *Function,const char *Description,...) APT_PRINTF(3) APT_COLD;
 
 	/** \brief adds an errno message with the given type
 	 *
@@ -120,7 +122,7 @@ public:									/*{{{*/
 	 * \param Function which failed
 	 * \param Description of the error
 	 */
-	bool InsertErrno(MsgType const &type, const char* Function,
+	APT_PUBLIC bool InsertErrno(MsgType const &type, const char* Function,
 			 const char* Description,...) APT_PRINTF(4) APT_COLD;
 
 	/** \brief adds an errno message with the given type
@@ -138,7 +140,7 @@ public:									/*{{{*/
 	 * \return true if the message was added, false if not - the caller
 	 * should call this method again in that case
 	 */
-	bool InsertErrno(MsgType type, const char* Function,
+	APT_PUBLIC bool InsertErrno(MsgType type, const char* Function,
 			 const char* Description, va_list &args,
 			 int const errsv, size_t &msgSize) APT_COLD;
 
@@ -155,7 +157,7 @@ public:									/*{{{*/
 	 *
 	 *  \return \b false
 	 */
-	bool Fatal(const char *Description,...) APT_PRINTF(2) APT_COLD;
+	APT_PUBLIC bool Fatal(const char *Description,...) APT_PRINTF(2) APT_COLD;
 
 	/** \brief add an Error message to the list
 	 *
@@ -163,7 +165,7 @@ public:									/*{{{*/
 	 *
 	 *  \return \b false
 	 */
-	bool Error(const char *Description,...) APT_PRINTF(2) APT_COLD;
+	APT_PUBLIC bool Error(const char *Description,...) APT_PRINTF(2) APT_COLD;
 
 	/** \brief add a warning message to the list
 	 *
@@ -174,7 +176,7 @@ public:									/*{{{*/
 	 *
 	 *  \return \b false
 	 */
-	bool Warning(const char *Description,...) APT_PRINTF(2) APT_COLD;
+	APT_PUBLIC bool Warning(const char *Description,...) APT_PRINTF(2) APT_COLD;
 
 	/** \brief add a notice message to the list
 	 *
@@ -187,7 +189,7 @@ public:									/*{{{*/
 	 *
 	 *  \return \b false
 	 */
-	bool Notice(const char *Description,...) APT_PRINTF(2) APT_COLD;
+	APT_PUBLIC bool Notice(const char *Description,...) APT_PRINTF(2) APT_COLD;
 
 	/** \brief add a debug message to the list
 	 *
@@ -195,14 +197,14 @@ public:									/*{{{*/
 	 *
 	 *  \return \b false
 	 */
-	bool Debug(const char *Description,...) APT_PRINTF(2) APT_COLD;
+	APT_PUBLIC bool Debug(const char *Description,...) APT_PRINTF(2) APT_COLD;
 
 	/** \brief adds an error message with the given type
 	 *
 	 * \param type of the error message
 	 * \param Description of the error
 	 */
-	bool Insert(MsgType const &type, const char* Description,...) APT_PRINTF(3) APT_COLD;
+	APT_PUBLIC bool Insert(MsgType const &type, const char* Description,...) APT_PRINTF(3) APT_COLD;
 
 	/** \brief adds an error message with the given type
 	 *
@@ -217,7 +219,7 @@ public:									/*{{{*/
 	 * \return true if the message was added, false if not - the caller
 	 * should call this method again in that case
 	 */
-	bool Insert(MsgType type, const char* Description,
+	APT_PUBLIC bool Insert(MsgType type, const char* Description,
 			 va_list &args, size_t &msgSize) APT_COLD;
 
 	/** \brief is an error in the list?
@@ -236,7 +238,7 @@ public:									/*{{{*/
 	 *
 	 *  \return \b true if the list is empty, \b false otherwise
 	 */
-	bool empty(MsgType const &threshold = WARNING) const APT_PURE;
+	APT_PUBLIC bool empty(MsgType const &threshold = WARNING) const APT_PURE;
 
 	/** \brief returns and removes the first (or last) message in the list
 	 *
@@ -244,10 +246,10 @@ public:									/*{{{*/
 	 *
 	 *  \return \b true if the message was an error, \b false otherwise
 	 */
-	bool PopMessage(std::string &Text);
+	APT_PUBLIC bool PopMessage(std::string &Text);
 
 	/** \brief clears the list of messages */
-	void Discard();
+	APT_PUBLIC void Discard();
 
 	/** \brief outputs the list of messages to the given stream
 	 *
@@ -257,7 +259,7 @@ public:									/*{{{*/
 	 *  \param threshold minimum level considered
 	 *  \param mergeStack if true recursively dumps the entire stack
 	 */
-	void DumpErrors(std::ostream &out, MsgType const &threshold = WARNING,
+	APT_PUBLIC void DumpErrors(std::ostream &out, MsgType const &threshold = WARNING,
 			bool const &mergeStack = true);
 
 	/** \brief dumps the list of messages to std::cerr
@@ -292,20 +294,20 @@ public:									/*{{{*/
 	 * The stack can be as deep as you want - all stack operations
 	 * will only operate on the last element in the stack.
 	 */
-	void PushToStack();
+	APT_PUBLIC void PushToStack();
 
 	/** \brief throw away all current messages */
-	void RevertToStack();
+	APT_PUBLIC void RevertToStack();
 
 	/** \brief merge current and stack together */
-	void MergeWithStack();
+	APT_PUBLIC void MergeWithStack();
 
 	/** \brief return the deep of the stack */
 	size_t StackCount() const APT_PURE {
 		return Stacks.size();
 	}
 
-	GlobalError();
+	APT_PUBLIC GlobalError();
 									/*}}}*/
 private:								/*{{{*/
 	struct Item {
@@ -359,9 +361,10 @@ private:								/*{{{*/
 									/*}}}*/
 
 // The 'extra-ansi' syntax is used to help with collisions. 
-GlobalError *_GetErrorObj();
+APT_PUBLIC GlobalError *_GetErrorObj();
 static struct {
 	inline GlobalError* operator ->() { return _GetErrorObj(); }
 } _error APT_UNUSED;
 
+#pragma GCC visibility pop
 #endif
