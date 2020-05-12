@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+
+TESTDIR="$(readlink -f "$(dirname "$0")")"
+. "$TESTDIR/framework"
+setupenvironment
+configarchitecture "amd64"
+setupaptarchive
+
+# this used to crash, but it should treat it as an invalid member header
+touch ' '
+ar -q test.deb ' '
+testsuccessequal "E: Invalid archive member header" ${BUILDDIRECTORY}/../test/interactive-helper/testdeb test.deb
+
+
+rm test.deb
+touch 'x'
+ar -q test.deb 'x'
+testsuccessequal "E: This is not a valid DEB archive, missing 'debian-binary' member" ${BUILDDIRECTORY}/../test/interactive-helper/testdeb test.deb
