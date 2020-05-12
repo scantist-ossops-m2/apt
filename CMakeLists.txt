@@ -187,7 +187,7 @@ endif()
 # Configure some variables like package, version and architecture.
 set(PACKAGE ${PROJECT_NAME})
 set(PACKAGE_MAIL "APT Development Team <deity@lists.debian.org>")
-set(PACKAGE_VERSION "2.1.2")
+set(PACKAGE_VERSION "1.6.12ubuntu0.1")
 string(REGEX MATCH "^[0-9.]+" PROJECT_VERSION ${PACKAGE_VERSION})
 
 if (NOT DEFINED DPKG_DATADIR)

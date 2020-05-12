@@ -1,6 +1,5 @@
-apt (2.1.2) unstable; urgency=medium
+apt (1.6.12ubuntu0.1) bionic; urgency=high
 
-  [ Julian Andres Klode ]
   * SECURITY UPDATE: Out of bounds read in ar, tar implementations (LP: #1878177)
     - apt-pkg/contrib/arfile.cc: Fix out-of-bounds read in member name
     - apt-pkg/contrib/arfile.cc: Fix out-of-bounds read on unterminated
@@ -9,10 +8,7 @@ apt (2.1.2) unstable; urgency=medium
       member names in error path
     - CVE-2020-3810
 
-  [ Frans Spiesschaert ]
-  * Dutch program translation update (Closes: #960186)
-
- -- Julian Andres Klode <jak@debian.org>  Tue, 12 May 2020 11:57:30 +0200
+ -- Julian Andres Klode <juliank@ubuntu.com>  Tue, 12 May 2020 20:03:44 +0200
 
 apt (1.6.12) bionic; urgency=medium
 
