@@ -1,12 +1,13 @@
 #!/bin/sh
 set -e
 
-APTTESTHELPERSBINDIR="${APTWEBSERVERBINDIR}"
 TESTDIR="$(readlink -f "$(dirname "$0")")"
 . "$TESTDIR/framework"
 setupenvironment
 configarchitecture "amd64"
 setupaptarchive
+
+APTTESTHELPERSBINDIR="${APTWEBSERVERBINDIR}"
 
 # this used to crash, but it should treat it as an invalid member header
 touch ' '
