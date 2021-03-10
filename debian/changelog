@@ -1,3 +1,21 @@
+apt (1.8.5) buster; urgency=medium
+
+  * Merge 1.8.2.z security uploads back into 1.8.y branch; bringing
+    the changes from 1.8.3, 1.8.4 and this upload to buster.
+
+  [ David Kalnischkies ]
+  * Fix incorrect base64 encoding due to int promotion (LP: #1916050)
+
+  [ Julian Andres Klode ]
+  * Implement update --error-on=any (Closes: #594813) (LP: #1693900)
+  * Include all translations when building the cache (LP: #1907850)
+  * Add basic support for the Protected field, and do not require force-loopbreak
+    on Protected/Important packages (Closes: #983014) (LP: #1916725)
+  * Protect currently running kernel at run-time (LP: #1615381)
+  * Make ADDARG{,C}() macros expand to single statements
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 10 Mar 2021 14:36:59 +0100
+
 apt (1.8.4) unstable; urgency=medium
 
   * CMake: Pass -Werror=return-type to gcc
